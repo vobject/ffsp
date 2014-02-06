@@ -1,0 +1,8 @@
+*.o
+mkfs.ffsp
+mount.ffsp
+fs
+.cproject
+.project
+*-build
+CMakeLists.txt.user
