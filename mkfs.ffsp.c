@@ -19,7 +19,6 @@
  */
 
 #define _GNU_SOURCE
-#define _FILE_OFFSET_BITS 64
 
 #include <unistd.h>
 #include <stdio.h>
