@@ -21,7 +21,12 @@
 #ifndef LOG_H
 #define LOG_H
 
-void FFSP_DEBUG(const char *format, ...) __attribute__((format(printf, 1, 2)));
-void FFSP_ERROR(const char *format, ...) __attribute__((format(printf, 1, 2)));
+#ifdef WIN32
+void FFSP_DEBUG(const char *format, ...); // FIXME
+void FFSP_ERROR(const char *format, ...); // FIXME
+#else
+void FFSP_DEBUG(const char *format, ...); __attribute__((format(printf, 1, 2)));
+void FFSP_ERROR(const char *format, ...); __attribute__((format(printf, 1, 2)));
+#endif
 
 #endif /* LOG_H */

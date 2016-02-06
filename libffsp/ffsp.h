@@ -21,9 +21,16 @@
 #ifndef FFSP_H
 #define FFSP_H
 
+#include "byteorder.h"
+
 #include <stdint.h>
 
-#include "byteorder.h"
+#ifdef WIN32
+#include <sys/stat.h>
+#ifndef S_ISDIR
+#define S_ISDIR(m)	(((m)&S_IFDIR)==S_IFDIR)
+#endif
+#endif
 
 #define FFSP_FILE_SYSTEM_ID	0x46465350
 #define FFSP_VERSION_MAJOR	0
