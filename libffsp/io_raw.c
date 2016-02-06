@@ -20,15 +20,21 @@
 
 #define _GNU_SOURCE
 
-#include <endian.h>
-#include <byteswap.h>
-#include <limits.h>
-#include <unistd.h>
-#include <errno.h>
-
 #include "io_raw.h"
 #include "log.h"
 #include "debug.h"
+
+#include <limits.h>
+#include <errno.h>
+#include <stdint.h>
+
+#ifdef WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#define SSIZE_MAX MAXSSIZE_T
+#else
+#include <unistd.h>
+#endif
 
 int ffsp_read_raw(int fd, void *buf, size_t count, off_t offset)
 {
@@ -38,7 +44,7 @@ int ffsp_read_raw(int fd, void *buf, size_t count, off_t offset)
 		FFSP_DEBUG("ffsp_read_internal(): count > SSIZE_MAX");
 	}
 
-	rc = pread(fd, buf, count, offset);
+//	rc = pread(fd, buf, count, offset);
 	if (rc == -1) {
 		rc = -errno;
 		FFSP_ERROR("ffsp_read_raw(): pread() failed; errno=%d", errno);
@@ -61,7 +67,7 @@ int ffsp_write_raw(int fd, const void *buf, size_t count, off_t offset)
 		FFSP_DEBUG("ffsp_write_internal(): count > SSIZE_MAX");
 	}
 
-	rc = pwrite(fd, buf, count, offset);
+//	rc = pwrite(fd, buf, count, offset);
 	if (rc == -1) {
 		rc = -errno; // Return negative errno
 		FFSP_ERROR("ffsp_write_raw(): pwrite() failed; errno=%d", errno);

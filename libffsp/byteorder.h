@@ -22,8 +22,19 @@
 #define BYTE_ORDER_H
 
 #include <stdint.h>
+
+#ifdef WIN32
+#include <intrin.h>
+#define __LITTLE_ENDIAN __MACHINE
+#define __BIG_ENDIAN 0
+#define __BYTE_ORDER __MACHINE
+#define bswap_16 _byteswap_ushort
+#define bswap_32 _byteswap_ulong
+#define bswap_64 _byteswap_uint64
+#else
 #include <endian.h>
 #include <byteswap.h>
+#endif
 
 typedef struct { uint16_t v; } be16_t;
 typedef struct { uint32_t v; } be32_t;
