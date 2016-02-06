@@ -50,7 +50,11 @@ struct ffsp_super {
 };
 
 struct ffsp_timespec {
-	be64_t sec __attribute__ ((packed, aligned(4)));
+#ifndef WIN32
+	be64_t sec __attribute__((packed, aligned(4)));
+#else
+	be64_t sec; // FIXME
+#endif
 	be32_t nsec;
 };
 
