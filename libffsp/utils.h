@@ -24,8 +24,11 @@
 #include "ffsp.h"
 
 #include <sys/stat.h>
-#include <sys/statvfs.h>
 #include <time.h>
+
+#ifndef WIN32
+#include <sys/statvfs.h>
+#endif
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

@@ -20,14 +20,19 @@
 
 #define _GNU_SOURCE
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-
 #include "ffsp.h"
 #include "log.h"
 #include "inode.h"
 #include "utils.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef WIN32
+extern int gettimeofday(struct timeval *tp, struct timezone *tzp);
+#else
+#include <sys/time.h>
+#endif
 
 static uint64_t fs_size(const struct ffsp *fs)
 {
@@ -90,7 +95,9 @@ void ffsp_stat(struct ffsp *fs, const struct ffsp_inode *ino,
 	stbuf->st_rdev = get_be64(ino->i_rdev);
 	stbuf->st_size = get_be64(ino->i_size);
 //	stbuf->st_blksize = 0; /* ignored by FUSE */
+#ifndef WIN32
 	stbuf->st_blocks = (get_be64(ino->i_size) + 511) / 512 + 1;
+#endif
 	stbuf->st_atime = get_be64(ino->i_atime.sec);
 	stbuf->st_mtime = get_be64(ino->i_mtime.sec);
 	stbuf->st_ctime = get_be64(ino->i_ctime.sec);
