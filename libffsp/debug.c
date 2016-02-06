@@ -42,7 +42,11 @@ void ffsp_debug_fuse_stat(struct stat *stbuf)
 
 	memset(stbuf, 0, sizeof(*stbuf));
 	stbuf->st_ino = 0;
+#ifdef WIN32
+	stbuf->st_mode = S_IFREG; // FIXME
+#else
 	stbuf->st_mode = S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO;
+#endif
 	stbuf->st_nlink = 1;
 	stbuf->st_uid = 0;
 	stbuf->st_gid = 0;
