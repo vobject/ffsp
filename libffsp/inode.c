@@ -20,11 +20,6 @@
 
 #define _GNU_SOURCE
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-
 #include "ffsp.h"
 #include "log.h"
 #include "bitops.h"
@@ -36,6 +31,15 @@
 #include "inode_cache.h"
 #include "inode_group.h"
 #include "inode.h"
+
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+
+#ifdef WIN32
+extern char *strndup(const char *s, size_t n);
+#endif
 
 struct ffsp_inode *ffsp_allocate_inode(const struct ffsp *fs)
 {
@@ -514,7 +518,11 @@ int ffsp_symlink(struct ffsp *fs, const char *oldpath, const char *newpath,
 	mode_t mode;
 	struct ffsp_inode *ino;
 
+#ifdef WIN32
+	mode = S_IFLNK; // FIXME
+#else
 	mode = S_IFLNK | S_IRWXU | S_IRWXG | S_IRWXO;
+#endif
 
 	rc = ffsp_create(fs, newpath, mode, uid, gid, 0);
 	if (rc < 0)

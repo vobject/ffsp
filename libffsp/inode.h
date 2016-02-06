@@ -21,11 +21,15 @@
 #ifndef INODE_H
 #define INODE_H
 
+#include "ffsp.h"
+
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "ffsp.h"
+#ifdef WIN32
+#include <fuse_win.h>
+#endif
 
 struct ffsp_inode *ffsp_allocate_inode(const struct ffsp *fs);
 void ffsp_delete_inode(struct ffsp_inode *ino);
