@@ -23,7 +23,12 @@
 
 #include <fuse.h>
 
+#ifdef WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
@@ -62,19 +67,26 @@ static void *fuse_ffsp_init(struct fuse_conn_info *conn)
 {
 	FFSP_DEBUG("fuse_ffsp_init()");
 
+#ifndef WIN32
 	if (conn->capable & FUSE_CAP_ATOMIC_O_TRUNC)
 		conn->want |= FUSE_CAP_ATOMIC_O_TRUNC;
+#endif
 
 	if (ffsp_mount(&fs, ffsp_params.device) < 0) {
 		FFSP_ERROR("ffsp_mount() failed. exiting...");
 		exit(EXIT_FAILURE);
 	}
 
+#ifndef WIN32
 	if (conn->capable & FUSE_CAP_BIG_WRITES) {
 		conn->want |= FUSE_CAP_BIG_WRITES;
 		conn->max_write = fs.clustersize;
 		FFSP_DEBUG("Setting max_write to %u", conn->max_write);
 	}
+#else
+	conn->max_write = fs.clustersize;
+	FFSP_DEBUG("Setting max_write to %u", conn->max_write);
+#endif
 
 	// TODO: Would it be ok to read all existing inode + dentry structs
 	//  into memory at mount time?
