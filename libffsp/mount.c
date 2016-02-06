@@ -24,8 +24,13 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <fcntl.h>
+
+#ifdef WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "ffsp.h"
 #include "log.h"
@@ -190,7 +195,11 @@ int ffsp_mount(struct ffsp *fs, const char *path)
 	 * page-aligned write pointer. But to get that calls to malloc had
 	 * to be replaced by posix_memalign with 4k alignment.
 	 */
+#ifdef WIN32
+	fs->fd = open(path, O_RDWR);
+#else
 	fs->fd = open(path, O_RDWR | O_SYNC);
+#endif
 	if (fs->fd == -1) {
 		FFSP_ERROR("ffsp_mount(): open(path=%s) failed", path);
 		return -1;
