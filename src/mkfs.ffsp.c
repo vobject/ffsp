@@ -64,7 +64,6 @@ static void show_usage(const char *progname)
 
 static int parse_arguments(int argc, char **argv, struct arguments *args)
 {
-#ifndef _WIN32
 	static const struct option long_options[] = {
 		{ "clustersize", 1, NULL, 'c' },
 		{ "erasesize", 1, NULL, 'e' },
@@ -74,7 +73,6 @@ static int parse_arguments(int argc, char **argv, struct arguments *args)
 		{ "write-eb", 1, NULL, 'w' },
 		{ NULL, 0, NULL, 0 },
 	};
-#endif
 
 	memset(args, 0, sizeof(*args));
 	// Default size for clusters is 4 KiB
@@ -93,11 +91,7 @@ static int parse_arguments(int argc, char **argv, struct arguments *args)
 	while (1) {
 		int c;
 
-#ifdef _WIN32
-		c = getopt(argc, argv, "c:e:i:o:r:w:");
-#else
 		c = getopt_long(argc, argv, "c:e:i:o:r:w:", long_options, &optind);
-#endif
 
 		if (c == -1)
 			break;
@@ -304,7 +298,7 @@ static int setup_fs(const struct arguments *args)
 	struct ffsp_dentry dot; // "."
 	memset(&dot, 0, sizeof(dot));
 	dot.ino = put_be32(1);
-	dot.len = strlen(".");
+	dot.len = (uint8_t)strlen(".");
 	strcpy(dot.name, ".");
 	memcpy(eb_buf + eb_buf_written, &dot, sizeof(dot));
 	eb_buf_written += sizeof(dot);
@@ -312,7 +306,7 @@ static int setup_fs(const struct arguments *args)
 	struct ffsp_dentry dotdot; // ".."
 	memset(&dotdot, 0, sizeof(dotdot));
 	dotdot.ino = put_be32(1);
-	dotdot.len = strlen("..");
+	dotdot.len = (uint8_t)strlen("..");
 	strcpy(dotdot.name, "..");
 	memcpy(eb_buf + eb_buf_written, &dotdot, sizeof(dotdot));
 	eb_buf_written += sizeof(dotdot);
