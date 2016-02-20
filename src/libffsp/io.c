@@ -671,7 +671,7 @@ int ffsp_truncate(struct ffsp *fs, struct ffsp_inode *ino, uint64_t length)
 }
 
 int ffsp_write(struct ffsp *fs, struct ffsp_inode *ino,
-		const void *buf, const size_t count, const uint64_t offset)
+		const void *buf, size_t count, uint64_t offset)
 {
 	int rc;
 	uint32_t i_flags;
