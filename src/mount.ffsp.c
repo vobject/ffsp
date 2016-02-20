@@ -18,7 +18,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define _GNU_SOURCE
 #define FUSE_USE_VERSION 26
 
 #include "libffsp/ffsp.h"
