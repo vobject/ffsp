@@ -10,10 +10,18 @@ IF(NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE "Debug")
 ENDIF()
 
+FILE(GLOB MKFS_SRC src/mkfs.ffsp.c)
+FILE(GLOB MOUNT_SRC src/mount.ffsp.c)
+FILE(GLOB FFSP_SRC src/libffsp/*.h src/libffsp/*.c)
+
 IF(WIN32)
     SET(FUSE_INCLUDE_DIRS "D:/Development/fs/dokany/dokan_fuse/include")
     SET(FUSE_LIBRARY_DIRS "D:/Development/fs/dokany/x64/Debug")
     SET(FUSE_LIBRARIES "dokanfuse")
+
+    INCLUDE_DIRECTORIES(src/libffsp/win32)
+    FILE(GLOB FFSP_SRC_WIN32 src/libffsp/win32/*.h src/libffsp/win32/*.c)
+    SET(FFSP_SRC "${FFSP_SRC}" "${FFSP_SRC_WIN32}")
 
     ADD_DEFINITIONS("-D_WIN32_WINNT=0x0601")
     ADD_DEFINITIONS("-D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS")
@@ -25,10 +33,6 @@ ELSE()
     ADD_DEFINITIONS("-D_FILE_OFFSET_BITS=64")
     ADD_DEFINITIONS("-Wall -Wextra -pedantic")
 ENDIF()
-
-FILE(GLOB MKFS_SRC src/mkfs.ffsp.c)
-FILE(GLOB MOUNT_SRC src/mount.ffsp.c)
-FILE(GLOB FFSP_SRC src/libffsp/*.h src/libffsp/*.c)
 
 INCLUDE_DIRECTORIES(${FUSE_INCLUDE_DIRS})
 LINK_DIRECTORIES(${FUSE_LIBRARY_DIRS})
