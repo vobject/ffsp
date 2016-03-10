@@ -18,9 +18,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
+extern "C" {
 #include "libffsp/ffsp.h"
 #include "libffsp/io_raw.h"
 #include "libffsp/utils.h"
+}
+
+#include "spdlog/spdlog.h"
 
 #include <sys/stat.h>
 #include <stdio.h>
@@ -39,7 +43,7 @@
 #endif
 
 struct arguments {
-	const char *filename;
+	const char *device;
 	int clustersize;
 	int erasesize;
 	int ninoopen;
@@ -125,7 +129,7 @@ static int parse_arguments(int argc, char **argv, struct arguments *args)
 		fprintf(stderr, "%s: invalid arguments\n", argv[0]);
 		return -1;
 	}
-	args->filename = argv[optind];
+	args->device = argv[optind];
 	return 0;
 }
 
@@ -133,8 +137,6 @@ static int get_eraseblk_cnt(const char *device, const int eb_size)
 {
 	int fd;
 	off_t size;
-
-	// TODO: Use stat() for this.
 
 	fd = open(device, O_RDONLY);
 	if (fd == -1) {
@@ -185,14 +187,32 @@ static int setup_fs(const struct arguments *args)
 	memset(&sb, 0, sizeof(sb));
 	memset(&eb, 0, sizeof(eb));
 
+	auto console = spdlog::stdout_logger_mt("console");
+	console->info("Size of in memory data structures:");
+	console->info("\tffsp: {}", sizeof(struct ffsp));
+	console->info("\tffsp_super: {}", sizeof(struct ffsp_super));
+	console->info("\tffsp_inode: {}", sizeof(struct ffsp_inode));
+	console->info("\tffsp_dentry: {}", sizeof(struct ffsp_dentry));
+	console->info("\tffsp_timespec: {}", sizeof(struct ffsp_timespec));
+	console->info("\tffsp_eraseblk: {}", sizeof(struct ffsp_eraseblk));
+
+	console->info("Setup file system:");
+	console->info("\tdevice: {}", args->device);
+	console->info("\tclustersize: {}", args->clustersize);
+	console->info("\terasesize: {}", args->erasesize);
+	console->info("\tninoopen: {}", args->ninoopen);
+	console->info("\tneraseopen: {}", args->neraseopen);
+	console->info("\tnerasereserve: {}", args->nerasereserve);
+	console->info("\tnerasewrites: {}", args->nerasewrites);
+
 	// Setup the first eraseblock with super, usage and inodemap
-	eb_buf = malloc(args->erasesize);
+	eb_buf = (char*)malloc(args->erasesize);
 	if (!eb_buf) {
 		perror("malloc(erasesize)\n");
 		return -1;
 	}
 	max_writeops = args->erasesize / args->clustersize;
-	eb_cnt = get_eraseblk_cnt(args->filename, args->erasesize);
+	eb_cnt = get_eraseblk_cnt(args->device, args->erasesize);
 	ino_cnt = get_inode_cnt(args->erasesize, args->clustersize, eb_cnt);
 
 	sb.s_fsid = put_be32(FFSP_FILE_SYSTEM_ID);
@@ -254,9 +274,9 @@ static int setup_fs(const struct arguments *args)
 
 	// Write the first erase block into the file.
 #ifdef _WIN32
-	fd = open(args->filename, O_WRONLY);
+	fd = open(args->device, O_WRONLY);
 #else
-	fd = open(args->filename, O_WRONLY | O_SYNC);
+	fd = open(args->device, O_WRONLY | O_SYNC);
 #endif
 	if (fd == -1) {
 		perror("open()\n");
@@ -328,13 +348,6 @@ static int setup_fs(const struct arguments *args)
 int main(int argc, char *argv[])
 {
 	struct arguments args;
-
-	printf("ffsp_super: %zu\n", sizeof(struct ffsp_super));
-	printf("ffsp_inode: %zu\n", sizeof(struct ffsp_inode));
-	printf("ffsp_timespec: %zu\n", sizeof(struct ffsp_timespec));
-	printf("ffsp_eraseblk: %zu\n", sizeof(struct ffsp_eraseblk));
-	printf("ffsp_dentry: %zu\n", sizeof(struct ffsp_dentry));
-	printf("ffsp: %zu\n", sizeof(struct ffsp));
 
 	if (parse_arguments(argc, argv, &args) < 0)
 		return EXIT_FAILURE;

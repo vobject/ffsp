@@ -20,6 +20,7 @@
 
 #define FUSE_USE_VERSION 26
 
+extern "C" {
 #include "libffsp/ffsp.h"
 #include "libffsp/log.h"
 #include "libffsp/debug.h"
@@ -28,6 +29,7 @@
 #include "libffsp/inode.h"
 #include "libffsp/io.h"
 #include "libffsp/utils.h"
+}
 
 #include <fuse.h>
 
