@@ -31,6 +31,8 @@ extern "C" {
 #include "libffsp/utils.h"
 }
 
+#include "spdlog/spdlog.h"
+
 #include <fuse.h>
 
 #include <sys/stat.h>
@@ -49,6 +51,314 @@ extern "C" {
 #include <unistd.h>
 #define FUSE_OFF_T off_t
 #endif
+
+namespace fuse_api_logging
+{
+	auto console = spdlog::stdout_logger_mt("console");
+
+	struct init
+	{
+		init(struct fuse_conn_info *conn)
+		{
+			console->info("> init()");
+		}
+
+		~init()
+		{
+			console->info("< init()");
+		}
+	};
+
+	struct destroy
+	{
+		destroy(void *user)
+		{
+			console->info("> destroy(user={})", user);
+		}
+
+		~destroy()
+		{
+			console->info("< destroy()");
+		}
+	};
+
+	struct getattr
+	{
+		getattr(const char *path, struct stat *stbuf)
+		{
+			console->info("> getattr(path={})", path);
+		}
+
+		~getattr()
+		{
+			console->info("< getattr()");
+		}
+	};
+
+	struct readdir
+	{
+		readdir(const char *path, void *buf,
+			fuse_fill_dir_t filler, FUSE_OFF_T offset,
+			struct fuse_file_info *fi)
+		{
+			console->info("> readdir(path={})", path);
+		}
+
+		~readdir()
+		{
+			console->info("< readdir()");
+		}
+	};
+
+	struct open
+	{
+		open(const char *path, struct fuse_file_info *fi)
+		{
+			console->info("> open(path={})", path);
+		}
+
+		~open()
+		{
+			console->info("< open()");
+		}
+	};
+
+	struct release
+	{
+		release(const char *path, struct fuse_file_info *fi)
+		{
+			console->info("> release(path={})", path);
+		}
+
+		~release()
+		{
+			console->info("< release()");
+		}
+	};
+
+	struct truncate
+	{
+		truncate(const char *path, FUSE_OFF_T length)
+		{
+			console->info("> truncate(path={})", path);
+		}
+
+		~truncate()
+		{
+			console->info("< truncate()");
+		}
+	};
+
+	struct read
+	{
+		read(const char *path, char *buf, size_t count,
+			FUSE_OFF_T offset, struct fuse_file_info *fi)
+		{
+			console->info("> read(path={})", path);
+		}
+
+		~read()
+		{
+			console->info("< read()");
+		}
+	};
+
+	struct write
+	{
+		write(const char *path, const char *buf, size_t count,
+			FUSE_OFF_T offset, struct fuse_file_info *fi)
+		{
+			console->info("> write(path={})", path);
+		}
+
+		~write()
+		{
+			console->info("< write()");
+		}
+	};
+
+	struct mknod
+	{
+		mknod(const char *path, mode_t mode, dev_t device)
+		{
+			console->info("> mknod(path={})", path);
+		}
+
+		~mknod()
+		{
+			console->info("< mknod()");
+		}
+	};
+
+	struct link
+	{
+		link(const char *oldpath, const char *newpath)
+		{
+			console->info("> link(oldpath={}, newpath={})", oldpath, newpath);
+		}
+
+		~link()
+		{
+			console->info("< link()");
+		}
+	};
+
+	struct symlink
+	{
+		symlink(const char *oldpath, const char *newpath)
+		{
+			console->info("> symlink(oldpath={}, newpath={})", oldpath, newpath);
+		}
+
+		~symlink()
+		{
+			console->info("< symlink()");
+		}
+	};
+
+	struct readlink
+	{
+		readlink(const char *path, char *buf, size_t len)
+		{
+			console->info("> readlink(path={})", path);
+		}
+
+		~readlink()
+		{
+			console->info("< readlink()");
+		}
+	};
+
+	struct mkdir
+	{
+		mkdir(const char *path, mode_t mode)
+		{
+			console->info("> mkdir(path={})", path);
+		}
+
+		~mkdir()
+		{
+			console->info("< mkdir()");
+		}
+	};
+
+	struct rmdir
+	{
+		rmdir(const char *path)
+		{
+			console->info("> rmdir(path={})", path);
+		}
+
+		~rmdir()
+		{
+			console->info("< rmdir()");
+		}
+	};
+
+	struct unlink
+	{
+		unlink(const char *path)
+		{
+			console->info("> unlink(path={})", path);
+		}
+
+		~unlink()
+		{
+			console->info("< unlink()");
+		}
+	};
+
+	struct rename
+	{
+		rename(const char *oldpath, const char *newpath)
+		{
+			console->info("> rename(oldpath={}, newpath={})", oldpath, newpath);
+		}
+
+		~rename()
+		{
+			console->info("< rename()");
+		}
+	};
+
+	struct utimens
+	{
+		utimens(const char *path, const struct timespec tv[2])
+		{
+			console->info("> utimens(path={})", path);
+		}
+
+		~utimens()
+		{
+			console->info("< utimens()");
+		}
+	};
+
+	struct chmod
+	{
+		chmod(const char *path, mode_t mode)
+		{
+			console->info("> chmod(path={})", path);
+		}
+
+		~chmod()
+		{
+			console->info("< chmod()");
+		}
+	};
+
+	struct chown
+	{
+		chown(const char *path, uid_t uid, gid_t gid)
+		{
+			console->info("> chown(path={})", path);
+		}
+
+		~chown()
+		{
+			console->info("< chown()");
+		}
+	};
+
+	struct statfs
+	{
+		statfs(const char *path, struct statvfs *sfs)
+		{
+			console->info("> statfs(path={})", path);
+		}
+
+		~statfs()
+		{
+			console->info("< statfs()");
+		}
+	};
+
+	struct flush
+	{
+		flush(const char *path, struct fuse_file_info *fi)
+		{
+			console->info("> flush(path={})", path);
+		}
+
+		~flush()
+		{
+			console->info("< flush()");
+		}
+	};
+
+	struct fsync
+	{
+		fsync(const char *path, int xxx, struct fuse_file_info *fi)
+		{
+			console->info("> fsync(path={})", path);
+		}
+
+		~fsync()
+		{
+			console->info("< fsync()");
+		}
+	};
+}
 
 static struct ffsp_params {
 	char *device;
@@ -69,7 +379,7 @@ static void set_inode(struct fuse_file_info *fi, const struct ffsp_inode *ino)
 
 static void *fuse_ffsp_init(struct fuse_conn_info *conn)
 {
-	FFSP_DEBUG("fuse_ffsp_init()");
+	fuse_api_logging::init log(conn);
 
 #ifndef _WIN32
 	if (conn->capable & FUSE_CAP_ATOMIC_O_TRUNC)
@@ -102,9 +412,7 @@ static void *fuse_ffsp_init(struct fuse_conn_info *conn)
 
 static void fuse_ffsp_destroy(void *user)
 {
-	(void) user;
-
-	FFSP_DEBUG("fuse_ffsp_destroy()");
+	fuse_api_logging::destroy log(user);
 
 	ffsp_unmount(&fs);
 }
@@ -115,10 +423,10 @@ static int fuse_ffsp_getattr(const char *path, struct FUSE_STAT *stbuf)
 static int fuse_ffsp_getattr(const char *path, struct stat *stbuf)
 #endif
 {
+	fuse_api_logging::getattr log(path, stbuf);
+
 	int rc;
 	struct ffsp_inode *ino;
-
-	FFSP_DEBUG("fuse_ffsp_getattr(path=%s)", path);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0) {
 		ffsp_debug_fuse_stat(stbuf);
@@ -174,12 +482,12 @@ static int fuse_ffsp_readdir(const char *path, void *buf,
 		fuse_fill_dir_t filler, FUSE_OFF_T offset,
 		struct fuse_file_info *fi)
 {
+	fuse_api_logging::readdir log(path, buf, filler, offset, fi);
+
 	int rc;
 	struct ffsp_inode *ino;
 	struct ffsp_dentry *dent_buf;
 	int dent_cnt;
-
-	FFSP_DEBUG("fuse_ffsp_readdir(path=%s, offset=%lld, fuse_file_info=%s)", path, offset, fi ? "true" : "false");
 
 	rc = ffsp_lookup(&fs, &ino, path);
 	if (rc < 0)
@@ -209,11 +517,13 @@ static int fuse_ffsp_readdir(const char *path, void *buf,
 
 static int fuse_ffsp_open(const char *path, struct fuse_file_info *fi)
 {
+	fuse_api_logging::open log(path, fi);
+
 	int rc;
 	struct ffsp_inode *ino;
 
-	FFSP_DEBUG("fuse_ffsp_open(path=%s, trunc=%s)", path,
-			(fi->flags & O_TRUNC) ? "true" : "false");
+	//FFSP_DEBUG("fuse_ffsp_open(path=%s, trunc=%s)", path,
+	//		(fi->flags & O_TRUNC) ? "true" : "false");
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return 0;
@@ -236,7 +546,7 @@ static int fuse_ffsp_open(const char *path, struct fuse_file_info *fi)
 
 static int fuse_ffsp_release(const char *path, struct fuse_file_info *fi)
 {
-	FFSP_DEBUG("fuse_ffsp_release(path=%s)", path);
+	fuse_api_logging::release log(path, fi);
 
 	set_inode(fi, NULL);
 	return 0;
@@ -244,10 +554,10 @@ static int fuse_ffsp_release(const char *path, struct fuse_file_info *fi)
 
 static int fuse_ffsp_truncate(const char *path, FUSE_OFF_T length)
 {
+	fuse_api_logging::truncate log(path, length);
+
 	int rc;
 	struct ffsp_inode *ino;
-
-	FFSP_DEBUG("fuse_ffsp_truncate(path=%s, length=%lld)", path, length);
 
 	rc = ffsp_lookup(&fs, &ino, path);
 	if (rc < 0)
@@ -260,13 +570,10 @@ static int fuse_ffsp_truncate(const char *path, FUSE_OFF_T length)
 static int fuse_ffsp_read(const char *path, char *buf, size_t count,
 	FUSE_OFF_T offset, struct fuse_file_info *fi)
 {
-	(void) fi;
+	fuse_api_logging::read log(path, buf, count, offset, fi);
 
 	int rc;
 	struct ffsp_inode *ino;
-
-	FFSP_DEBUG("fuse_ffsp_read(path=%s, count=%zu, offset=%lld)",
-			path, count, offset);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return ffsp_debug_get_info(buf, count);
@@ -282,13 +589,10 @@ static int fuse_ffsp_read(const char *path, char *buf, size_t count,
 static int fuse_ffsp_write(const char *path, const char *buf, size_t count,
 	FUSE_OFF_T offset, struct fuse_file_info *fi)
 {
-	(void) fi;
+	fuse_api_logging::write log(path, buf, count, offset, fi);
 
 	int rc;
 	struct ffsp_inode *ino;
-
-	FFSP_DEBUG("fuse_ffsp_write(path=%s, count=%zu, offset=%lld)",
-			path, count, offset);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return -EIO;
@@ -303,11 +607,10 @@ static int fuse_ffsp_write(const char *path, const char *buf, size_t count,
 
 static int fuse_ffsp_mknod(const char *path, mode_t mode, dev_t device)
 {
+	fuse_api_logging::mknod log(path, mode, device);
+
 	uid_t uid;
 	gid_t gid;
-
-	FFSP_DEBUG("fuse_ffsp_mknod(path=%s, mode=0x%x, device=%d)",
-			path, mode, device);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return -EEXIST;
@@ -322,7 +625,7 @@ static int fuse_ffsp_mknod(const char *path, mode_t mode, dev_t device)
 
 static int fuse_ffsp_link(const char *oldpath, const char *newpath)
 {
-	FFSP_DEBUG("fuse_ffsp_link(old=%s, new=%s)", oldpath, newpath);
+	fuse_api_logging::link log(oldpath, newpath);
 
 	if (strncmp(newpath, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return -EIO;
@@ -332,10 +635,10 @@ static int fuse_ffsp_link(const char *oldpath, const char *newpath)
 
 static int fuse_ffsp_symlink(const char *oldpath, const char *newpath)
 {
+	fuse_api_logging::symlink log(oldpath, newpath);
+
 	uid_t uid;
 	gid_t gid;
-
-	FFSP_DEBUG("fuse_ffsp_symlink(old=%s, new=%s)", oldpath, newpath);
 
 	if (strncmp(newpath, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return -EIO;
@@ -348,17 +651,19 @@ static int fuse_ffsp_symlink(const char *oldpath, const char *newpath)
 
 static int fuse_ffsp_readlink(const char *path, char *buf, size_t len)
 {
-	FFSP_DEBUG("fuse_ffsp_readlink(path=%s, len=%zu)", path, len);
+	fuse_api_logging::readlink log(path, buf, len);
 
 	return ffsp_readlink(&fs, path, buf, len);
 }
 
 static int fuse_ffsp_mkdir(const char *path, mode_t mode)
 {
+	fuse_api_logging::mkdir log(path, mode);
+
 	uid_t uid;
 	gid_t gid;
 
-	FFSP_DEBUG("fuse_ffsp_mkdir(path=%s, mode=0x%x)", path, mode);
+	//FFSP_DEBUG("fuse_ffsp_mkdir(path=%s, mode=0x%x)", path, mode);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return -EIO;
@@ -371,21 +676,21 @@ static int fuse_ffsp_mkdir(const char *path, mode_t mode)
 
 static int fuse_ffsp_rmdir(const char *path)
 {
-	FFSP_DEBUG("fuse_ffsp_rmdir(path=%s)", path);
+	fuse_api_logging::rmdir log(path);
 
 	return ffsp_rmdir(&fs, path);
 }
 
 static int fuse_ffsp_unlink(const char *path)
 {
-	FFSP_DEBUG("fuse_ffsp_unlink(path=%s)", path);
+	fuse_api_logging::unlink log(path);
 
 	return ffsp_unlink(&fs, path);
 }
 
 static int fuse_ffsp_rename(const char *oldpath, const char *newpath)
 {
-	FFSP_DEBUG("fuse_ffsp_rename(old=%s, new=%s)", oldpath, newpath);
+	fuse_api_logging::rename log(oldpath, newpath);
 
 	if (strncmp(newpath, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return -EIO;
@@ -395,10 +700,10 @@ static int fuse_ffsp_rename(const char *oldpath, const char *newpath)
 
 static int fuse_ffsp_utimens(const char *path, const struct timespec tv[2])
 {
+	fuse_api_logging::utimens log(path, tv);
+
 	int rc;
 	struct ffsp_inode *ino;
-
-	FFSP_DEBUG("fuse_ffsp_utimens(path=%s)", path);
 
 	rc = ffsp_lookup(&fs, &ino, path);
 	if (rc < 0)
@@ -410,10 +715,12 @@ static int fuse_ffsp_utimens(const char *path, const struct timespec tv[2])
 
 static int fuse_ffsp_chmod(const char *path, mode_t mode)
 {
+	fuse_api_logging::chmod log(path, mode);
+
 	int rc;
 	struct ffsp_inode *ino;
 
-	FFSP_DEBUG("fuse_ffsp_chmod(path=%s, mode=0x%x)", path, mode);
+	//FFSP_DEBUG("fuse_ffsp_chmod(path=%s, mode=0x%x)", path, mode);
 
 	rc = ffsp_lookup(&fs, &ino, path);
 	if (rc < 0)
@@ -427,10 +734,10 @@ static int fuse_ffsp_chmod(const char *path, mode_t mode)
 
 static int fuse_ffsp_chown(const char *path, uid_t uid, gid_t gid)
 {
+	fuse_api_logging::chown log(path, uid, gid);
+
 	int rc;
 	struct ffsp_inode *ino;
-
-	FFSP_DEBUG("fuse_ffsp_chown(path=%s, uid=%u, gid=%u)", path, uid, gid);
 
 	rc = ffsp_lookup(&fs, &ino, path);
 	if (rc < 0)
@@ -445,7 +752,7 @@ static int fuse_ffsp_chown(const char *path, uid_t uid, gid_t gid)
 
 static int fuse_ffsp_statfs(const char *path, struct statvfs *sfs)
 {
-	FFSP_DEBUG("fuse_ffsp_statfs(path=%s)", path);
+	fuse_api_logging::statfs log(path, sfs);
 
 	ffsp_statfs(&fs, sfs);
 	return 0;
@@ -453,9 +760,7 @@ static int fuse_ffsp_statfs(const char *path, struct statvfs *sfs)
 
 static int fuse_ffsp_flush(const char *path, struct fuse_file_info *fi)
 {
-	(void) fi;
-
-	FFSP_DEBUG("fuse_ffsp_flush(path=%s)", path);
+	fuse_api_logging::flush log(path, fi);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return 0;
@@ -469,9 +774,7 @@ static int fuse_ffsp_flush(const char *path, struct fuse_file_info *fi)
 
 static int fuse_ffsp_fsync(const char *path, int xxx, struct fuse_file_info *fi)
 {
-	(void) fi;
-
-	FFSP_DEBUG("fuse_ffsp_fsync(path=%s, xxx=%d)", path, xxx);
+	fuse_api_logging::fsync log(path, xxx, fi);
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return 0;
