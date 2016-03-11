@@ -34,6 +34,7 @@ extern "C" {
 #include <fuse.h>
 
 #include <atomic>
+#include <string>
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -52,8 +53,8 @@ extern "C" {
 #define FUSE_OFF_T off_t
 #endif
 
-static struct ffsp_params {
-	char *device;
+struct ffsp_params {
+	std::string device;
 } ffsp_params;
 
 // Convert from fuse_file_info->fh to ffsp_inode...
@@ -69,25 +70,18 @@ static void set_inode(struct fuse_file_info *fi, const struct ffsp_inode *ino)
 
 static void *fuse_ffsp_init(struct fuse_conn_info *conn)
 {
-	struct ffsp *fs;
+	ffsp *fs = new ffsp;
 
-	fs = (struct ffsp *)malloc(sizeof(struct ffsp));
-	if (!fs) {
-		FFSP_ERROR("malloc(ffsp_inode_cache) failed");
-		abort();
-	}
-
-#ifndef _WIN32
-	if (conn->capable & FUSE_CAP_ATOMIC_O_TRUNC)
-		conn->want |= FUSE_CAP_ATOMIC_O_TRUNC;
-#endif
-
-	if (ffsp_mount(fs, ffsp_params.device) < 0) {
+	if (ffsp_mount(fs, ffsp_params.device.c_str()) < 0) {
 		FFSP_ERROR("ffsp_mount() failed. exiting...");
 		exit(EXIT_FAILURE);
 	}
 
 #ifndef _WIN32
+	if (conn->capable & FUSE_CAP_ATOMIC_O_TRUNC) {
+		conn->want |= FUSE_CAP_ATOMIC_O_TRUNC;
+	}
+
 	if (conn->capable & FUSE_CAP_BIG_WRITES) {
 		conn->want |= FUSE_CAP_BIG_WRITES;
 		conn->max_write = fs->clustersize;
@@ -108,11 +102,9 @@ static void *fuse_ffsp_init(struct fuse_conn_info *conn)
 
 static void fuse_ffsp_destroy(void *user)
 {
-	struct ffsp *fs;
-
-	fs = (struct ffsp *)user;
+	ffsp *fs = static_cast<ffsp *>(user);
 	ffsp_unmount(fs);
-	free(fs);
+	delete fs;
 }
 
 #ifdef _WIN32
@@ -745,12 +737,11 @@ struct fuse_operations_wrapper
 	fuse_operations ops_;
 
 	// every operation (aka FUSE API call) has a unique id
-	typedef unsigned int OperationIdType;
-	static std::atomic<OperationIdType> op_id_;
+	static std::atomic_uint op_id_;
 
 	static std::shared_ptr<spdlog::logger> logger_;
 };
-std::atomic<fuse_operations_wrapper::OperationIdType> fuse_operations_wrapper::op_id_;
+std::atomic_uint fuse_operations_wrapper::op_id_;
 std::shared_ptr<spdlog::logger> fuse_operations_wrapper::logger_ = spdlog::stdout_logger_mt("console");
 
 static void show_usage(const char *progname)
@@ -787,8 +778,8 @@ static int fuse_ffsp_opt_proc(void *data, const char *arg, int key,
 
 	switch (key) {
 		case FUSE_OPT_KEY_NONOPT:
-			if (!ffsp_params.device) {
-				ffsp_params.device = strdup(arg);
+			if (ffsp_params.device.empty()) {
+				ffsp_params.device = arg;
 				return 0;
 			}
 			return 1;
@@ -809,27 +800,23 @@ int main(int argc, char *argv[])
 	fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	fuse_operations_wrapper ffsp_oper;
 
-	memset(&ffsp_params, 0, sizeof(ffsp_params));
-
 	if (fuse_opt_parse(&args, NULL, ffsp_opt, fuse_ffsp_opt_proc) == -1) {
 		printf("fuse_opt_parse() failed!\n");
 		return EXIT_FAILURE;
 	}
 
-	if (!ffsp_params.device) {
+	if (ffsp_params.device.empty()) {
 		printf("device argument missing\n");
 		return EXIT_FAILURE;
 	}
 
 	if (fuse_opt_add_arg(&args, "-odefault_permissions") == -1) {
 		printf("fuse_opt_add_arg() failed!\n");
-		free(ffsp_params.device);
 		return EXIT_FAILURE;
 	}
 
-	int rc = fuse_main(args.argc, args.argv, &ffsp_oper.ops_, NULL);
+	int rc = fuse_main(args.argc, args.argv, &ffsp_oper.ops_, nullptr);
 
-	free(ffsp_params.device);
 	fuse_opt_free_args(&args);
 	spdlog::drop_all();
 	return rc;
