@@ -14,8 +14,7 @@ FILE(GLOB MKFS_SRC src/mkfs.ffsp.cpp)
 FILE(GLOB MOUNT_SRC src/mount.ffsp.cpp)
 FILE(GLOB FFSP_SRC src/libffsp/*.h src/libffsp/*.c)
 
-# TODO: add full submodule
-SET(SPDLOG_INCLUDE_DIRS "lib")
+SET(SPDLOG_INCLUDE_DIRS "lib/spdlog/include")
 
 IF(WIN32)
     SET(FUSE_INCLUDE_DIRS "D:/Development/fs/dokany/dokan_fuse/include")
