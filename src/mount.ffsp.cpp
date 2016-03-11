@@ -18,8 +18,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#define FUSE_USE_VERSION 26
-
 extern "C" {
 #include "libffsp/ffsp.h"
 #include "libffsp/log.h"
@@ -34,6 +32,8 @@ extern "C" {
 #include "spdlog/spdlog.h"
 
 #include <fuse.h>
+
+#include <atomic>
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -332,9 +332,9 @@ static int fuse_ffsp_symlink(const char *oldpath, const char *newpath)
 	return ffsp_symlink(&fs, oldpath, newpath, uid, gid);
 }
 
-static int fuse_ffsp_readlink(const char *path, char *buf, size_t len)
+static int fuse_ffsp_readlink(const char *path, char *buf, size_t bufsize)
 {
-	return ffsp_readlink(&fs, path, buf, len);
+	return ffsp_readlink(&fs, path, buf, bufsize);
 }
 
 static int fuse_ffsp_mkdir(const char *path, mode_t mode)
@@ -439,9 +439,9 @@ static int fuse_ffsp_flush(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int fuse_ffsp_fsync(const char *path, int xxx, struct fuse_file_info *fi)
+static int fuse_ffsp_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-	(void) xxx;
+	(void) datasync;
 	(void) fi;
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
@@ -461,155 +461,174 @@ struct fuse_operations_logging
 	{
 		ops_.getattr = [](const char *path, struct stat *stbuf)
 		{
-			logger_->info("> getattr(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} getattr(path={}, stbuf={})", id, path, static_cast<void*>(stbuf));
 			int rc = fuse_ffsp_getattr(path, stbuf);
-			logger_->info("< getattr(rc={})", rc);
+			logger_->info("< {} getattr(rc={})", id, rc);
 			return rc;
 		};
 
-		ops_.readlink = [](const char *path, char *buf, size_t len)
+		ops_.readlink = [](const char *path, char *buf, size_t bufsize)
 		{
-			logger_->info("> readlink(path={})", path);
-			int rc = fuse_ffsp_readlink(path, buf, len);
-			logger_->info("< readlink(rc={})", rc);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} readlink(path={}, buf={}, bufsize={})", id, path, static_cast<void*>(buf), bufsize);
+			int rc = fuse_ffsp_readlink(path, buf, bufsize);
+			logger_->info("< {} readlink(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.mknod = [](const char *path, mode_t mode, dev_t device)
 		{
-			logger_->info("> mknod(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} mknod(path={}, mode={:#o}, device={})", id, path, mode, device);
 			int rc = fuse_ffsp_mknod(path, mode, device);
-			logger_->info("< mknod(rc={})", rc);
+			logger_->info("< {} mknod(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.mkdir = [](const char *path, mode_t mode)
 		{
-			logger_->info("> mkdir(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} mkdir(path={}, mode={:#o})", id, path, mode);
 			int rc = fuse_ffsp_mkdir(path, mode);
-			logger_->info("< mkdir(rc={})", rc);
+			logger_->info("< {} mkdir(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.unlink = [](const char *path)
 		{
-			logger_->info("> unlink(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} unlink(path={})", id, path);
 			int rc = fuse_ffsp_unlink(path);
-			logger_->info("< unlink(rc={})", rc);
+			logger_->info("< {} unlink(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.rmdir = [](const char *path)
 		{
-			logger_->info("> rmdir(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} rmdir(path={})", id, path);
 			int rc = fuse_ffsp_rmdir(path);
-			logger_->info("< rmdir(rc={})", rc);
+			logger_->info("< {} rmdir(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.symlink = [](const char *oldpath, const char *newpath)
 		{
-			logger_->info("> symlink(oldpath={}, newpath={})", oldpath, newpath);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} symlink(oldpath={}, newpath={})", id, oldpath, newpath);
 			int rc = fuse_ffsp_symlink(oldpath, newpath);
-			logger_->info("< symlink(rc={})", rc);
+			logger_->info("< {} symlink(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.rename = [](const char *oldpath, const char *newpath)
 		{
-			logger_->info("> rename(oldpath={}, newpath={})", oldpath, newpath);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} rename(oldpath={}, newpath={})", id, oldpath, newpath);
 			int rc = fuse_ffsp_rename(oldpath, newpath);
-			logger_->info("< rename(rc={})", rc);
+			logger_->info("< {} rename(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.link = [](const char *oldpath, const char *newpath)
 		{
-			logger_->info("> link(oldpath={}, newpath={})", oldpath, newpath);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} link(oldpath={}, newpath={})", id, oldpath, newpath);
 			int rc = fuse_ffsp_link(oldpath, newpath);
-			logger_->info("< link(rc={})", rc);
+			logger_->info("< {} link(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.chmod = [](const char *path, mode_t mode)
 		{
-			logger_->info("> chmod(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} chmod(path={}, mode={:#o})", id, path, mode);
 			int rc = fuse_ffsp_chmod(path, mode);
-			logger_->info("< chmod(rc={})", rc);
+			logger_->info("< {} chmod(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.chown = [](const char *path, uid_t uid, gid_t gid)
 		{
-			logger_->info("> chown(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} chown(path={}, uid={}, gid={})", id, path, uid, gid);
 			int rc = fuse_ffsp_chown(path, uid, gid);
-			logger_->info("< chown(rc={})", rc);
+			logger_->info("< {} chown(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.truncate = [](const char *path, FUSE_OFF_T length)
 		{
-			logger_->info("> truncate(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} truncate(path={}, length={})", id, path, length);
 			int rc = fuse_ffsp_truncate(path, length);
-			logger_->info("< truncate(rc={})", rc);
+			logger_->info("< {} truncate(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.open = [](const char *path, struct fuse_file_info *fi)
 		{
-			logger_->info("> open(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} open(path={}, fi={})", id, path, static_cast<void*>(fi));
 			int rc = fuse_ffsp_open(path, fi);
-			logger_->info("< open(rc={})", rc);
+			logger_->info("< {} open(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.read = [](const char *path, char *buf, size_t count,
 			FUSE_OFF_T offset, struct fuse_file_info *fi)
 		{
-			logger_->info("> read(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} read(path={}, buf={}, count={}, offset={}, fi={})", id, path, static_cast<void*>(buf), count, offset, static_cast<void*>(fi));
 			int rc = fuse_ffsp_read(path, buf, count, offset, fi);
-			logger_->info("< read(rc={})", rc);
+			logger_->info("< {} read(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.write = [](const char *path, const char *buf, size_t count,
 			FUSE_OFF_T offset, struct fuse_file_info *fi)
 		{
-			logger_->info("> write(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} write(path={}, buf={}, count={}, offset={}, fi={})", id, path, static_cast<const void*>(buf), count, offset, static_cast<void*>(fi));
 			int rc = fuse_ffsp_write(path, buf, count, offset, fi);
-			logger_->info("< write(rc={})", rc);
+			logger_->info("< {} write(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.statfs = [](const char *path, struct statvfs *sfs)
 		{
-			logger_->info("> statfs(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} statfs(path={}, sfs={})", id, path, static_cast<void*>(sfs));
 			int rc = fuse_ffsp_statfs(path, sfs);
-			logger_->info("< statfs(rc={})", rc);
+			logger_->info("< {} statfs(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.flush = [](const char *path, struct fuse_file_info *fi)
 		{
-			logger_->info("> flush(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} flush(path={}, fi={})", id, path, static_cast<void*>(fi));
 			int rc = fuse_ffsp_flush(path, fi);
-			logger_->info("< flush(rc={})", rc);
+			logger_->info("< {} flush(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.release = [](const char *path, struct fuse_file_info *fi)
 		{
-			logger_->info("> release(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} release(path={}, fi={})", id, path, static_cast<void*>(fi));
 			int rc = fuse_ffsp_release(path, fi);
-			logger_->info("< release(rc={})", rc);
+			logger_->info("< {} release(rc={})", id, rc);
 			return rc;
 		};
 
-		ops_.fsync = [](const char *path, int xxx, struct fuse_file_info *fi)
+		ops_.fsync = [](const char *path, int datasync, struct fuse_file_info *fi)
 		{
-			logger_->info("> fsync(path={})", path);
-			int rc = fuse_ffsp_fsync(path, xxx, fi);
-			logger_->info("< fsync(rc={})", rc);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} fsync(path={}, datasync={}, fi={})", id, path, datasync, static_cast<void*>(fi));
+			int rc = fuse_ffsp_fsync(path, datasync, fi);
+			logger_->info("< {} fsync(rc={})", id, rc);
 			return rc;
 		};
 
@@ -617,32 +636,36 @@ struct fuse_operations_logging
 				fuse_fill_dir_t filler, FUSE_OFF_T offset,
 				struct fuse_file_info *fi)
 		{
-			logger_->info("> readdir(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, path, buf, (filler != nullptr), offset, static_cast<void*>(fi));
 			int rc = fuse_ffsp_readdir(path, buf, filler, offset, fi);
-			logger_->info("< readdir(rc={})", rc);
+			logger_->info("< {} readdir(rc={})", id, rc);
 			return rc;
 		};
 
 		ops_.init = [](struct fuse_conn_info *conn)
 		{
-			logger_->info("> init()");
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} init(conn={})", id, static_cast<void*>(conn));
 			fuse_ffsp_init(conn);
-			logger_->info("< init()");
+			logger_->info("< {} init()", id);
 			return (void*)NULL;
 		};
 
 		ops_.destroy = [](void *user)
 		{
-			logger_->info("> destroy()");
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} destroy(user={})", id, user);
 			fuse_ffsp_destroy(user);
-			logger_->info("< destroy()");
+			logger_->info("< {} destroy()", id);
 		};
 
 		ops_.utimens = [](const char *path, const struct timespec tv[2])
 		{
-			logger_->info("> utimens(path={})", path);
+			const OperationIdType id = ++op_id_;
+			logger_->info("> {} utimens(path={}, access={{sec={} nsec={}}}, mod={{sec={} nsec={}}})", id, path, tv[0].tv_sec, tv[0].tv_nsec, tv[1].tv_sec, tv[1].tv_nsec);
 			int rc = fuse_ffsp_utimens(path, tv);
-			logger_->info("< utimens(rc={})", rc);
+			logger_->info("< {} utimens(rc={})", id, rc);
 			return rc;
 		};
 
@@ -667,12 +690,12 @@ struct fuse_operations_logging
 		ops_.lock = nullptr;
 		ops_.bmap = nullptr;
 
-#if FUSE_VERSION >= 28
+#if FUSE_USE_VERSION >= 28
 		ops_.ioctl = nullptr;
 		ops_.poll = nullptr;
 #endif
 
-#if FUSE_VERSION >= 29
+#if FUSE_USE_VERSION >= 29
 		ops_.write_buf = nullptr;
 		ops_.read_buf = nullptr;
 		ops_.flock = nullptr;
@@ -684,15 +707,17 @@ struct fuse_operations_logging
 		ops_.win_set_attributes = nullptr; // TODO
 		ops_.win_set_times = nullptr; // TODO
 #endif
-
-		ops_.flag_nullpath_ok = 0;
-		ops_.flag_nopath = 0;
-		ops_.flag_utime_omit_ok = 0;
 	}
 
 	fuse_operations ops_;
+
+	// every operation (aka FUSE API call) has a unique id
+	typedef unsigned int OperationIdType;
+	static std::atomic<OperationIdType> op_id_;
+
 	static std::shared_ptr<spdlog::logger> logger_;
 };
+std::atomic<fuse_operations_logging::OperationIdType> fuse_operations_logging::op_id_;
 std::shared_ptr<spdlog::logger> fuse_operations_logging::logger_ = spdlog::stdout_logger_mt("console");
 
 static void show_usage(const char *progname)
@@ -773,5 +798,6 @@ int main(int argc, char *argv[])
 
 	free(ffsp_params.device);
 	fuse_opt_free_args(&args);
+	spdlog::drop_all();
 	return rc;
 }

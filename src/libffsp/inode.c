@@ -542,7 +542,7 @@ int ffsp_symlink(struct ffsp *fs, const char *oldpath, const char *newpath,
 	return (rc < 0) ? rc : 0;
 }
 
-int ffsp_readlink(struct ffsp *fs, const char *path, char *buf, size_t len)
+int ffsp_readlink(struct ffsp *fs, const char *path, char *buf, size_t bufsize)
 {
 	int rc;
 	struct ffsp_inode *ino;
@@ -551,7 +551,7 @@ int ffsp_readlink(struct ffsp *fs, const char *path, char *buf, size_t len)
 	if (rc < 0)
 		return rc;
 
-	rc = ffsp_read(fs, ino, buf, len - 1, 0);
+	rc = ffsp_read(fs, ino, buf, bufsize - 1, 0);
 	if (rc < 0)
 		return rc;
 

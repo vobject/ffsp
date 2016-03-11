@@ -189,21 +189,21 @@ static int setup_fs(const struct arguments *args)
 
 	auto console = spdlog::stdout_logger_mt("console");
 	console->info("Size of in memory data structures:");
-	console->info("\tffsp: {}", sizeof(struct ffsp));
-	console->info("\tffsp_super: {}", sizeof(struct ffsp_super));
-	console->info("\tffsp_inode: {}", sizeof(struct ffsp_inode));
-	console->info("\tffsp_dentry: {}", sizeof(struct ffsp_dentry));
-	console->info("\tffsp_timespec: {}", sizeof(struct ffsp_timespec));
-	console->info("\tffsp_eraseblk: {}", sizeof(struct ffsp_eraseblk));
+	console->info("\tffsp={}", sizeof(struct ffsp));
+	console->info("\tffsp_super={}", sizeof(struct ffsp_super));
+	console->info("\tffsp_inode={}", sizeof(struct ffsp_inode));
+	console->info("\tffsp_dentry={}", sizeof(struct ffsp_dentry));
+	console->info("\tffsp_timespec={}", sizeof(struct ffsp_timespec));
+	console->info("\tffsp_eraseblk={}", sizeof(struct ffsp_eraseblk));
 
 	console->info("Setup file system:");
-	console->info("\tdevice: {}", args->device);
-	console->info("\tclustersize: {}", args->clustersize);
-	console->info("\terasesize: {}", args->erasesize);
-	console->info("\tninoopen: {}", args->ninoopen);
-	console->info("\tneraseopen: {}", args->neraseopen);
-	console->info("\tnerasereserve: {}", args->nerasereserve);
-	console->info("\tnerasewrites: {}", args->nerasewrites);
+	console->info("\tdevice={}", args->device);
+	console->info("\tclustersize={}", args->clustersize);
+	console->info("\terasesize={}", args->erasesize);
+	console->info("\tninoopen={}", args->ninoopen);
+	console->info("\tneraseopen={}", args->neraseopen);
+	console->info("\tnerasereserve={}", args->nerasereserve);
+	console->info("\tnerasewrites={}", args->nerasewrites);
 
 	// Setup the first eraseblock with super, usage and inodemap
 	eb_buf = (char*)malloc(args->erasesize);
