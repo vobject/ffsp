@@ -118,7 +118,6 @@ static int fuse_ffsp_getattr(ffsp& fs, const char *path, struct stat *stbuf)
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0) {
 		ffsp_debug_fuse_stat(stbuf);
-//		FFSP_DEBUG("fuse_ffsp_getattr(path=%s) with inode=%lld mode=0x%x nlink=%d size=%lld", path, stbuf->st_ino, stbuf->st_mode, stbuf->st_nlink, stbuf->st_size);
 		return 0;
 	}
 
@@ -162,7 +161,6 @@ static int fuse_ffsp_getattr(ffsp& fs, const char *path, struct stat *stbuf)
 	ffsp_stat(&fs, ino, stbuf);
 #endif
 
-//	FFSP_DEBUG("fuse_ffsp_getattr(path=%s) with inode=%lld mode=0x%x nlink=%d size=%lld", path, stbuf->st_ino, stbuf->st_mode, stbuf->st_nlink, stbuf->st_size);
 	return 0;
 }
 
@@ -196,8 +194,6 @@ static int fuse_ffsp_readdir(ffsp& fs, const char *path, void *buf,
 			continue; // Invalid ffsp_entry
 		if (filler(buf, dent_buf[i].name, NULL, 0))
 			FFSP_DEBUG("fuse_ffsp_readdir(): filler full!");
-//		else
-//			FFSP_DEBUG("fuse_ffsp_readdir(path=%s, offset=%lld) add %s", path, offset, dent_buf[i].name);
 	}
 	// TODO: Handle directory cache inside ffsp structure.
 	free(dent_buf);
@@ -208,9 +204,6 @@ static int fuse_ffsp_open(ffsp& fs, const char *path, struct fuse_file_info *fi)
 {
 	int rc;
 	struct ffsp_inode *ino;
-
-	//FFSP_DEBUG("fuse_ffsp_open(path=%s, trunc=%s)", path,
-	//		(fi->flags & O_TRUNC) ? "true" : "false");
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
 		return 0;
@@ -567,6 +560,14 @@ struct fuse_operations_wrapper
 	fuse_operations_wrapper()
 		: ops_()
 	{
+		const std::vector<spdlog::sink_ptr> sinks
+		{
+			std::make_shared<spdlog::sinks::stdout_sink_mt>(),
+			std::make_shared<spdlog::sinks::simple_file_sink_mt>("ffsp_api.log", true)
+		};
+		logger_ = std::make_shared<spdlog::logger>("ffsp_api", std::begin(sinks), std::end(sinks));
+		spdlog::register_logger(logger_);
+
 		ops_.getattr = [](const char *path, struct stat *stbuf)
 		{
 			auto id = ++op_id_;
@@ -857,7 +858,7 @@ struct fuse_operations_wrapper
 	static std::shared_ptr<spdlog::logger> logger_;
 };
 std::atomic_uint fuse_operations_wrapper::op_id_;
-std::shared_ptr<spdlog::logger> fuse_operations_wrapper::logger_ = spdlog::stdout_logger_mt("console");
+std::shared_ptr<spdlog::logger> fuse_operations_wrapper::logger_;
 
 static void show_usage(const char *progname)
 {
