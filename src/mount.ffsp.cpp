@@ -537,9 +537,19 @@ std::ostream& operator<<(std::ostream& os, const struct timespec& tv)
 
 template<typename T>
 struct ptr_wrapper {
-	explicit ptr_wrapper(const T* p) : ptr_{p} { }
-	const T* const ptr_;
+	explicit ptr_wrapper(T p) : ptr_{p} { }
+	T const ptr_;
 };
+
+std::ostream& operator<<(std::ostream& os, const ptr_wrapper<const char *>& wrapper)
+{
+	if (wrapper.ptr_) {
+		os << wrapper.ptr_; // don't dereference const char*
+	} else {
+		os << static_cast<void*>(nullptr);
+	}
+	return os;
+}
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const ptr_wrapper<T>& wrapper)
@@ -834,9 +844,9 @@ struct fuse_operations_wrapper
 	}
 
 	template<typename T>
-	static ptr_wrapper<T> deref(const T* ptr)
+	static ptr_wrapper<const T *> deref(const T* ptr)
 	{
-		return ptr_wrapper<T>{ptr};
+		return ptr_wrapper<const T *>{ptr};
 	}
 
 	fuse_operations ops_;
