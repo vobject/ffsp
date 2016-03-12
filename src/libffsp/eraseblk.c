@@ -29,7 +29,10 @@
 #include <string.h>
 
 #ifdef _WIN32
-#define S_ISDIR(m)	(((m)&S_IFDIR)==S_IFDIR)
+#ifndef S_ISDIR
+#include <io.h>
+#define S_ISDIR(mode)	(((mode) & S_IFMT) == S_IFDIR)
+#endif
 #endif
 
 int ffsp_eb_get_cvalid(const struct ffsp *fs, unsigned int eb_id)

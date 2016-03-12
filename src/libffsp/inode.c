@@ -37,7 +37,10 @@
 #include <errno.h>
 
 #ifdef _WIN32
-#define S_ISDIR(m)	(((m)&S_IFDIR)==S_IFDIR)
+#ifndef S_ISDIR
+#include <io.h>
+#define S_ISDIR(mode)	(((mode) & S_IFMT) == S_IFDIR)
+#endif
 extern char *strndup(const char *s, size_t n);
 #endif
 

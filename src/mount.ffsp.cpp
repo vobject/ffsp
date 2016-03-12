@@ -46,8 +46,10 @@ extern "C" {
 #include <inttypes.h>
 
 #ifdef _WIN32
+#ifndef S_ISDIR
 #include <io.h>
-#define S_ISDIR(m)	(((m)&S_IFDIR)==S_IFDIR)
+#define S_ISDIR(mode)	(((mode) & S_IFMT) == S_IFDIR)
+#endif
 #else
 #include <unistd.h>
 #define FUSE_OFF_T off_t
