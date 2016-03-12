@@ -117,7 +117,9 @@ static int fuse_ffsp_getattr(ffsp& fs, const char *path, struct stat *stbuf)
 	struct ffsp_inode *ino;
 
 	if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0) {
+#ifndef _WIN32
 		ffsp_debug_fuse_stat(stbuf);
+#endif
 		return 0;
 	}
 
@@ -153,10 +155,6 @@ static int fuse_ffsp_getattr(ffsp& fs, const char *path, struct stat *stbuf)
 	ctim.tv_sec = stbuf_tmp.st_ctime;
 	ctim.tv_nsec = 0;
 	stbuf->st_ctim = ctim; /* timestruc_t <- time_t */
-
-//	stbuf->st_dev = stbuf_tmp.???; /* blksize_t <-  */
-//	stbuf->st_dev = stbuf_tmp.???; /* blkcnt_t <-  */
-//	stbuf->st_dev = stbuf_tmp.???; /* timestruc_t <-  */
 #else
 	ffsp_stat(&fs, ino, stbuf);
 #endif
@@ -461,14 +459,14 @@ std::ostream& operator<<(std::ostream& os, const struct stat& stat)
 		  << ", gid=" << stat.st_gid
 		  << ", rdev=" << stat.st_rdev
 		  << ", size=" << stat.st_size
-#ifdef _WIN32
-		TODO
-//		  << ", atime=" << stat.st_atime
-//		  << ", mtime=" << stat.st_mtime
-//		  << ", ctime=" << stat.st_ctime
-#else
 		  << ", blksize=" << stat.st_blksize
 		  << ", blocks=" << stat.st_blocks
+#ifdef _WIN32
+		  << ", atime=" << stat.st_atim.tv_sec << "." << stat.st_atim.tv_nsec
+		  << ", mtime=" << stat.st_mtim.tv_sec << "." << stat.st_mtim.tv_nsec
+		  << ", ctime=" << stat.st_ctim.tv_sec << "." << stat.st_ctim.tv_nsec
+		  << ", birthtim=" << stat.st_birthtim.tv_sec << "." << stat.st_birthtim.tv_nsec
+#else
 		  << ", atime=" << stat.st_atime
 		  << ", mtime=" << stat.st_mtime
 		  << ", ctime=" << stat.st_ctime
@@ -487,8 +485,10 @@ std::ostream& operator<<(std::ostream& os, const struct fuse_file_info& fi)
 		  << ", direct_io=" << fi.direct_io
 		  << ", keep_cache=" << fi.keep_cache
 		  << ", flush=" << fi.flush
+#ifndef _WIN32
 		  << ", nonseekable=" << fi.nonseekable
 		  << ", flock_release=" << fi.flock_release
+#endif
 		  << "}";
 }
 
@@ -516,10 +516,12 @@ std::ostream& operator<<(std::ostream& os, const struct fuse_conn_info& conn)
 		  << ", async_read=" << conn.async_read
 		  << ", max_write=" << conn.max_write
 		  << ", max_readahead=" << conn.max_readahead
+#ifndef _WIN32
 		  << ", capable=0x" << std::hex << conn.capable << std::dec
 		  << ", want=0x" << std::hex << conn.want << std::dec
 		  << ", max_background=" << conn.max_background
 		  << ", congestion_threshold=" << conn.congestion_threshold
+#endif
 		  << "}";
 }
 
@@ -568,7 +570,11 @@ struct fuse_operations_wrapper
 		logger_ = std::make_shared<spdlog::logger>("ffsp_api", std::begin(sinks), std::end(sinks));
 		spdlog::register_logger(logger_);
 
+#ifdef _WIN32
+		ops_.getattr = [](const char *path, struct FUSE_STAT *stbuf)
+#else
 		ops_.getattr = [](const char *path, struct stat *stbuf)
+#endif
 		{
 			auto id = ++op_id_;
 			auto fs = get_fs(fuse_get_context());
