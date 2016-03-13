@@ -155,17 +155,17 @@ static void mk_directory(struct ffsp_inode *ino, unsigned int parent_no)
 }
 
 static int add_dentry(struct ffsp *fs, const char *path,
-		unsigned int inode_no, mode_t mode)
+		unsigned int inode_no, mode_t mode,
+		unsigned int *parent_no)
 {
 	int rc;
 	char *name;
 	char *parent;
-	struct ffsp_inode *ino;
+	struct ffsp_inode *parent_ino;
 	struct ffsp_dentry dent;
-	uint64_t file_size;
 
 	split_path(path, &parent, &name);
-	rc = ffsp_lookup(fs, &ino, parent);
+	rc = ffsp_lookup(fs, &parent_ino, parent);
 
 	free(parent);
 	if (rc < 0) {
@@ -179,20 +179,22 @@ static int add_dentry(struct ffsp *fs, const char *path,
 	strcpy(dent.name, name);
 	free(name);
 
-	file_size = get_be64(ino->i_size);
 	// Append the new dentry at the inode's data.
-	rc = ffsp_write(fs, ino, &dent, sizeof(dent), file_size);
+	rc = ffsp_write(fs, parent_ino, &dent, sizeof(dent), get_be64(parent_ino->i_size));
 	if (rc < 0)
 		return rc;
 
 	// The link count of the parent directory must be incremented
 	//  in case the path points to a directory instead of a file.
 	if (S_ISDIR(mode)) {
-		inc_be32(&ino->i_nlink);
-		ffsp_mark_dirty(fs, ino);
+		inc_be32(&parent_ino->i_nlink);
+		ffsp_mark_dirty(fs, parent_ino);
 	}
-	// HACK: returning signed int, but i_no is unsigned
-	return get_be32(ino->i_no); // Return parents inode_no on success.
+	if (parent_no) {
+		// Return parents inode_no on success.
+		*parent_no = get_be32(parent_ino->i_no);
+	}
+	return 0;
 }
 
 static int remove_dentry(struct ffsp *fs, const char *path,
@@ -477,17 +479,18 @@ int ffsp_release_inodes(struct ffsp *fs)
 int ffsp_create(struct ffsp *fs, const char *path, mode_t mode,
 		uid_t uid, gid_t gid, dev_t device)
 {
+	int rc;
 	unsigned int inode_no;
-	int parent_no; // HACK: should not have to be signed!
+	unsigned int parent_no;
 	struct ffsp_inode *ino;
 
 	inode_no = find_free_inode_no(fs);
 	if (inode_no == FFSP_INVALID_INO_NO)
 		return -ENOSPC; // max number of files in the fs reached
 
-	parent_no = add_dentry(fs, path, inode_no, mode);
-	if (parent_no < 0)
-		return parent_no; // return error code
+	rc = add_dentry(fs, path, inode_no, mode, &parent_no);
+	if (rc < 0)
+		return rc;
 
 	// initialize a file inode by default
 	ino = ffsp_allocate_inode(fs);
@@ -577,7 +580,7 @@ int ffsp_link(struct ffsp *fs, const char *oldpath, const char *newpath)
 	inode_no = get_be32(ino->i_no);
 	mode = get_be32(ino->i_mode);
 
-	rc = add_dentry(fs, newpath, inode_no, mode);
+	rc = add_dentry(fs, newpath, inode_no, mode, NULL);
 	if (rc < 0)
 		return rc;
 
