@@ -23,6 +23,7 @@
 
 #include "byteorder.h"
 
+#include <assert.h>
 #include <stdint.h>
 
 #define FFSP_FILE_SYSTEM_ID	0x46465350
@@ -48,15 +49,20 @@ struct ffsp_super {
 
 	be32_t reserved[21]; // extend to 128 Bytes
 };
+static_assert(sizeof(struct ffsp_super) == 128, "struct ffsp_super: unexpected size");
 
 struct ffsp_timespec {
 #ifdef _WIN32
-	be64_t sec; // FIXME
+#pragma pack(push, 4)
+	be64_t sec;
+	be32_t nsec;
+#pragma pack(pop)
 #else
 	be64_t sec __attribute__((packed, aligned(4)));
-#endif
 	be32_t nsec;
+#endif
 };
+static_assert(sizeof(struct ffsp_timespec) == 12, "struct ffsp_timespec: unexpected size");
 
 // Invalid index inside the inode map
 #define FFSP_INVALID_INO_NO	0
@@ -91,6 +97,7 @@ struct ffsp_inode {
 
 	be32_t reserved[13]; // extend to 128 Bytes
 };
+static_assert(sizeof(struct ffsp_inode) == 128, "struct ffsp_inode: unexpected size");
 
 // TODO: Find out if these types are REALLY written to the file system!
 //  Or if they are only necessary at runtime to determine in which erase block
@@ -110,6 +117,7 @@ struct ffsp_eraseblk {
 	be16_t e_cvalid; // valid clusters inside the erase block
 	be16_t e_writeops; // how many writes were performed on this eb
 };
+static_assert(sizeof(struct ffsp_eraseblk) == 8, "struct ffsp_eraseblk: unexpected size");
 
 struct ffsp_dentry {
 	be32_t ino;
@@ -117,6 +125,7 @@ struct ffsp_dentry {
 	uint8_t reserved[3];
 	char name[FFSP_NAME_MAX];
 };
+static_assert(sizeof(struct ffsp_dentry) == 256, "struct ffsp_dentry: unexpected size");
 
 // In-Memory-only structures
 
