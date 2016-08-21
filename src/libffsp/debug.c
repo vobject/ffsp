@@ -76,7 +76,7 @@ int ffsp_debug_get_info(char *buf, size_t count)
 					debug_info.gc_write);
 }
 
-void ffsp_debug_update(int type, int val)
+void ffsp_debug_update(int type, unsigned long val)
 {
 	switch (type) {
 		case FFSP_DEBUG_READ_RAW:

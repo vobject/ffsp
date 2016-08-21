@@ -2,8 +2,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(ffsp)
 
+OPTION(FFSP_BUILD_MKFS "Build file system creation tool." ON)
+OPTION(FFSP_BUILD_MOUNT "Build file system mount tool." ON)
+OPTION(FFSP_BUILD_TESTS "Build file system tests." ON)
+
+SET(FFSP_LIB "ffsp")
 SET(MKFS_BINARY "mkfs.ffsp")
 SET(MOUNT_BINARY "mount.ffsp")
+SET(TEST_BINARY "test.ffsp")
 
 IF(NOT CMAKE_BUILD_TYPE)
     MESSAGE(STATUS "No build type selected. Default to Debug")
@@ -11,10 +17,11 @@ IF(NOT CMAKE_BUILD_TYPE)
 ENDIF()
 
 FILE(GLOB MKFS_SRC src/mkfs.ffsp.cpp)
-FILE(GLOB MOUNT_SRC src/mount.ffsp.cpp)
+FILE(GLOB MOUNT_SRC src/fuse_ffsp.hpp src/fuse_ffsp.cpp src/mount.ffsp.cpp)
 FILE(GLOB FFSP_SRC src/libffsp/*.h src/libffsp/*.c)
+FILE(GLOB TESTS_SRC src/fuse_ffsp.hpp src/fuse_ffsp.cpp test/*.hpp test/*.cpp)
 
-SET(SPDLOG_INCLUDE_DIRS "lib/spdlog/include")
+SET(SPDLOG_INCLUDE_DIRS "lib/spdlog-0.9.0/include")
 
 IF(WIN32)
     SET(FUSE_INCLUDE_DIRS "D:/Development/fs/dokany/dokan_fuse/include")
@@ -34,14 +41,35 @@ ELSE()
     SET(FUSE_LIBRARIES "fuse" "pthread")
 
     ADD_DEFINITIONS(-DFUSE_USE_VERSION=26 -D_FILE_OFFSET_BITS=64)
-    ADD_DEFINITIONS(-std=gnu++14 -Wall -Wextra -pedantic)
+    ADD_DEFINITIONS(-Wall -Wextra -pedantic)
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1z")
 ENDIF()
 
 INCLUDE_DIRECTORIES(${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
 LINK_DIRECTORIES(${FUSE_LIBRARY_DIRS})
 
-ADD_EXECUTABLE(${MKFS_BINARY} ${MKFS_SRC} ${FFSP_SRC})
-TARGET_LINK_LIBRARIES(${MKFS_BINARY} ${SPDLOG_LIBRARIES})
+ADD_LIBRARY(${FFSP_LIB} ${FFSP_SRC})
 
-ADD_EXECUTABLE(${MOUNT_BINARY} ${MOUNT_SRC} ${FFSP_SRC})
-TARGET_LINK_LIBRARIES(${MOUNT_BINARY} ${SPDLOG_LIBRARIES} ${FUSE_LIBRARIES})
+IF(FFSP_BUILD_MKFS)
+    ADD_EXECUTABLE(${MKFS_BINARY} ${MKFS_SRC})
+    TARGET_LINK_LIBRARIES(${MKFS_BINARY} ${FFSP_LIB} ${SPDLOG_LIBRARIES})
+ENDIF()
+
+IF(FFSP_BUILD_MOUNT)
+    ADD_EXECUTABLE(${MOUNT_BINARY} ${MOUNT_SRC})
+    TARGET_LINK_LIBRARIES(${MOUNT_BINARY} ${FFSP_LIB} ${SPDLOG_LIBRARIES} ${FUSE_LIBRARIES})
+ENDIF()
+
+IF(FFSP_BUILD_TESTS)
+    ENABLE_TESTING()
+    SET(GTEST_ROOT "lib/googletest-release-1.7.0")
+    ADD_SUBDIRECTORY(${GTEST_ROOT})
+    INCLUDE_DIRECTORIES(src ${GTEST_ROOT}/include ${GTEST_ROOT})
+
+    ADD_EXECUTABLE(${TEST_BINARY} ${TESTS_SRC})
+    TARGET_LINK_LIBRARIES(${TEST_BINARY} ${FFSP_LIB} gtest gtest_main)
+
+    ADD_TEST(NAME that-test-I-made COMMAND ${TEST_BINARY})
+    ADD_TEST(that-other-test-I-made ${TEST_BINARY})
+ENDIF()

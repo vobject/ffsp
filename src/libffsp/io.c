@@ -69,12 +69,12 @@ static uint64_t max_ebin_size(const struct ffsp *fs)
 			sizeof(be32_t) * fs->erasesize;
 }
 
-static int is_buf_empty(const char *buf, int size)
+static bool is_buf_empty(const char *buf, size_t size)
 {
-	for (int i = 0; i < size; ++i)
+	for (size_t i = 0; i < size; ++i)
 		if (buf[i])
-			return 0;
-	return 1;
+			return false;
+	return true;
 }
 
 static int ind_from_offset(uint64_t offset, uint32_t ind_size)
@@ -619,11 +619,11 @@ int ffsp_truncate(struct ffsp *fs, struct ffsp_inode *ino, uint64_t length)
 	uint32_t i_flags;
 	struct write_context ctx;
 
-	if (length == get_be64(ino->i_size))
-		return 0;
-
 	if (length > max_ebin_size(fs))
 		return -EFBIG;
+
+	if (length == get_be64(ino->i_size))
+		return 0;
 
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.buf = NULL; // no applicable for truncation

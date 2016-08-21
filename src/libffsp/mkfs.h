@@ -18,33 +18,22 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef MKFS_H
+#define MKFS_H
 
 #include "ffsp.h"
 
-#include <stddef.h>
+struct ffsp_mkfs_options {
+	uint32_t clustersize;
+	uint32_t erasesize;
+	uint32_t ninoopen;
+	uint32_t neraseopen;
+	uint32_t nerasereserve;
+	uint32_t nerasewrites;
+};
 
-struct stat;
+int ffsp_mkfs(const char *path, const struct ffsp_mkfs_options *options);
 
-#define FFSP_DEBUG_FILE	"/.FFSP"
+int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options *options);
 
-#define FFSP_DEBUG_READ_RAW		1
-#define FFSP_DEBUG_WRITE_RAW		2
-#define FFSP_DEBUG_FUSE_READ		3
-#define FFSP_DEBUG_FUSE_WRITE		4
-#define FFSP_DEBUG_GC_READ		5
-#define FFSP_DEBUG_GC_WRITE		6
-#define FFSP_DEBUG_LOG_ERROR		7
-
-void ffsp_debug_fuse_stat(struct stat *stbuf);
-int ffsp_debug_get_info(char *buf, size_t count);
-void ffsp_debug_update(int type, unsigned long val);
-
-/* TODO: Introduce some kind of 'debuginfo context':
- * 	ffsp_debug_set_context(FFSP_DEBUG_CTX_GC);
- * 	ffsp_write(); <--- will log to write_raw AND gc_write.
- * 	ffsp_debug_unset_context(FFSP_DEBUG_CTX_GC);
- */
-
-#endif /* DEBUG_H */
+#endif /* MKFS_H */
