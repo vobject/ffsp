@@ -36,16 +36,16 @@
 
 struct ffsp_super {
 	be32_t s_fsid; // file system ID
-	be32_t s_flags; // mount flags - TODO: What are these for? -> e.g. noatime(?)
-	be32_t s_neraseblocks; // Number of erase blocks
+	be32_t s_flags; // mount flags - TODO: What are these for? -> noatime(?)
+	be32_t s_neraseblocks; // number of erase blocks
 	be32_t s_nino; // supported number of files on the drive
-	be32_t s_blocksize; // Currently same as clustersize
+	be32_t s_blocksize; // currently same as clustersize
 	be32_t s_clustersize; // size of a cluster (aka inode + data) -> 4096
-	be32_t s_erasesize; // size of a single erase block (in bytes or clusters?)
-	be32_t s_ninoopen; // Number of dirty inodes to cache before writing them to disk
-	be32_t s_neraseopen; // Number of erase blocks to be hold open at a time
-	be32_t s_nerasereserve; // Number of erase blocks for the fs's internal use
-	be32_t s_nerasewrites; // Number of erase block to finalize before GC is performed
+	be32_t s_erasesize; // size of an erase block (in bytes or clusters?)
+	be32_t s_ninoopen; // dirty inodes to cache before writing to disk
+	be32_t s_neraseopen; // erase blocks to be hold open simultaneously
+	be32_t s_nerasereserve; // number of erase blocks for internal use
+	be32_t s_nerasewrites; // number of erase block to finalize before GC
 
 	be32_t reserved[21]; // extend to 128 Bytes
 };
@@ -147,16 +147,16 @@ struct ffsp {
 	int fd;
 
 	uint32_t fsid; // file system ID
-	uint32_t flags; // mount flags - TODO: What are these for? -> e.g. no-atime
-	uint32_t neraseblocks; // Number of erase blocks
+	uint32_t flags; // mount flags - TODO: What are these for? -> noatime(?)
+	uint32_t neraseblocks; // number of erase blocks
 	uint32_t nino; // supported number of files on the drive
-	uint32_t blocksize; // same as clustersize atm
+	uint32_t blocksize; // currently same as clustersize
 	uint32_t clustersize; // size of a cluster (aka inode + data) -> 4096
-	uint32_t erasesize; // size of a single erase block (in bytes or clusters?)
-	uint32_t ninoopen;
-	uint32_t neraseopen;
-	uint32_t nerasereserve;
-	uint32_t nerasewrites;
+	uint32_t erasesize; // size of an erase block (in bytes or clusters?)
+	uint32_t ninoopen; // dirty inodes to cache before writing to disk
+	uint32_t neraseopen; // erase blocks to be hold open simultaneously
+	uint32_t nerasereserve; // number of erase blocks for internal use
+	uint32_t nerasewrites; // number of erase block to finalize before GC
 
 	// Array with information about every erase block
 	struct ffsp_eraseblk *eb_usage;
