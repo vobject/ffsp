@@ -1,0 +1,10 @@
+BasedOnStyle: Mozilla
+AccessModifierOffset: -4
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+BreakBeforeBraces: Allman
+ColumnLimit: 0
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
+IndentWidth: 4
+SortIncludes: false
