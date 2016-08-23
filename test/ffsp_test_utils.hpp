@@ -29,7 +29,8 @@ extern "C" {
 
 struct ffsp;
 
-namespace ffsp_testing {
+namespace ffsp_testing
+{
 
 bool create_file(const char* file_path, uint64_t file_size);
 bool remove_file(const char* file_path);
@@ -39,13 +40,13 @@ bool mount_fs(ffsp& fs, const char* file_path);
 bool unmount_fs(ffsp& fs);
 
 const constexpr char* const default_fs_path{ "/tmp/test.ffsp_fs" };
-const constexpr uint64_t default_fs_size{ 1024 * 1024 * 128 };       // 128 MiB
-const constexpr ffsp_mkfs_options default_mkfs_options{ 1024*32,     // cluster
-                                                        1024*1024*4, // eraseblock
-                                                        128,         // open inodes
-                                                        5,           // open eraseblocks
-                                                        3,           // reserved eraseblocks
-                                                        5 };         // gc trigger
+const constexpr uint64_t default_fs_size{ 1024 * 1024 * 128 };           // 128 MiB
+const constexpr ffsp_mkfs_options default_mkfs_options{ 1024 * 32,       // cluster
+                                                        1024 * 1024 * 4, // eraseblock
+                                                        128,             // open inodes
+                                                        5,               // open eraseblocks
+                                                        3,               // reserved eraseblocks
+                                                        5 };             // gc trigger
 
 bool default_create_file();
 bool default_remove_file();

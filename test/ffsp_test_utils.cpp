@@ -34,20 +34,19 @@ extern "C" {
 #include <stdio.h>
 #include <unistd.h>
 
-fuse_context *fuse_get_context()
+fuse_context* fuse_get_context()
 {
     static fuse_context dummy_ctx = {};
     return &dummy_ctx;
 }
 
-namespace ffsp_testing {
+namespace ffsp_testing
+{
 
 bool create_file(const char* file_path, uint64_t file_size)
 {
-    FILE *fp = fopen(file_path, "w");
-    return fp
-           && (ftruncate(fileno(fp), static_cast<off_t>(file_size)) == 0)
-           && (fclose(fp) == 0);
+    FILE* fp = fopen(file_path, "w");
+    return fp && (ftruncate(fileno(fp), static_cast<off_t>(file_size)) == 0) && (fclose(fp) == 0);
 }
 
 bool remove_file(const char* file_path)
