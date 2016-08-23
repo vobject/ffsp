@@ -36,93 +36,97 @@ typedef SSIZE_T ssize_t;
 #include <unistd.h>
 #endif
 
-static ssize_t do_pread(int fd, void *buf, size_t count, off_t offset)
+static ssize_t do_pread(int fd, void* buf, size_t count, off_t offset)
 {
 #ifdef _WIN32
-	ssize_t rc;
-	off_t oldoff;
-	int olderrno;
+    ssize_t rc;
+    off_t oldoff;
+    int olderrno;
 
-	oldoff = lseek(fd, offset, SEEK_SET);
-	if (oldoff < 0)
-		return -1;
+    oldoff = lseek(fd, offset, SEEK_SET);
+    if (oldoff < 0)
+        return -1;
 
-	rc = read(fd, buf, count);
+    rc = read(fd, buf, count);
 
-	olderrno = errno;
-	lseek(fd, oldoff, SEEK_SET);
-	errno = olderrno;
-	return rc;
+    olderrno = errno;
+    lseek(fd, oldoff, SEEK_SET);
+    errno = olderrno;
+    return rc;
 #else
-	return pread(fd, buf, count, offset);
+    return pread(fd, buf, count, offset);
 #endif
 }
 
-static ssize_t do_pwrite(int fd, const void *buf, size_t count, off_t offset)
+static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset)
 {
 #ifdef _WIN32
-	ssize_t rc;
-	off_t oldoff;
-	int olderrno;
+    ssize_t rc;
+    off_t oldoff;
+    int olderrno;
 
-	oldoff = lseek(fd, offset, SEEK_SET);
-	if (oldoff < 0)
-		return -1;
+    oldoff = lseek(fd, offset, SEEK_SET);
+    if (oldoff < 0)
+        return -1;
 
-	rc = write(fd, buf, count);
+    rc = write(fd, buf, count);
 
-	olderrno = errno;
-	lseek(fd, oldoff, SEEK_SET);
-	errno = olderrno;
+    olderrno = errno;
+    lseek(fd, oldoff, SEEK_SET);
+    errno = olderrno;
 
-	return rc;
+    return rc;
 #else
-	return pwrite(fd, buf, count, offset);
+    return pwrite(fd, buf, count, offset);
 #endif
 }
 
-int ffsp_read_raw(int fd, void *buf, size_t count, off_t offset)
+int ffsp_read_raw(int fd, void* buf, size_t count, off_t offset)
 {
-	ssize_t rc;
+    ssize_t rc;
 
-	if (count > SSIZE_MAX) {
-		FFSP_DEBUG("ffsp_read_internal(): count > SSIZE_MAX");
-	}
+    if (count > SSIZE_MAX)
+    {
+        FFSP_DEBUG("ffsp_read_internal(): count > SSIZE_MAX");
+    }
 
-	rc = do_pread(fd, buf, count, offset);
-	if (rc == -1) {
-		rc = -errno;
-		FFSP_ERROR("ffsp_read_raw(): pread() failed; errno=%d", errno);
-	}
+    rc = do_pread(fd, buf, count, offset);
+    if (rc == -1)
+    {
+        rc = -errno;
+        FFSP_ERROR("ffsp_read_raw(): pread() failed; errno=%d", errno);
+    }
 
-	ffsp_debug_update(FFSP_DEBUG_READ_RAW, count);
+    ffsp_debug_update(FFSP_DEBUG_READ_RAW, count);
 
-	// TODO: Handle EINTR.
-	// TODO: Find out if interrupts can occur when the file system was
-	//        not started with the "-o intr" flag.
+    // TODO: Handle EINTR.
+    // TODO: Find out if interrupts can occur when the file system was
+    //        not started with the "-o intr" flag.
 
-	return rc;
+    return rc;
 }
 
-int ffsp_write_raw(int fd, const void *buf, size_t count, off_t offset)
+int ffsp_write_raw(int fd, const void* buf, size_t count, off_t offset)
 {
-	ssize_t rc;
+    ssize_t rc;
 
-	if (count > SSIZE_MAX) {
-		FFSP_DEBUG("ffsp_write_internal(): count > SSIZE_MAX");
-	}
+    if (count > SSIZE_MAX)
+    {
+        FFSP_DEBUG("ffsp_write_internal(): count > SSIZE_MAX");
+    }
 
-	rc = do_pwrite(fd, buf, count, offset);
-	if (rc == -1) {
-		rc = -errno; // Return negative errno
-		FFSP_ERROR("ffsp_write_raw(): pwrite() failed; errno=%d", errno);
-	}
+    rc = do_pwrite(fd, buf, count, offset);
+    if (rc == -1)
+    {
+        rc = -errno; // Return negative errno
+        FFSP_ERROR("ffsp_write_raw(): pwrite() failed; errno=%d", errno);
+    }
 
-	ffsp_debug_update(FFSP_DEBUG_WRITE_RAW, count);
+    ffsp_debug_update(FFSP_DEBUG_WRITE_RAW, count);
 
-	// TODO: Handle EINTR.
-	// TODO: Find out if interrupts can occur when the file system was
-	//        not started with the "-o intr" flag.
+    // TODO: Handle EINTR.
+    // TODO: Find out if interrupts can occur when the file system was
+    //        not started with the "-o intr" flag.
 
-	return rc;
+    return rc;
 }

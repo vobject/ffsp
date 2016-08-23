@@ -31,12 +31,12 @@ struct statvfs;
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-void ffsp_update_time(struct ffsp_timespec *dest);
+void ffsp_update_time(struct ffsp_timespec* dest);
 
-void ffsp_stat(struct ffsp *fs, const struct ffsp_inode *ino,
-		struct stat *stbuf);
-void ffsp_statfs(struct ffsp *fs, struct statvfs *sfs);
-void ffsp_utimens(struct ffsp *fs, struct ffsp_inode *ino,
-		const struct timespec tvi[2]);
+void ffsp_stat(struct ffsp* fs, const struct ffsp_inode* ino,
+               struct stat* stbuf);
+void ffsp_statfs(struct ffsp* fs, struct statvfs* sfs);
+void ffsp_utimens(struct ffsp* fs, struct ffsp_inode* ino,
+                  const struct timespec tvi[2]);
 
 #endif /* UTILS_H */

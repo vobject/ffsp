@@ -29,101 +29,103 @@
 #include <string.h>
 
 #ifdef _WIN32
-extern int gettimeofday(struct timeval *tp, struct timezone *tzp);
+extern int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #else
 #include <sys/statvfs.h>
 #include <sys/time.h>
 #endif
 
-static uint64_t fs_size(const struct ffsp *fs)
+static uint64_t fs_size(const struct ffsp* fs)
 {
-	/* do not count the first erase block */
-	return (fs->neraseblocks - 1) * fs->erasesize;
+    /* do not count the first erase block */
+    return (fs->neraseblocks - 1) * fs->erasesize;
 }
 
-static int free_cluster_cnt(const struct ffsp *fs)
+static int free_cluster_cnt(const struct ffsp* fs)
 {
-	int free_cl_cnt = 0; /* atm clusters and blocks are the same. */
+    int free_cl_cnt = 0; /* atm clusters and blocks are the same. */
 
-	for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++) {
-		if (fs->eb_usage[eb_id].e_type & FFSP_EB_EBIN)
-			continue;
+    for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++)
+    {
+        if (fs->eb_usage[eb_id].e_type & FFSP_EB_EBIN)
+            continue;
 
-		if (fs->eb_usage[eb_id].e_type & FFSP_EB_EMPTY)
-			free_cl_cnt += (fs->erasesize / fs->clustersize);
-		else
-			free_cl_cnt += (fs->erasesize / fs->clustersize) -
-					get_be16(fs->eb_usage[eb_id].e_cvalid);
-	}
-	return free_cl_cnt;
+        if (fs->eb_usage[eb_id].e_type & FFSP_EB_EMPTY)
+            free_cl_cnt += (fs->erasesize / fs->clustersize);
+        else
+            free_cl_cnt += (fs->erasesize / fs->clustersize) -
+                           get_be16(fs->eb_usage[eb_id].e_cvalid);
+    }
+    return free_cl_cnt;
 }
 
-static int inode_cnt(const struct ffsp *fs)
+static int inode_cnt(const struct ffsp* fs)
 {
-	int free_ino_cnt = 0;
+    int free_ino_cnt = 0;
 
-	for (unsigned int ino_no = 1; ino_no < fs->nino; ino_no++)
-		if (get_be32(fs->ino_map[ino_no]) == FFSP_FREE_CL_ID)
-			free_ino_cnt++;
-	return fs->nino - free_ino_cnt;
+    for (unsigned int ino_no = 1; ino_no < fs->nino; ino_no++)
+        if (get_be32(fs->ino_map[ino_no]) == FFSP_FREE_CL_ID)
+            free_ino_cnt++;
+    return fs->nino - free_ino_cnt;
 }
 
-void ffsp_update_time(struct ffsp_timespec *dest)
+void ffsp_update_time(struct ffsp_timespec* dest)
 {
-	struct timeval tv;
+    struct timeval tv;
 
-	if (gettimeofday(&tv, NULL) == -1) {
-		FFSP_ERROR("call to gettimeofday() failed");
-		dest->sec = put_be64(0);
-		dest->nsec = put_be32(0);
-		return;
-	}
-	dest->sec = put_be64(tv.tv_sec);
-	dest->nsec = put_be32(tv.tv_usec * 1000);
+    if (gettimeofday(&tv, NULL) == -1)
+    {
+        FFSP_ERROR("call to gettimeofday() failed");
+        dest->sec = put_be64(0);
+        dest->nsec = put_be32(0);
+        return;
+    }
+    dest->sec = put_be64(tv.tv_sec);
+    dest->nsec = put_be32(tv.tv_usec * 1000);
 }
 
-void ffsp_stat(struct ffsp *fs, const struct ffsp_inode *ino,
-		struct stat *stbuf)
+void ffsp_stat(struct ffsp* fs, const struct ffsp_inode* ino,
+               struct stat* stbuf)
 {
-	(void) fs;
+    (void)fs;
 
-	memset(stbuf, 0, sizeof(*stbuf));
-	stbuf->st_dev = 0; // FIXME
-	stbuf->st_ino = get_be32(ino->i_no);
-	stbuf->st_mode = get_be32(ino->i_mode);
-	stbuf->st_nlink = get_be32(ino->i_nlink);
-	stbuf->st_uid = get_be32(ino->i_uid);
-	stbuf->st_gid = get_be32(ino->i_gid);
-	stbuf->st_rdev = get_be64(ino->i_rdev);
-	stbuf->st_size = get_be64(ino->i_size);
-	stbuf->st_atime = get_be64(ino->i_atime.sec);
-	stbuf->st_mtime = get_be64(ino->i_mtime.sec);
-	stbuf->st_ctime = get_be64(ino->i_ctime.sec);
+    memset(stbuf, 0, sizeof(*stbuf));
+    stbuf->st_dev = 0; // FIXME
+    stbuf->st_ino = get_be32(ino->i_no);
+    stbuf->st_mode = get_be32(ino->i_mode);
+    stbuf->st_nlink = get_be32(ino->i_nlink);
+    stbuf->st_uid = get_be32(ino->i_uid);
+    stbuf->st_gid = get_be32(ino->i_gid);
+    stbuf->st_rdev = get_be64(ino->i_rdev);
+    stbuf->st_size = get_be64(ino->i_size);
+    stbuf->st_atime = get_be64(ino->i_atime.sec);
+    stbuf->st_mtime = get_be64(ino->i_mtime.sec);
+    stbuf->st_ctime = get_be64(ino->i_ctime.sec);
 #ifndef _WIN32
-	stbuf->st_blksize = 0; /* ignored by FUSE */
-	stbuf->st_blocks = (get_be64(ino->i_size) + 511) / 512 + 1;
+    stbuf->st_blksize = 0; /* ignored by FUSE */
+    stbuf->st_blocks = (get_be64(ino->i_size) + 511) / 512 + 1;
 #endif
 }
 
-void ffsp_statfs(struct ffsp *fs, struct statvfs *sfs)
+void ffsp_statfs(struct ffsp* fs, struct statvfs* sfs)
 {
-	memset(sfs, 0, sizeof(*sfs));
-	sfs->f_bsize = fs->blocksize;
-	sfs->f_blocks = fs_size(fs) / fs->blocksize;
-	sfs->f_bfree = free_cluster_cnt(fs);
-	sfs->f_bavail = sfs->f_bfree;
-	sfs->f_files = inode_cnt(fs);
-	sfs->f_ffree = fs->nino - sfs->f_files;
-	sfs->f_namemax = FFSP_NAME_MAX;
+    memset(sfs, 0, sizeof(*sfs));
+    sfs->f_bsize = fs->blocksize;
+    sfs->f_blocks = fs_size(fs) / fs->blocksize;
+    sfs->f_bfree = free_cluster_cnt(fs);
+    sfs->f_bavail = sfs->f_bfree;
+    sfs->f_files = inode_cnt(fs);
+    sfs->f_ffree = fs->nino - sfs->f_files;
+    sfs->f_namemax = FFSP_NAME_MAX;
 }
 
-void ffsp_utimens(struct ffsp *fs, struct ffsp_inode *ino,
-		const struct timespec tv[2])
+void ffsp_utimens(struct ffsp* fs, struct ffsp_inode* ino,
+                  const struct timespec tv[2])
 {
-	ino->i_atime.sec = put_be64(tv[0].tv_sec);
-	ino->i_atime.nsec = put_be32(tv[0].tv_nsec);
-	ino->i_mtime.sec = put_be64(tv[1].tv_sec);
-	ino->i_mtime.nsec = put_be32(tv[1].tv_nsec);
-	ffsp_mark_dirty(fs, ino);
-	ffsp_flush_inodes(fs, false);
+    ino->i_atime.sec = put_be64(tv[0].tv_sec);
+    ino->i_atime.nsec = put_be32(tv[0].tv_nsec);
+    ino->i_mtime.sec = put_be64(tv[1].tv_sec);
+    ino->i_mtime.nsec = put_be32(tv[1].tv_nsec);
+    ffsp_mark_dirty(fs, ino);
+    ffsp_flush_inodes(fs, false);
 }

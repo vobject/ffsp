@@ -23,20 +23,20 @@
 
 #include <stdint.h>
 
-static inline int test_bit(uint32_t *data, uint32_t n)
+static inline int test_bit(uint32_t* data, uint32_t n)
 {
-	return ((1 << (n % sizeof(uint32_t))) &
-			(data[n / sizeof(uint32_t)])) != 0;
+    return ((1 << (n % sizeof(uint32_t))) &
+            (data[n / sizeof(uint32_t)])) != 0;
 }
 
-static inline void set_bit(uint32_t *data, uint32_t n)
+static inline void set_bit(uint32_t* data, uint32_t n)
 {
-	data[n / sizeof(uint32_t)] |= 1 << (n % sizeof(uint32_t));
+    data[n / sizeof(uint32_t)] |= 1 << (n % sizeof(uint32_t));
 }
 
-static inline void clear_bit(uint32_t *data, uint32_t n)
+static inline void clear_bit(uint32_t* data, uint32_t n)
 {
-	data[n / sizeof(uint32_t)] &= ~(1 << (n % sizeof(uint32_t)));
+    data[n / sizeof(uint32_t)] &= ~(1 << (n % sizeof(uint32_t)));
 }
 
 #endif /* BITOPS_H */

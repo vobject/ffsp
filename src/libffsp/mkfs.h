@@ -23,17 +23,18 @@
 
 #include "ffsp.h"
 
-struct ffsp_mkfs_options {
-	uint32_t clustersize;
-	uint32_t erasesize;
-	uint32_t ninoopen;
-	uint32_t neraseopen;
-	uint32_t nerasereserve;
-	uint32_t nerasewrites;
+struct ffsp_mkfs_options
+{
+    uint32_t clustersize;
+    uint32_t erasesize;
+    uint32_t ninoopen;
+    uint32_t neraseopen;
+    uint32_t nerasereserve;
+    uint32_t nerasewrites;
 };
 
-int ffsp_mkfs(const char *path, const struct ffsp_mkfs_options *options);
+int ffsp_mkfs(const char* path, const struct ffsp_mkfs_options* options);
 
-int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options *options);
+int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options);
 
 #endif /* MKFS_H */

@@ -23,10 +23,10 @@
 
 #include "ffsp.h"
 
-int ffsp_read_inode_group(struct ffsp *fs, unsigned int cl_id,
-				struct ffsp_inode **inodes);
-int ffsp_get_inode_group(const struct ffsp *fs, struct ffsp_inode **inodes,
-		int ino_cnt, struct ffsp_inode **group);
-int ffsp_write_inodes(struct ffsp *fs, struct ffsp_inode **inodes, int ino_cnt);
+int ffsp_read_inode_group(struct ffsp* fs, unsigned int cl_id,
+                          struct ffsp_inode** inodes);
+int ffsp_get_inode_group(const struct ffsp* fs, struct ffsp_inode** inodes,
+                         int ino_cnt, struct ffsp_inode** group);
+int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt);
 
 #endif /* INODE_GROUP_H */

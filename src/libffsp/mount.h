@@ -23,7 +23,7 @@
 
 #include "ffsp.h"
 
-int ffsp_mount(struct ffsp *fs, const char *path);
-void ffsp_unmount(struct ffsp *fs);
+int ffsp_mount(struct ffsp* fs, const char* path);
+void ffsp_unmount(struct ffsp* fs);
 
 #endif /* MOUNT_H */

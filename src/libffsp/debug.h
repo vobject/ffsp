@@ -27,18 +27,18 @@
 
 struct stat;
 
-#define FFSP_DEBUG_FILE	"/.FFSP"
+#define FFSP_DEBUG_FILE "/.FFSP"
 
-#define FFSP_DEBUG_READ_RAW		1
-#define FFSP_DEBUG_WRITE_RAW		2
-#define FFSP_DEBUG_FUSE_READ		3
-#define FFSP_DEBUG_FUSE_WRITE		4
-#define FFSP_DEBUG_GC_READ		5
-#define FFSP_DEBUG_GC_WRITE		6
-#define FFSP_DEBUG_LOG_ERROR		7
+#define FFSP_DEBUG_READ_RAW 1
+#define FFSP_DEBUG_WRITE_RAW 2
+#define FFSP_DEBUG_FUSE_READ 3
+#define FFSP_DEBUG_FUSE_WRITE 4
+#define FFSP_DEBUG_GC_READ 5
+#define FFSP_DEBUG_GC_WRITE 6
+#define FFSP_DEBUG_LOG_ERROR 7
 
-void ffsp_debug_fuse_stat(struct stat *stbuf);
-int ffsp_debug_get_info(char *buf, size_t count);
+void ffsp_debug_fuse_stat(struct stat* stbuf);
+int ffsp_debug_get_info(char* buf, size_t count);
 void ffsp_debug_update(int type, unsigned long val);
 
 /* TODO: Introduce some kind of 'debuginfo context':

@@ -23,27 +23,29 @@
 
 #include "ffsp.h"
 
-struct ffsp_inode_cache_status {
-	int last_valid_index;
+struct ffsp_inode_cache_status
+{
+    int last_valid_index;
 };
 
-struct ffsp_inode_cache {
-	int count;
-	int valid;
-	struct ffsp_inode **buf;
+struct ffsp_inode_cache
+{
+    int count;
+    int valid;
+    struct ffsp_inode** buf;
 };
 
-void ffsp_inode_cache_init(const struct ffsp *fs, struct ffsp_inode_cache **cache);
-void ffsp_inode_cache_uninit(struct ffsp_inode_cache **cache);
+void ffsp_inode_cache_init(const struct ffsp* fs, struct ffsp_inode_cache** cache);
+void ffsp_inode_cache_uninit(struct ffsp_inode_cache** cache);
 
-int ffsp_inode_cache_entry_count(struct ffsp_inode_cache *cache);
+int ffsp_inode_cache_entry_count(struct ffsp_inode_cache* cache);
 
-void ffsp_inode_cache_insert(struct ffsp_inode_cache *cache, struct ffsp_inode *ino);
-void ffsp_inode_cache_remove(struct ffsp_inode_cache *cache, struct ffsp_inode *ino);
-struct ffsp_inode *ffsp_inode_cache_find(struct ffsp_inode_cache *cache, be32_t ino_no);
+void ffsp_inode_cache_insert(struct ffsp_inode_cache* cache, struct ffsp_inode* ino);
+void ffsp_inode_cache_remove(struct ffsp_inode_cache* cache, struct ffsp_inode* ino);
+struct ffsp_inode* ffsp_inode_cache_find(struct ffsp_inode_cache* cache, be32_t ino_no);
 
-void ffsp_inode_cache_init_status(struct ffsp_inode_cache_status *status);
-struct ffsp_inode *ffsp_inode_cache_next(struct ffsp_inode_cache *cache,
-				struct ffsp_inode_cache_status *status);
+void ffsp_inode_cache_init_status(struct ffsp_inode_cache_status* status);
+struct ffsp_inode* ffsp_inode_cache_next(struct ffsp_inode_cache* cache,
+                                         struct ffsp_inode_cache_status* status);
 
 #endif /* INODE_CACHE_H */

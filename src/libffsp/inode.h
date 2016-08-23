@@ -31,36 +31,36 @@
 #include <fuse_win.h>
 #endif
 
-struct ffsp_inode *ffsp_allocate_inode(const struct ffsp *fs);
-void ffsp_delete_inode(struct ffsp_inode *ino);
-void *ffsp_inode_data(struct ffsp_inode *ino);
-int ffsp_get_inode_size(const struct ffsp *fs, const struct ffsp_inode *ino);
-bool ffsp_is_inode_valid(const struct ffsp *fs, unsigned int cl_id,
-		const struct ffsp_inode *ino);
+struct ffsp_inode* ffsp_allocate_inode(const struct ffsp* fs);
+void ffsp_delete_inode(struct ffsp_inode* ino);
+void* ffsp_inode_data(struct ffsp_inode* ino);
+int ffsp_get_inode_size(const struct ffsp* fs, const struct ffsp_inode* ino);
+bool ffsp_is_inode_valid(const struct ffsp* fs, unsigned int cl_id,
+                         const struct ffsp_inode* ino);
 
-int ffsp_lookup_no(struct ffsp *fs, struct ffsp_inode **ino, uint32_t ino_no);
-int ffsp_lookup(struct ffsp *fs, struct ffsp_inode **ino,
-		const char *path);
-int ffsp_flush_inodes(struct ffsp *fs, bool force);
-int ffsp_release_inodes(struct ffsp *fs);
+int ffsp_lookup_no(struct ffsp* fs, struct ffsp_inode** ino, uint32_t ino_no);
+int ffsp_lookup(struct ffsp* fs, struct ffsp_inode** ino,
+                const char* path);
+int ffsp_flush_inodes(struct ffsp* fs, bool force);
+int ffsp_release_inodes(struct ffsp* fs);
 
-int ffsp_create(struct ffsp *fs, const char *path, mode_t mode,
-		uid_t uid, gid_t gid, dev_t device);
-int ffsp_symlink(struct ffsp *fs, const char *oldpath, const char *newpath,
-		uid_t uid, gid_t gid);
-int ffsp_readlink(struct ffsp *fs, const char *path, char *buf, size_t len);
-int ffsp_link(struct ffsp *fs, const char *oldpath, const char *newpath);
-int ffsp_unlink(struct ffsp *fs, const char *path);
-int ffsp_rmdir(struct ffsp *fs, const char *path);
-int ffsp_rename(struct ffsp *fs, const char *oldpath, const char *newpath);
+int ffsp_create(struct ffsp* fs, const char* path, mode_t mode,
+                uid_t uid, gid_t gid, dev_t device);
+int ffsp_symlink(struct ffsp* fs, const char* oldpath, const char* newpath,
+                 uid_t uid, gid_t gid);
+int ffsp_readlink(struct ffsp* fs, const char* path, char* buf, size_t len);
+int ffsp_link(struct ffsp* fs, const char* oldpath, const char* newpath);
+int ffsp_unlink(struct ffsp* fs, const char* path);
+int ffsp_rmdir(struct ffsp* fs, const char* path);
+int ffsp_rename(struct ffsp* fs, const char* oldpath, const char* newpath);
 
-void ffsp_mark_dirty(struct ffsp *fs, struct ffsp_inode *ino);
-void ffsp_reset_dirty(struct ffsp *fs, struct ffsp_inode *ino);
+void ffsp_mark_dirty(struct ffsp* fs, struct ffsp_inode* ino);
+void ffsp_reset_dirty(struct ffsp* fs, struct ffsp_inode* ino);
 
-int ffsp_cache_dir(const struct ffsp *fs, struct ffsp_inode *ino,
-		struct ffsp_dentry **dent_buf, int *dentry_cnt);
+int ffsp_cache_dir(const struct ffsp* fs, struct ffsp_inode* ino,
+                   struct ffsp_dentry** dent_buf, int* dentry_cnt);
 
-void ffsp_invalidate_ind_ptr(struct ffsp *fs, const be32_t *ind_ptr,
-		int cnt, int ind_type);
+void ffsp_invalidate_ind_ptr(struct ffsp* fs, const be32_t* ind_ptr,
+                             int cnt, int ind_type);
 
 #endif /* INODE_H */

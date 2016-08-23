@@ -22,10 +22,10 @@
 #define LOG_H
 
 #ifndef __GNUC__
-#define  __attribute__(x)  /* NOTHING */
+#define __attribute__(x) /* NOTHING */
 #endif
 
-void FFSP_DEBUG(const char *format, ...) __attribute__((format(printf, 1, 2)));
-void FFSP_ERROR(const char *format, ...) __attribute__((format(printf, 1, 2)));
+void FFSP_DEBUG(const char* format, ...) __attribute__((format(printf, 1, 2)));
+void FFSP_ERROR(const char* format, ...) __attribute__((format(printf, 1, 2)));
 
 #endif /* LOG_H */

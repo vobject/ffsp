@@ -24,34 +24,34 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-void FFSP_DEBUG(const char *format, ...)
+void FFSP_DEBUG(const char* format, ...)
 {
-	va_list ap;
+    va_list ap;
 
-	fflush(stdout);
-	fputs("---> DEBUG: ", stderr);
+    fflush(stdout);
+    fputs("---> DEBUG: ", stderr);
 
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+    va_start(ap, format);
+    vfprintf(stderr, format, ap);
+    va_end(ap);
 
-	fputs("\n", stderr);
-	fflush(stderr);
+    fputs("\n", stderr);
+    fflush(stderr);
 }
 
-void FFSP_ERROR(const char *format, ...)
+void FFSP_ERROR(const char* format, ...)
 {
-	va_list ap;
+    va_list ap;
 
-	fflush(stdout);
-	fputs("---> ERROR: ", stderr);
+    fflush(stdout);
+    fputs("---> ERROR: ", stderr);
 
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+    va_start(ap, format);
+    vfprintf(stderr, format, ap);
+    va_end(ap);
 
-	fputs("\n", stderr);
-	fflush(stderr);
+    fputs("\n", stderr);
+    fflush(stderr);
 
-	ffsp_debug_update(FFSP_DEBUG_LOG_ERROR, 1);
+    ffsp_debug_update(FFSP_DEBUG_LOG_ERROR, 1);
 }
