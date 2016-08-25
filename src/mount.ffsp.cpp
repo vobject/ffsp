@@ -486,7 +486,28 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
         case FUSE_OPT_KEY_NONOPT:
             if (ffsp_params.device.empty())
             {
-                ffsp_params.device.assign(arg);
+                if (arg[0] == '/')
+                {
+                    // absolute path
+                    ffsp_params.device = arg;
+                    return 0;
+                }
+
+                // relative path
+                char* cwd = get_current_dir_name();
+                if (!cwd)
+                {
+                    return -1;
+                }
+
+                if (cwd[0] != '/')
+                {
+                    free(cwd);
+                    return -1;
+                }
+
+                ffsp_params.device = std::string(cwd) + "/" + arg;
+                free(cwd);
                 return 0;
             }
             return 1;
