@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "libffsp/ffsp.hpp"
 #include "libffsp/mkfs.hpp"
+#include "libffsp/ffsp.hpp"
 
 #include "spdlog/spdlog.h"
 

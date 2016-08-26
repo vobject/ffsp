@@ -22,13 +22,13 @@
 #include "io_raw.hpp"
 #include "utils.hpp"
 
-#include <sys/stat.h>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
 #include <ctime>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #include <io.h>

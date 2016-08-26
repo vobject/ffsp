@@ -21,8 +21,8 @@
 #include "log.hpp"
 #include "debug.hpp"
 
-#include <cstdio>
 #include <cstdarg>
+#include <cstdio>
 
 void FFSP_DEBUG(const char* format, ...)
 {

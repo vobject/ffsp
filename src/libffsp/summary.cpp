@@ -18,9 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.hpp"
-#include "io_raw.hpp"
 #include "summary.hpp"
+#include "io_raw.hpp"
+#include "log.hpp"
 
 #include <cstdlib>
 #include <cstring>

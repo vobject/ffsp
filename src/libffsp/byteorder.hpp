@@ -32,8 +32,8 @@
 #define bswap_32 _byteswap_ulong
 #define bswap_64 _byteswap_uint64
 #else
-#include <endian.h>
 #include <byteswap.h>
+#include <endian.h>
 #endif
 
 typedef struct

@@ -28,8 +28,8 @@
 
 #include "fuse.h"
 
-#include <sys/types.h>
 #include <cstdio>
+#include <sys/types.h>
 #include <unistd.h>
 
 fuse_context* fuse_get_context()

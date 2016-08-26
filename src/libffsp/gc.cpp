@@ -18,15 +18,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.hpp"
-#include "debug.hpp"
+#include "gc.hpp"
 #include "bitops.hpp"
+#include "debug.hpp"
 #include "eraseblk.hpp"
 #include "inode.hpp"
 #include "inode_group.hpp"
 #include "io_raw.hpp"
+#include "log.hpp"
 #include "summary.hpp"
-#include "gc.hpp"
 
 #include <cstdlib>
 #include <cstring>

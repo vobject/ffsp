@@ -18,14 +18,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "ffsp.hpp"
-#include "log.hpp"
-#include "inode.hpp"
 #include "utils.hpp"
+#include "ffsp.hpp"
+#include "inode.hpp"
+#include "log.hpp"
 
-#include <sys/stat.h>
 #include <cstdlib>
 #include <cstring>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 extern int gettimeofday(struct timeval* tp, struct timezone* tzp);

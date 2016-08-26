@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
+#include "libffsp/io_raw.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
-#include "libffsp/io_raw.hpp"
 
 #include "ffsp_test_utils.hpp"
 

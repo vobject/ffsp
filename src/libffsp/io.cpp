@@ -18,19 +18,19 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.hpp"
-#include "ffsp.hpp"
-#include "utils.hpp"
-#include "eraseblk.hpp"
-#include "inode.hpp"
-#include "gc.hpp"
-#include "io_raw.hpp"
 #include "io.hpp"
+#include "eraseblk.hpp"
+#include "ffsp.hpp"
+#include "gc.hpp"
+#include "inode.hpp"
+#include "io_raw.hpp"
+#include "log.hpp"
+#include "utils.hpp"
 
+#include <cerrno>
 #include <cinttypes>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
 
 struct write_context
 {

@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.hpp"
 #include "inode_cache.hpp"
+#include "log.hpp"
 
 #include <cstdlib>
 #include <cstring>

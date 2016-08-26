@@ -20,10 +20,10 @@
 
 #include "debug.hpp"
 
-#include <sys/stat.h>
+#include <cinttypes>
 #include <cstdio>
 #include <cstring>
-#include <cinttypes>
+#include <sys/stat.h>
 
 static struct ffsp_debug_info
 {

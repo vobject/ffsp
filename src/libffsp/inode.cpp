@@ -18,22 +18,22 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "ffsp.hpp"
-#include "log.hpp"
+#include "inode.hpp"
 #include "bitops.hpp"
 #include "eraseblk.hpp"
+#include "ffsp.hpp"
 #include "gc.hpp"
-#include "io.hpp"
-#include "io_raw.hpp"
-#include "utils.hpp"
 #include "inode_cache.hpp"
 #include "inode_group.hpp"
-#include "inode.hpp"
+#include "io.hpp"
+#include "io_raw.hpp"
+#include "log.hpp"
+#include "utils.hpp"
 
-#include <sys/stat.h>
+#include <cerrno>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 #ifndef S_ISDIR

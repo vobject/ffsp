@@ -19,16 +19,16 @@
  */
 
 #include "io_raw.hpp"
-#include "log.hpp"
 #include "debug.hpp"
+#include "log.hpp"
 
-#include <climits>
 #include <cerrno>
+#include <climits>
 
 #ifdef _WIN32
-#include <io.h>
-#include <stdio.h>
 #include <BaseTsd.h>
+#include <cstdio>
+#include <io.h>
 typedef SSIZE_T ssize_t;
 #define SSIZE_MAX MAXSSIZE_T
 #else
