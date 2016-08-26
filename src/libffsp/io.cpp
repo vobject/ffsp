@@ -27,11 +27,10 @@
 #include "io_raw.hpp"
 #include "io.hpp"
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include <errno.h>
+#include <cinttypes>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 
 struct write_context
 {

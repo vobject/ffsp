@@ -21,7 +21,7 @@
 #ifndef BITOPS_H
 #define BITOPS_H
 
-#include <stdint.h>
+#include <cstdint>
 
 static inline int test_bit(uint32_t* data, uint32_t n)
 {

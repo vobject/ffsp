@@ -22,9 +22,8 @@
 #include "log.hpp"
 #include "debug.hpp"
 
-#include <limits.h>
-#include <errno.h>
-#include <stdint.h>
+#include <climits>
+#include <cerrno>
 
 #ifdef _WIN32
 #include <io.h>

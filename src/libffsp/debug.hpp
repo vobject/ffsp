@@ -23,7 +23,7 @@
 
 #include "ffsp.hpp"
 
-#include <stddef.h>
+#include <cstddef>
 
 struct stat;
 

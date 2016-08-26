@@ -21,7 +21,7 @@
 #ifndef BYTE_ORDER_H
 #define BYTE_ORDER_H
 
-#include <stdint.h>
+#include <cstdint>
 
 #ifdef _WIN32
 #include <intrin.h>

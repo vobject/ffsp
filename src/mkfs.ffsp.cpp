@@ -25,8 +25,8 @@
 
 #include <string>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <getopt.h>
 
 struct arguments

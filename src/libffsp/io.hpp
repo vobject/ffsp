@@ -23,8 +23,7 @@
 
 #include "ffsp.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
+#include <cstddef>
 
 int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino,
                   uint64_t length);

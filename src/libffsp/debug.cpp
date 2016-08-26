@@ -21,9 +21,9 @@
 #include "debug.hpp"
 
 #include <sys/stat.h>
-#include <stdio.h>
-#include <string.h>
-#include <inttypes.h>
+#include <cstdio>
+#include <cstring>
+#include <cinttypes>
 
 static struct ffsp_debug_info
 {

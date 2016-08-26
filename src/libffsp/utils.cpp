@@ -24,9 +24,8 @@
 #include "utils.hpp"
 
 #include <sys/stat.h>
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #ifdef _WIN32
 extern int gettimeofday(struct timeval* tp, struct timezone* tzp);

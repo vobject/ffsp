@@ -23,8 +23,6 @@
 
 #include "ffsp.hpp"
 
-#include <stdint.h>
-
 int ffsp_eb_get_cvalid(const struct ffsp* fs, unsigned int eb_id);
 void ffsp_eb_inc_cvalid(struct ffsp* fs, unsigned int eb_id);
 void ffsp_eb_dec_cvalid(struct ffsp* fs, unsigned int eb_id);

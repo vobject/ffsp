@@ -23,8 +23,6 @@
 
 #include "libffsp/mkfs.hpp"
 
-#include <stdint.h>
-
 struct ffsp;
 
 namespace ffsp_testing

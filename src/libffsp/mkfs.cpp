@@ -23,13 +23,12 @@
 #include "utils.hpp"
 
 #include <sys/stat.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
+#include <ctime>
 #include <fcntl.h>
-#include <time.h>
 
 #ifdef _WIN32
 #include <io.h>

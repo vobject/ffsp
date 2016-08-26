@@ -32,13 +32,11 @@
 #include <string>
 
 #include <sys/stat.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-#include <inttypes.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cerrno>
 
 #ifdef _WIN32
 #ifndef S_ISDIR

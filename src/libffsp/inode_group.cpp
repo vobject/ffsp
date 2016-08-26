@@ -26,10 +26,8 @@
 #include "inode_cache.hpp"
 #include "inode_group.hpp"
 
-#include <stddef.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 /* copy grouped elements into the cluster buffer. */
 static void group_inodes(const struct ffsp* fs, struct ffsp_inode** group,

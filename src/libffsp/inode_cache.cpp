@@ -21,8 +21,8 @@
 #include "log.hpp"
 #include "inode_cache.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 void ffsp_inode_cache_init(const struct ffsp* fs,
                            struct ffsp_inode_cache** cache)

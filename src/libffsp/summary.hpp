@@ -23,8 +23,6 @@
 
 #include "ffsp.hpp"
 
-#include <stdbool.h>
-
 be32_t* ffsp_alloc_summary(const struct ffsp* fs);
 void ffsp_delete_summary(be32_t* summary);
 

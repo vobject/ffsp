@@ -23,7 +23,7 @@
 
 #include "ffsp.hpp"
 
-#include <time.h>
+#include <ctime>
 
 struct stat;
 struct statvfs;

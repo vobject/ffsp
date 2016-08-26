@@ -22,7 +22,7 @@
 #define IO_RAW_H
 
 #include <sys/types.h>
-#include <stddef.h>
+#include <cstddef>
 
 int ffsp_read_raw(int fd, void* buf, size_t count, off_t offset);
 int ffsp_write_raw(int fd, const void* buf, size_t count, off_t offset);

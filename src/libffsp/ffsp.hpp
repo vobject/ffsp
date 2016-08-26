@@ -23,8 +23,7 @@
 
 #include "byteorder.hpp"
 
-#include <assert.h>
-#include <stdint.h>
+#include <cassert>
 
 #define FFSP_FILE_SYSTEM_ID 0x46465350
 #define FFSP_VERSION_MAJOR 0

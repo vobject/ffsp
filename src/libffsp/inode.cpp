@@ -31,10 +31,9 @@
 #include "inode.hpp"
 
 #include <sys/stat.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 
 #ifdef _WIN32
 #ifndef S_ISDIR
@@ -324,7 +323,7 @@ int ffsp_lookup_no(struct ffsp* fs, struct ffsp_inode** ino, uint32_t ino_no)
 
     /* How many inodes may fit into one cluster? */
     inodes = (struct ffsp_inode**)malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
-                    sizeof(struct ffsp_inode*));
+                                         sizeof(struct ffsp_inode*));
     if (!inodes)
     {
         FFSP_ERROR("malloc(valid inode pointers) failed");

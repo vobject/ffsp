@@ -28,8 +28,8 @@
 #include "summary.hpp"
 #include "gc.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 /*
  * Checks if garbage collection can be performed on the given erase block type.
@@ -254,7 +254,7 @@ static int move_inodes(struct ffsp* fs, unsigned int src_eb_id,
 
     /* How many inodes may fit into one cluster? */
     inodes = (struct ffsp_inode**)malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
-                    sizeof(struct ffsp_inode*));
+                                         sizeof(struct ffsp_inode*));
     if (!inodes)
     {
         FFSP_ERROR("malloc(valid inode pointers) failed");

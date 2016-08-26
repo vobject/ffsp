@@ -24,8 +24,6 @@
 #include "ffsp.hpp"
 
 #include <sys/types.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 #ifdef _WIN32
 #include <fuse_win.h>

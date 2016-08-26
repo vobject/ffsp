@@ -22,8 +22,8 @@
 #include "io_raw.hpp"
 #include "summary.hpp"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 be32_t* ffsp_alloc_summary(const struct ffsp* fs)
 {
