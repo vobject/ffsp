@@ -18,33 +18,26 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef ERASEBLK_H
+#define ERASEBLK_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
-#include <stddef.h>
+#include <stdint.h>
 
-struct stat;
+int ffsp_eb_get_cvalid(const struct ffsp* fs, unsigned int eb_id);
+void ffsp_eb_inc_cvalid(struct ffsp* fs, unsigned int eb_id);
+void ffsp_eb_dec_cvalid(struct ffsp* fs, unsigned int eb_id);
 
-#define FFSP_DEBUG_FILE "/.FFSP"
+unsigned int ffsp_emtpy_eraseblk_count(const struct ffsp* fs);
+int ffsp_get_eraseblk_type(const struct ffsp* fs, int data_type,
+                           uint32_t mode);
 
-#define FFSP_DEBUG_READ_RAW 1
-#define FFSP_DEBUG_WRITE_RAW 2
-#define FFSP_DEBUG_FUSE_READ 3
-#define FFSP_DEBUG_FUSE_WRITE 4
-#define FFSP_DEBUG_GC_READ 5
-#define FFSP_DEBUG_GC_WRITE 6
-#define FFSP_DEBUG_LOG_ERROR 7
+int ffsp_find_writable_cluster(struct ffsp* fs, int eb_type,
+                               uint32_t* eb_id, uint32_t* cl_id);
+void ffsp_commit_write_operation(struct ffsp* fs, int eb_type,
+                                 uint32_t eb_id, be32_t ino_no);
+void ffsp_close_eraseblks(struct ffsp* fs);
+int ffsp_write_meta_data(const struct ffsp* fs);
 
-void ffsp_debug_fuse_stat(struct stat* stbuf);
-int ffsp_debug_get_info(char* buf, size_t count);
-void ffsp_debug_update(int type, unsigned long val);
-
-/* TODO: Introduce some kind of 'debuginfo context':
- * 	ffsp_debug_set_context(FFSP_DEBUG_CTX_GC);
- * 	ffsp_write(); <--- will log to write_raw AND gc_write.
- * 	ffsp_debug_unset_context(FFSP_DEBUG_CTX_GC);
- */
-
-#endif /* DEBUG_H */
+#endif /* ERASEBLK_H */

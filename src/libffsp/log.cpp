@@ -18,15 +18,40 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef INODE_GROUP_H
-#define INODE_GROUP_H
+#include "log.hpp"
+#include "debug.hpp"
 
-#include "ffsp.h"
+#include <stdio.h>
+#include <stdarg.h>
 
-int ffsp_read_inode_group(struct ffsp* fs, unsigned int cl_id,
-                          struct ffsp_inode** inodes);
-int ffsp_get_inode_group(const struct ffsp* fs, struct ffsp_inode** inodes,
-                         int ino_cnt, struct ffsp_inode** group);
-int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt);
+void FFSP_DEBUG(const char* format, ...)
+{
+    va_list ap;
 
-#endif /* INODE_GROUP_H */
+    fflush(stdout);
+    fputs("---> DEBUG: ", stderr);
+
+    va_start(ap, format);
+    vfprintf(stderr, format, ap);
+    va_end(ap);
+
+    fputs("\n", stderr);
+    fflush(stderr);
+}
+
+void FFSP_ERROR(const char* format, ...)
+{
+    va_list ap;
+
+    fflush(stdout);
+    fputs("---> ERROR: ", stderr);
+
+    va_start(ap, format);
+    vfprintf(stderr, format, ap);
+    va_end(ap);
+
+    fputs("\n", stderr);
+    fflush(stderr);
+
+    ffsp_debug_update(FFSP_DEBUG_LOG_ERROR, 1);
+}

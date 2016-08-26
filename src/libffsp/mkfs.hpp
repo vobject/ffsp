@@ -18,40 +18,23 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.h"
-#include "debug.h"
+#ifndef MKFS_H
+#define MKFS_H
 
-#include <stdio.h>
-#include <stdarg.h>
+#include "ffsp.hpp"
 
-void FFSP_DEBUG(const char* format, ...)
+struct ffsp_mkfs_options
 {
-    va_list ap;
+    uint32_t clustersize;
+    uint32_t erasesize;
+    uint32_t ninoopen;
+    uint32_t neraseopen;
+    uint32_t nerasereserve;
+    uint32_t nerasewrites;
+};
 
-    fflush(stdout);
-    fputs("---> DEBUG: ", stderr);
+int ffsp_mkfs(const char* path, const struct ffsp_mkfs_options* options);
 
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    va_end(ap);
+int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options);
 
-    fputs("\n", stderr);
-    fflush(stderr);
-}
-
-void FFSP_ERROR(const char* format, ...)
-{
-    va_list ap;
-
-    fflush(stdout);
-    fputs("---> ERROR: ", stderr);
-
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    va_end(ap);
-
-    fputs("\n", stderr);
-    fflush(stderr);
-
-    ffsp_debug_update(FFSP_DEBUG_LOG_ERROR, 1);
-}
+#endif /* MKFS_H */

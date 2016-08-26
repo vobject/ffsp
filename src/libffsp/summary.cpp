@@ -18,9 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.h"
-#include "io_raw.h"
-#include "summary.h"
+#include "log.hpp"
+#include "io_raw.hpp"
+#include "summary.hpp"
 
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +29,7 @@ be32_t* ffsp_alloc_summary(const struct ffsp* fs)
 {
     be32_t* summary;
 
-    summary = malloc(fs->clustersize);
+    summary = (be32_t*)malloc(fs->clustersize);
     if (!summary)
     {
         FFSP_ERROR("malloc(summary) failed");
@@ -49,7 +49,7 @@ void ffsp_summary_list_add(struct ffsp_summary_list_node* head,
 {
     struct ffsp_summary_list_node* node;
 
-    node = malloc(sizeof(struct ffsp_summary_list_node));
+    node = (struct ffsp_summary_list_node*)malloc(sizeof(struct ffsp_summary_list_node));
     if (!node)
     {
         FFSP_ERROR("malloc(summary list node) failed");

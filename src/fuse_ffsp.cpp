@@ -20,16 +20,14 @@
 
 #include "fuse_ffsp.hpp"
 
-extern "C" {
-#include "libffsp/ffsp.h"
-#include "libffsp/log.h"
-#include "libffsp/debug.h"
-#include "libffsp/mount.h"
-#include "libffsp/eraseblk.h"
-#include "libffsp/inode.h"
-#include "libffsp/io.h"
-#include "libffsp/utils.h"
-}
+#include "libffsp/ffsp.hpp"
+#include "libffsp/log.hpp"
+#include "libffsp/debug.hpp"
+#include "libffsp/mount.hpp"
+#include "libffsp/eraseblk.hpp"
+#include "libffsp/inode.hpp"
+#include "libffsp/io.hpp"
+#include "libffsp/utils.hpp"
 
 #include <string>
 

@@ -20,11 +20,9 @@
 
 #include "ffsp_test_utils.hpp"
 
-extern "C" {
-#include "libffsp/ffsp.h"
-#include "libffsp/mkfs.h"
-#include "libffsp/mount.h"
-}
+#include "libffsp/ffsp.hpp"
+#include "libffsp/mkfs.hpp"
+#include "libffsp/mount.hpp"
 
 #include "fuse_ffsp.hpp"
 

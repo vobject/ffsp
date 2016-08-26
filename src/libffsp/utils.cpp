@@ -18,10 +18,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "ffsp.h"
-#include "log.h"
-#include "inode.h"
-#include "utils.h"
+#include "ffsp.hpp"
+#include "log.hpp"
+#include "inode.hpp"
+#include "utils.hpp"
 
 #include <sys/stat.h>
 #include <time.h>

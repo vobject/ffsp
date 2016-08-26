@@ -18,7 +18,7 @@ ENDIF()
 
 FILE(GLOB MKFS_SRC src/mkfs.ffsp.cpp)
 FILE(GLOB MOUNT_SRC src/fuse_ffsp.hpp src/fuse_ffsp.cpp src/mount.ffsp.cpp)
-FILE(GLOB FFSP_SRC src/libffsp/*.h src/libffsp/*.c)
+FILE(GLOB FFSP_SRC src/libffsp/*.hpp src/libffsp/*.cpp)
 FILE(GLOB TESTS_SRC src/fuse_ffsp.hpp src/fuse_ffsp.cpp test/*.hpp test/*.cpp)
 
 SET(SPDLOG_INCLUDE_DIRS "lib/spdlog-0.9.0/include")
@@ -42,7 +42,6 @@ ELSE()
 
     ADD_DEFINITIONS(-DFUSE_USE_VERSION=26 -D_FILE_OFFSET_BITS=64)
     ADD_DEFINITIONS(-Wall -Wextra -pedantic)
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1z")
 ENDIF()
 

@@ -18,12 +18,26 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MOUNT_H
-#define MOUNT_H
+#ifndef SUMMARY_H
+#define SUMMARY_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
-int ffsp_mount(struct ffsp* fs, const char* path);
-void ffsp_unmount(struct ffsp* fs);
+#include <stdbool.h>
 
-#endif /* MOUNT_H */
+be32_t* ffsp_alloc_summary(const struct ffsp* fs);
+void ffsp_delete_summary(be32_t* summary);
+
+void ffsp_summary_list_add(struct ffsp_summary_list_node* head,
+                           be32_t* summary, int eb_type);
+void ffsp_summary_list_del(struct ffsp_summary_list_node* head,
+                           int eb_type);
+be32_t* ffsp_summary_list_find(struct ffsp_summary_list_node* head,
+                               int eb_type);
+
+bool ffsp_has_summary(int eb_type);
+int ffsp_read_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary);
+int ffsp_write_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary);
+void ffsp_add_summary_ref(be32_t* summary, unsigned int ino_no, int writeops);
+
+#endif /* SUMMARY_H */

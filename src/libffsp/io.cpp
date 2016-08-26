@@ -18,14 +18,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.h"
-#include "ffsp.h"
-#include "utils.h"
-#include "eraseblk.h"
-#include "inode.h"
-#include "gc.h"
-#include "io_raw.h"
-#include "io.h"
+#include "log.hpp"
+#include "ffsp.hpp"
+#include "utils.hpp"
+#include "eraseblk.hpp"
+#include "inode.hpp"
+#include "gc.hpp"
+#include "io_raw.hpp"
+#include "io.hpp"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -149,7 +149,7 @@ static int read_emb(const struct ffsp* fs, struct ffsp_inode* ino,
                     char* buf, size_t size, uint64_t offset)
 {
     (void)fs;
-    char* emb_data = ffsp_inode_data(ino);
+    char* emb_data = (char*)ffsp_inode_data(ino);
     const uint64_t i_size = get_be64(ino->i_size);
 
     if ((offset + size) > i_size)
@@ -169,7 +169,7 @@ static int read_ind(const struct ffsp* fs, struct ffsp_inode* ino, char* buf,
     uint64_t bytes_left;
     uint64_t cl_off;
 
-    ind_ptr = ffsp_inode_data(ino);
+    ind_ptr = (be32_t*)ffsp_inode_data(ino);
     ind_index = offset / ind_size;
     ind_offset = offset % ind_size;
 
@@ -268,7 +268,7 @@ static int trunc_clin2ebin(struct ffsp* fs, struct write_context* ctx)
     int ind_last;
 
     // Restore this backup on error.
-    old_ptr = malloc(max_emb_size(fs));
+    old_ptr = (be32_t*)malloc(max_emb_size(fs));
     if (!old_ptr)
     {
         FFSP_ERROR("malloc(max_emb_size) failed!");
@@ -625,11 +625,11 @@ int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
     i_flags = get_be32(ino->i_flags);
 
     if (i_flags & FFSP_DATA_EMB)
-        rc = read_emb(fs, ino, buf, count, offset);
+        rc = read_emb(fs, ino, (char*)buf, count, offset);
     else if (i_flags & FFSP_DATA_CLIN)
-        rc = read_ind(fs, ino, buf, count, offset, fs->clustersize);
+        rc = read_ind(fs, ino, (char*)buf, count, offset, fs->clustersize);
     else if (i_flags & FFSP_DATA_EBIN)
-        rc = read_ind(fs, ino, buf, count, offset, fs->erasesize);
+        rc = read_ind(fs, ino, (char*)buf, count, offset, fs->erasesize);
     else
     {
         FFSP_ERROR("ffsp_read(): unknown inode type");
@@ -662,7 +662,7 @@ int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino, uint64_t length)
     ctx.bytes_left = 0; // no applicable for truncation
     ctx.offset = length;
     ctx.ino = ino;
-    ctx.ind_ptr = ffsp_inode_data(ino);
+    ctx.ind_ptr = (be32_t*)ffsp_inode_data(ino);
     ctx.old_size = get_be64(ino->i_size);
     ctx.new_size = length;
     ctx.old_ind_size = ind_size_from_size(fs, ctx.old_size);
@@ -718,11 +718,11 @@ int ffsp_write(struct ffsp* fs, struct ffsp_inode* ino,
         return 0;
 
     memset(&ctx, 0, sizeof(ctx));
-    ctx.buf = buf;
+    ctx.buf = (char*)buf;
     ctx.bytes_left = count;
     ctx.offset = offset;
     ctx.ino = ino;
-    ctx.ind_ptr = ffsp_inode_data(ino);
+    ctx.ind_ptr = (be32_t*)ffsp_inode_data(ino);
     ctx.old_size = get_be64(ino->i_size);
     ctx.new_size = MAX(get_be64(ino->i_size), offset + count);
     ctx.old_ind_size = ind_size_from_size(fs, ctx.old_size);

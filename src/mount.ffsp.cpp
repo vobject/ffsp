@@ -18,9 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-extern "C" {
-#include "libffsp/ffsp.h"
-}
+#include "libffsp/ffsp.hpp"
 
 #include "fuse_ffsp.hpp"
 

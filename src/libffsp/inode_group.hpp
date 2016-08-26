@@ -18,23 +18,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MKFS_H
-#define MKFS_H
+#ifndef INODE_GROUP_H
+#define INODE_GROUP_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
-struct ffsp_mkfs_options
-{
-    uint32_t clustersize;
-    uint32_t erasesize;
-    uint32_t ninoopen;
-    uint32_t neraseopen;
-    uint32_t nerasereserve;
-    uint32_t nerasewrites;
-};
+int ffsp_read_inode_group(struct ffsp* fs, unsigned int cl_id,
+                          struct ffsp_inode** inodes);
+int ffsp_get_inode_group(const struct ffsp* fs, struct ffsp_inode** inodes,
+                         int ino_cnt, struct ffsp_inode** group);
+int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt);
 
-int ffsp_mkfs(const char* path, const struct ffsp_mkfs_options* options);
-
-int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options);
-
-#endif /* MKFS_H */
+#endif /* INODE_GROUP_H */

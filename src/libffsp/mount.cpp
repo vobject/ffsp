@@ -18,14 +18,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "ffsp.h"
-#include "log.h"
-#include "eraseblk.h"
-#include "inode.h"
-#include "inode_cache.h"
-#include "utils.h"
-#include "io_raw.h"
-#include "mount.h"
+#include "ffsp.hpp"
+#include "log.hpp"
+#include "eraseblk.hpp"
+#include "inode.hpp"
+#include "inode_cache.hpp"
+#include "utils.hpp"
+#include "io_raw.hpp"
+#include "mount.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -74,7 +74,7 @@ static void read_eb_usage(struct ffsp* fs)
     // Size of the array that holds the erase block meta information
     size = fs->neraseblocks * sizeof(struct ffsp_eraseblk);
 
-    fs->eb_usage = malloc(size);
+    fs->eb_usage = (struct ffsp_eraseblk*)malloc(size);
     if (!fs->eb_usage)
     {
         FFSP_ERROR("malloc(erase blocks - size=%d) failed", size);
@@ -98,7 +98,7 @@ static void read_ino_map(struct ffsp* fs)
     // Size of the array in bytes holding the cluster ids.
     size = fs->nino * sizeof(uint32_t);
 
-    fs->ino_map = malloc(size);
+    fs->ino_map = (be32_t*)malloc(size);
     if (!fs->ino_map)
     {
         FFSP_ERROR("malloc(inode ids - size=%d) failed", size);
@@ -128,7 +128,7 @@ static void read_cl_occupancy(struct ffsp* fs)
     }
 
     cl_occ_size = (size / fs->clustersize) * sizeof(int);
-    fs->cl_occupancy = malloc(cl_occ_size);
+    fs->cl_occupancy = (int*)malloc(cl_occ_size);
     if (!fs->cl_occupancy)
     {
         FFSP_ERROR("malloc(cluster occupancy array) failed");
@@ -228,7 +228,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
     ffsp_inode_cache_init(fs, &fs->ino_cache);
 
     ino_bitmask_size = fs->nino / sizeof(uint32_t) + 1;
-    fs->ino_status_map = malloc(ino_bitmask_size);
+    fs->ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
     if (!fs->ino_status_map)
     {
         FFSP_ERROR("malloc(dirty inodes mask) failed");
@@ -241,7 +241,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
     fs->dirty_ino_cnt = 0;
 
     gcinfo_size = (fs->neraseopen - 1) * sizeof(struct ffsp_gcinfo);
-    fs->gcinfo = malloc(gcinfo_size);
+    fs->gcinfo = (struct ffsp_gcinfo*)malloc(gcinfo_size);
     if (!fs->gcinfo)
     {
         FFSP_ERROR("malloc(gcinfo) failed");
@@ -249,7 +249,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
     }
     init_gcinfo(fs);
 
-    fs->buf = malloc(fs->erasesize);
+    fs->buf = (char*)malloc(fs->erasesize);
     if (!fs->buf)
     {
         FFSP_ERROR("ffsp_mount(): malloc(erasesize) failed");

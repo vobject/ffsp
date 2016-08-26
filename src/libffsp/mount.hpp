@@ -18,19 +18,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef IO_H
-#define IO_H
+#ifndef MOUNT_H
+#define MOUNT_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
-#include <stddef.h>
-#include <stdint.h>
+int ffsp_mount(struct ffsp* fs, const char* path);
+void ffsp_unmount(struct ffsp* fs);
 
-int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino,
-                  uint64_t length);
-int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
-              size_t count, uint64_t offset);
-int ffsp_write(struct ffsp* fs, struct ffsp_inode* ino,
-               const void* buf, size_t count, uint64_t offset);
-
-#endif /* IO_H */
+#endif /* MOUNT_H */

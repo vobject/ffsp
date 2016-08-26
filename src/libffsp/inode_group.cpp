@@ -18,13 +18,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.h"
-#include "ffsp.h"
-#include "io_raw.h"
-#include "eraseblk.h"
-#include "inode.h"
-#include "inode_cache.h"
-#include "inode_group.h"
+#include "log.hpp"
+#include "ffsp.hpp"
+#include "io_raw.hpp"
+#include "eraseblk.hpp"
+#include "inode.hpp"
+#include "inode_cache.hpp"
+#include "inode_group.hpp"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -37,7 +37,7 @@ static void group_inodes(const struct ffsp* fs, struct ffsp_inode** group,
 {
     unsigned int ino_size;
     unsigned int cl_filling = 0;
-    char* buf_ptr = cl_buf;
+    char* buf_ptr = (char*)cl_buf;
 
     for (int i = 0; i < group_elem_cnt; i++)
     {
@@ -145,7 +145,7 @@ int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt)
     mode = get_be32(inodes[0]->i_mode);
 
     /* an inode group can have a max size of ino_cnt elements */
-    group = malloc(ino_cnt * sizeof(struct ffsp_inode*));
+    group = (struct ffsp_inode**)malloc(ino_cnt * sizeof(struct ffsp_inode*));
     if (!group)
     {
         FFSP_ERROR("malloc(inode group) failed");

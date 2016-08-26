@@ -18,17 +18,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "ffsp.h"
-#include "log.h"
-#include "bitops.h"
-#include "eraseblk.h"
-#include "gc.h"
-#include "io.h"
-#include "io_raw.h"
-#include "utils.h"
-#include "inode_cache.h"
-#include "inode_group.h"
-#include "inode.h"
+#include "ffsp.hpp"
+#include "log.hpp"
+#include "bitops.hpp"
+#include "eraseblk.hpp"
+#include "gc.hpp"
+#include "io.hpp"
+#include "io_raw.hpp"
+#include "utils.hpp"
+#include "inode_cache.hpp"
+#include "inode_group.hpp"
+#include "inode.hpp"
 
 #include <sys/stat.h>
 #include <stdbool.h>
@@ -48,7 +48,7 @@ struct ffsp_inode* ffsp_allocate_inode(const struct ffsp* fs)
 {
     struct ffsp_inode* ino;
 
-    ino = malloc(fs->clustersize);
+    ino = (struct ffsp_inode*)malloc(fs->clustersize);
     if (!ino)
     {
         FFSP_ERROR("malloc(inode) failed");
@@ -136,7 +136,7 @@ static void mk_directory(struct ffsp_inode* ino, unsigned int parent_no)
 {
     struct ffsp_dentry* dentry_ptr;
 
-    dentry_ptr = ffsp_inode_data(ino);
+    dentry_ptr = (struct ffsp_dentry*)ffsp_inode_data(ino);
 
     // Add "." and ".." to the embedded data section
     dentry_ptr[0].ino = ino->i_no;
@@ -323,7 +323,7 @@ int ffsp_lookup_no(struct ffsp* fs, struct ffsp_inode** ino, uint32_t ino_no)
 	 * Read it from disk and add it to the inode list. */
 
     /* How many inodes may fit into one cluster? */
-    inodes = malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
+    inodes = (struct ffsp_inode**)malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
                     sizeof(struct ffsp_inode*));
     if (!inodes)
     {
@@ -450,7 +450,7 @@ int ffsp_flush_inodes(struct ffsp* fs, bool force)
     if (!force && !should_write_inodes(fs))
         return 0;
 
-    inodes = malloc(fs->dirty_ino_cnt * sizeof(struct ffsp_inode*));
+    inodes = (struct ffsp_inode**)malloc(fs->dirty_ino_cnt * sizeof(struct ffsp_inode*));
     if (!inodes)
     {
         FFSP_ERROR("malloc(dirty inodes cache) failed");
@@ -692,7 +692,7 @@ int ffsp_unlink(struct ffsp* fs, const char* path)
                 return -1;
             }
             ind_cnt = ((file_size - 1) / ind_size) + 1;
-            ind_ptr = ffsp_inode_data(ino);
+            ind_ptr = (be32_t*)ffsp_inode_data(ino);
             ffsp_invalidate_ind_ptr(fs, ind_ptr, ind_cnt, ind_type);
         }
         ffsp_inode_cache_remove(fs->ino_cache, ino);
@@ -788,7 +788,7 @@ int ffsp_rmdir(struct ffsp* fs, const char* path)
             return -1;
         }
         ind_cnt = ((file_size - 1) / ind_size) + 1;
-        ind_ptr = ffsp_inode_data(ino);
+        ind_ptr = (be32_t*)ffsp_inode_data(ino);
         ffsp_invalidate_ind_ptr(fs, ind_ptr, ind_cnt, ind_type);
     }
     ffsp_inode_cache_remove(fs->ino_cache, ino);
@@ -898,7 +898,7 @@ int ffsp_cache_dir(const struct ffsp* fs, struct ffsp_inode* ino,
     // Number of bytes till the end of the last valid dentry.
     data_size = get_be64(ino->i_size);
 
-    *dent_buf = malloc(data_size);
+    *dent_buf = (struct ffsp_dentry*)malloc(data_size);
     if (!*dent_buf)
     {
         FFSP_ERROR("ffsp_cache_dir(): malloc() failed.");

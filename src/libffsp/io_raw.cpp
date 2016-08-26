@@ -18,9 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "io_raw.h"
-#include "log.h"
-#include "debug.h"
+#include "io_raw.hpp"
+#include "log.hpp"
+#include "debug.hpp"
 
 #include <limits.h>
 #include <errno.h>

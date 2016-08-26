@@ -18,9 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "mkfs.h"
-#include "io_raw.h"
-#include "utils.h"
+#include "mkfs.hpp"
+#include "io_raw.hpp"
+#include "utils.hpp"
 
 #include <sys/stat.h>
 #include <stdio.h>

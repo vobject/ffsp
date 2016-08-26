@@ -18,14 +18,25 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef GC_H
-#define GC_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
-unsigned int ffsp_gcinfo_update_writetime(struct ffsp* fs, int eb_type);
-unsigned int ffsp_gcinfo_inc_writecnt(struct ffsp* fs, int eb_type);
+#include <time.h>
 
-void ffsp_gc(struct ffsp* fs);
+struct stat;
+struct statvfs;
 
-#endif /* GC_H */
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+void ffsp_update_time(struct ffsp_timespec* dest);
+
+void ffsp_stat(struct ffsp* fs, const struct ffsp_inode* ino,
+               struct stat* stbuf);
+void ffsp_statfs(struct ffsp* fs, struct statvfs* sfs);
+void ffsp_utimens(struct ffsp* fs, struct ffsp_inode* ino,
+                  const struct timespec tvi[2]);
+
+#endif /* UTILS_H */

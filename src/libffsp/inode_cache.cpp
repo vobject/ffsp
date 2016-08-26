@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.h"
-#include "inode_cache.h"
+#include "log.hpp"
+#include "inode_cache.hpp"
 
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +30,7 @@ void ffsp_inode_cache_init(const struct ffsp* fs,
     int buf_size;
     void* buf;
 
-    *cache = malloc(sizeof(struct ffsp_inode_cache));
+    *cache = (struct ffsp_inode_cache*)malloc(sizeof(struct ffsp_inode_cache));
     if (!*cache)
     {
         FFSP_ERROR("malloc(ffsp_inode_cache) failed");
@@ -48,7 +48,7 @@ void ffsp_inode_cache_init(const struct ffsp* fs,
 
     (*cache)->count = fs->nino;
     (*cache)->valid = 0;
-    (*cache)->buf = buf;
+    (*cache)->buf = (struct ffsp_inode**)buf;
 }
 
 void ffsp_inode_cache_uninit(struct ffsp_inode_cache** cache)

@@ -21,9 +21,7 @@
 #ifndef FFSP_TEST_UTILS_HPP
 #define FFSP_TEST_UTILS_HPP
 
-extern "C" {
-#include "libffsp/mkfs.h"
-}
+#include "libffsp/mkfs.hpp"
 
 #include <stdint.h>
 

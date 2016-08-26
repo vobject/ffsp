@@ -21,7 +21,7 @@
 #ifndef INODE_CACHE_H
 #define INODE_CACHE_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
 struct ffsp_inode_cache_status
 {

@@ -21,7 +21,7 @@
 #ifndef FFSP_H
 #define FFSP_H
 
-#include "byteorder.h"
+#include "byteorder.hpp"
 
 #include <assert.h>
 #include <stdint.h>

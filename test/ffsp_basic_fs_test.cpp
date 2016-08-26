@@ -1,10 +1,8 @@
 #include "gtest/gtest.h"
 
-extern "C" {
-#include "libffsp/mkfs.h"
-#include "libffsp/mount.h"
-#include "libffsp/io_raw.h"
-}
+#include "libffsp/mkfs.hpp"
+#include "libffsp/mount.hpp"
+#include "libffsp/io_raw.hpp"
 
 #include "ffsp_test_utils.hpp"
 

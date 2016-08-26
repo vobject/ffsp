@@ -21,7 +21,7 @@
 #ifndef INODE_H
 #define INODE_H
 
-#include "ffsp.h"
+#include "ffsp.hpp"
 
 #include <sys/types.h>
 #include <stdbool.h>

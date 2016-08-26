@@ -18,15 +18,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "log.h"
-#include "debug.h"
-#include "bitops.h"
-#include "eraseblk.h"
-#include "inode.h"
-#include "inode_group.h"
-#include "io_raw.h"
-#include "summary.h"
-#include "gc.h"
+#include "log.hpp"
+#include "debug.hpp"
+#include "bitops.hpp"
+#include "eraseblk.hpp"
+#include "inode.hpp"
+#include "inode_group.hpp"
+#include "io_raw.hpp"
+#include "summary.hpp"
+#include "gc.hpp"
 
 #include <stdlib.h>
 #include <string.h>
@@ -104,7 +104,7 @@ static bool is_clin_valid(struct ffsp* fs, unsigned int cl_id,
     if (!(flags & FFSP_DATA_CLIN) || !size)
         return false;
 
-    ind_ptr = ffsp_inode_data(ino);
+    ind_ptr = (be32_t*)ffsp_inode_data(ino);
     ind_last = (size - 1) / fs->clustersize;
 
     for (int i = 0; i <= ind_last; i++)
@@ -122,7 +122,7 @@ static void swap_cluster_id(struct ffsp* fs, unsigned int ino_no,
 
     ffsp_lookup_no(fs, &ino, ino_no);
 
-    ind_ptr = ffsp_inode_data(ino);
+    ind_ptr = (be32_t*)ffsp_inode_data(ino);
     ind_last = (get_be64(ino->i_size) - 1) / fs->clustersize;
 
     for (int i = 0; i <= ind_last; i++)
@@ -253,7 +253,7 @@ static int move_inodes(struct ffsp* fs, unsigned int src_eb_id,
     max_cvalid = fs->erasesize / fs->clustersize;
 
     /* How many inodes may fit into one cluster? */
-    inodes = malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
+    inodes = (struct ffsp_inode**)malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
                     sizeof(struct ffsp_inode*));
     if (!inodes)
     {
