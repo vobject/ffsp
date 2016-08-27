@@ -53,10 +53,10 @@ static int get_eraseblk_cnt(int fd, int eb_size)
 static int get_inode_cnt(const int eb_size, int cl_size, int eb_cnt)
 {
     // Note that the first inode number is always invalid.
-    return (eb_size                                    // Only look at the first erase block
-            - cl_size                                  // super block aligned to clustersize
-            - (eb_cnt * sizeof(struct ffsp_eraseblk))) // eb usage
-           / sizeof(uint32_t);                         // inodes are 4 bytes in size
+    return (eb_size                             // Only look at the first erase block
+            - cl_size                           // super block aligned to clustersize
+            - (eb_cnt * sizeof(ffsp_eraseblk))) // eb usage
+           / sizeof(uint32_t);                  // inodes are 4 bytes in size
 
     // TODO: FFSP_RESERVED_INODE_ID is not taken care of.
     //  But it is highly unlikely that the file system is created with
@@ -64,7 +64,7 @@ static int get_inode_cnt(const int eb_size, int cl_size, int eb_cnt)
     //  to be used as a valid inode_no.
 }
 
-int ffsp_mkfs(const char* path, const struct ffsp_mkfs_options* options)
+int ffsp_mkfs(const char* path, const ffsp_mkfs_options* options)
 {
     int rc;
     int fd;
@@ -94,7 +94,7 @@ int ffsp_mkfs(const char* path, const struct ffsp_mkfs_options* options)
     return 0;
 }
 
-int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options)
+int ffsp_fmkfs(int fd, const ffsp_mkfs_options* options)
 {
     int rc;
     int eb_cnt;
@@ -102,8 +102,8 @@ int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options)
     char* eb_buf;
     unsigned int eb_buf_written;
     unsigned int max_writeops;
-    struct ffsp_super sb;
-    struct ffsp_eraseblk eb;
+    ffsp_super sb;
+    ffsp_eraseblk eb;
 
     memset(&sb, 0, sizeof(sb));
     memset(&eb, 0, sizeof(eb));
@@ -188,9 +188,9 @@ int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options)
     }
 
     // Create the inode for the root directory
-    struct ffsp_inode root;
+    ffsp_inode root;
     memset(&root, 0, sizeof(root));
-    root.i_size = put_be64(sizeof(struct ffsp_dentry) * 2);
+    root.i_size = put_be64(sizeof(ffsp_dentry) * 2);
     root.i_flags = put_be32(FFSP_DATA_EMB);
     root.i_no = put_be32(1);
     root.i_nlink = put_be32(2);
@@ -208,7 +208,7 @@ int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options)
     eb_buf_written = sizeof(root);
 
     // Fill the embedded data with file and/or directory entries
-    struct ffsp_dentry dot; // "."
+    ffsp_dentry dot; // "."
     memset(&dot, 0, sizeof(dot));
     dot.ino = put_be32(1);
     dot.len = (uint8_t)strlen(".");
@@ -216,7 +216,7 @@ int ffsp_fmkfs(int fd, const struct ffsp_mkfs_options* options)
     memcpy(eb_buf + eb_buf_written, &dot, sizeof(dot));
     eb_buf_written += sizeof(dot);
 
-    struct ffsp_dentry dotdot; // ".."
+    ffsp_dentry dotdot; // ".."
     memset(&dotdot, 0, sizeof(dotdot));
     dotdot.ino = put_be32(1);
     dotdot.len = (uint8_t)strlen("..");

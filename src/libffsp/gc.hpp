@@ -23,9 +23,9 @@
 
 #include "ffsp.hpp"
 
-unsigned int ffsp_gcinfo_update_writetime(struct ffsp* fs, int eb_type);
-unsigned int ffsp_gcinfo_inc_writecnt(struct ffsp* fs, int eb_type);
+unsigned int ffsp_gcinfo_update_writetime(ffsp* fs, int eb_type);
+unsigned int ffsp_gcinfo_inc_writecnt(ffsp* fs, int eb_type);
 
-void ffsp_gc(struct ffsp* fs);
+void ffsp_gc(ffsp* fs);
 
 #endif /* GC_H */

@@ -30,7 +30,7 @@
 #include <cstring>
 
 /* copy grouped elements into the cluster buffer. */
-static void group_inodes(const struct ffsp* fs, struct ffsp_inode** group,
+static void group_inodes(const ffsp* fs, ffsp_inode** group,
                          int group_elem_cnt, void* cl_buf)
 {
     unsigned int ino_size;
@@ -47,14 +47,14 @@ static void group_inodes(const struct ffsp* fs, struct ffsp_inode** group,
 }
 
 /* Read all valid inodes from the specified cluster. */
-int ffsp_read_inode_group(struct ffsp* fs, unsigned int cl_id,
-                          struct ffsp_inode** inodes)
+int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
+                          ffsp_inode** inodes)
 {
     int rc;
     uint64_t cl_offset;
     int ino_cnt;
     char* ino_buf;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
     unsigned int ino_size;
 
     cl_offset = cl_id * fs->clustersize;
@@ -67,7 +67,7 @@ int ffsp_read_inode_group(struct ffsp* fs, unsigned int cl_id,
 
     while ((ino_buf - fs->buf) < (ptrdiff_t)fs->clustersize)
     {
-        ino = (struct ffsp_inode*)ino_buf;
+        ino = (ffsp_inode*)ino_buf;
         ino_size = ffsp_get_inode_size(fs, ino);
 
         if (ffsp_is_inode_valid(fs, cl_id, ino))
@@ -87,8 +87,8 @@ int ffsp_read_inode_group(struct ffsp* fs, unsigned int cl_id,
  * those in 'group'. The grouped pointer are invalidated in 'inodes'.
  * Return the number of inodes grouped together.
  */
-int ffsp_get_inode_group(const struct ffsp* fs, struct ffsp_inode** inodes,
-                         int ino_cnt, struct ffsp_inode** group)
+int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
+                         int ino_cnt, ffsp_inode** group)
 {
     unsigned int free_bytes;
     unsigned int inode_size;
@@ -124,12 +124,12 @@ int ffsp_get_inode_group(const struct ffsp* fs, struct ffsp_inode** inodes,
  * Group as many inodes as possible into one cluster, write the cluster
  * to disk and update all meta data.
  */
-int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt)
+int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, int ino_cnt)
 {
     int rc;
     uint32_t mode;
     int eb_type;
-    struct ffsp_inode** group;
+    ffsp_inode** group;
     int group_elem_cnt;
     unsigned int eb_id;
     unsigned int cl_id;
@@ -143,7 +143,7 @@ int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt)
     mode = get_be32(inodes[0]->i_mode);
 
     /* an inode group can have a max size of ino_cnt elements */
-    group = (struct ffsp_inode**)malloc(ino_cnt * sizeof(struct ffsp_inode*));
+    group = (ffsp_inode**)malloc(ino_cnt * sizeof(ffsp_inode*));
     if (!group)
     {
         ffsp_log().critical("malloc(inode group) failed");

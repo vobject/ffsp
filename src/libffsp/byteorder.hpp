@@ -36,18 +36,20 @@
 #include <endian.h>
 #endif
 
-typedef struct
+struct be16_t
 {
     uint16_t v;
-} be16_t;
-typedef struct
+};
+
+struct be32_t
 {
     uint32_t v;
-} be32_t;
-typedef struct
+};
+
+struct be64_t
 {
     uint64_t v;
-} be64_t;
+};
 
 static inline uint16_t be16_to_cpu(be16_t b)
 {

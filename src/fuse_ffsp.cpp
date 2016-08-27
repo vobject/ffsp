@@ -56,12 +56,12 @@ static struct params
 } params;
 
 // Convert from fuse_file_info->fh to ffsp_inode...
-static struct ffsp_inode* get_inode(const struct fuse_file_info* fi)
+static ffsp_inode* get_inode(const fuse_file_info* fi)
 {
-    return (struct ffsp_inode*)(size_t)fi->fh;
+    return (ffsp_inode*)(size_t)fi->fh;
 }
 // ... and back to fuse_file_info->fh.
-static void set_inode(struct fuse_file_info* fi, const struct ffsp_inode* ino)
+static void set_inode(fuse_file_info* fi, const ffsp_inode* ino)
 {
     fi->fh = (size_t)ino;
 }
@@ -71,7 +71,7 @@ void set_params(const std::string& device)
     params.device = device;
 }
 
-void* init(struct fuse_conn_info* conn)
+void* init(fuse_conn_info* conn)
 {
     ffsp_log_init();
 
@@ -124,7 +124,7 @@ int getattr(ffsp& fs, const char* path, struct stat* stbuf)
 #endif
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
     {
@@ -175,14 +175,14 @@ int getattr(ffsp& fs, const char* path, struct stat* stbuf)
 
 int readdir(ffsp& fs, const char* path, void* buf,
             fuse_fill_dir_t filler, FUSE_OFF_T offset,
-            struct fuse_file_info* fi)
+            fuse_file_info* fi)
 {
     (void)offset;
     (void)fi;
 
     int rc;
-    struct ffsp_inode* ino;
-    struct ffsp_dentry* dent_buf;
+    ffsp_inode* ino;
+    ffsp_dentry* dent_buf;
     int dent_cnt;
 
     rc = ffsp_lookup(&fs, &ino, path);
@@ -210,10 +210,10 @@ int readdir(ffsp& fs, const char* path, void* buf,
     return 0;
 }
 
-int open(ffsp& fs, const char* path, struct fuse_file_info* fi)
+int open(ffsp& fs, const char* path, fuse_file_info* fi)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
         return 0;
@@ -233,7 +233,7 @@ int open(ffsp& fs, const char* path, struct fuse_file_info* fi)
     return 0;
 }
 
-int release(ffsp& fs, const char* path, struct fuse_file_info* fi)
+int release(ffsp& fs, const char* path, fuse_file_info* fi)
 {
     (void)fs;
     (void)path;
@@ -245,7 +245,7 @@ int release(ffsp& fs, const char* path, struct fuse_file_info* fi)
 int truncate(ffsp& fs, const char* path, FUSE_OFF_T length)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     if (length < 0)
         return -EINVAL;
@@ -259,10 +259,10 @@ int truncate(ffsp& fs, const char* path, FUSE_OFF_T length)
 }
 
 int read(ffsp& fs, const char* path, char* buf, size_t count,
-         FUSE_OFF_T offset, struct fuse_file_info* fi)
+         FUSE_OFF_T offset, fuse_file_info* fi)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     if (offset < 0)
         return -EINVAL;
@@ -286,10 +286,10 @@ int read(ffsp& fs, const char* path, char* buf, size_t count,
 }
 
 int write(ffsp& fs, const char* path, const char* buf, size_t count,
-          FUSE_OFF_T offset, struct fuse_file_info* fi)
+          FUSE_OFF_T offset, fuse_file_info* fi)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     if (offset < 0)
         return -EINVAL;
@@ -390,7 +390,7 @@ int rename(ffsp& fs, const char* oldpath, const char* newpath)
 int utimens(ffsp& fs, const char* path, const struct timespec tv[2])
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     rc = ffsp_lookup(&fs, &ino, path);
     if (rc < 0)
@@ -403,7 +403,7 @@ int utimens(ffsp& fs, const char* path, const struct timespec tv[2])
 int chmod(ffsp& fs, const char* path, mode_t mode)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     rc = ffsp_lookup(&fs, &ino, path);
     if (rc < 0)
@@ -418,7 +418,7 @@ int chmod(ffsp& fs, const char* path, mode_t mode)
 int chown(ffsp& fs, const char* path, uid_t uid, gid_t gid)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
 
     rc = ffsp_lookup(&fs, &ino, path);
     if (rc < 0)
@@ -439,7 +439,7 @@ int statfs(ffsp& fs, const char* path, struct statvfs* sfs)
     return 0;
 }
 
-int flush(ffsp& fs, const char* path, struct fuse_file_info* fi)
+int flush(ffsp& fs, const char* path, fuse_file_info* fi)
 {
     (void)fs;
     (void)fi;
@@ -454,7 +454,7 @@ int flush(ffsp& fs, const char* path, struct fuse_file_info* fi)
     return 0;
 }
 
-int fsync(ffsp& fs, const char* path, int datasync, struct fuse_file_info* fi)
+int fsync(ffsp& fs, const char* path, int datasync, fuse_file_info* fi)
 {
     (void)fs;
     (void)datasync;

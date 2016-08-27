@@ -37,7 +37,7 @@ struct write_context
     size_t bytes_left;
     uint64_t offset;
 
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
     be32_t* ind_ptr;
     uint64_t old_size;
     uint64_t new_size;
@@ -47,24 +47,24 @@ struct write_context
     int new_type;
 };
 
-static uint32_t max_emb_size(const struct ffsp* fs)
+static uint32_t max_emb_size(const ffsp* fs)
 {
-    return fs->clustersize - sizeof(struct ffsp_inode);
+    return fs->clustersize - sizeof(ffsp_inode);
 }
 
-static uint64_t max_clin_size(const struct ffsp* fs)
+static uint64_t max_clin_size(const ffsp* fs)
 {
     // Number of possible pointers to indirect clusters times
     //  size of an indirect cluster.
-    return (fs->clustersize - sizeof(struct ffsp_inode)) /
+    return (fs->clustersize - sizeof(ffsp_inode)) /
            sizeof(be32_t) * fs->clustersize;
 }
 
-static uint64_t max_ebin_size(const struct ffsp* fs)
+static uint64_t max_ebin_size(const ffsp* fs)
 {
     // Number of possible pointers to indirect erase blocks times
     //  size of an indirect erase block.
-    return (fs->clustersize - sizeof(struct ffsp_inode)) /
+    return (fs->clustersize - sizeof(ffsp_inode)) /
            sizeof(be32_t) * fs->erasesize;
 }
 
@@ -83,7 +83,7 @@ static int ind_from_offset(uint64_t offset, uint32_t ind_size)
     return offset / ind_size;
 }
 
-static int ind_size_from_size(struct ffsp* fs, uint64_t size)
+static int ind_size_from_size(ffsp* fs, uint64_t size)
 {
     if (size > max_clin_size(fs))
         return fs->erasesize;
@@ -93,7 +93,7 @@ static int ind_size_from_size(struct ffsp* fs, uint64_t size)
         return 0; // No indirect data for this file size
 }
 
-static int data_type_from_size(struct ffsp* fs, uint32_t size)
+static int data_type_from_size(ffsp* fs, uint32_t size)
 {
     if (size > max_clin_size(fs))
         return FFSP_DATA_EBIN;
@@ -103,7 +103,7 @@ static int data_type_from_size(struct ffsp* fs, uint32_t size)
         return FFSP_DATA_EMB;
 }
 
-static int write_ind(struct ffsp* fs, struct write_context* ctx,
+static int write_ind(ffsp* fs, write_context* ctx,
                      const char* buf, be32_t* ind_id)
 {
     int rc;
@@ -143,7 +143,7 @@ static int write_ind(struct ffsp* fs, struct write_context* ctx,
     return rc;
 }
 
-static int read_emb(const struct ffsp* fs, struct ffsp_inode* ino,
+static int read_emb(const ffsp* fs, ffsp_inode* ino,
                     char* buf, size_t size, uint64_t offset)
 {
     (void)fs;
@@ -157,7 +157,7 @@ static int read_emb(const struct ffsp* fs, struct ffsp_inode* ino,
     return size;
 }
 
-static int read_ind(const struct ffsp* fs, struct ffsp_inode* ino, char* buf,
+static int read_ind(const ffsp* fs, ffsp_inode* ino, char* buf,
                     size_t count, uint64_t offset, uint32_t ind_size)
 {
     int ind_index;   /* current cluster id from the embedded data */
@@ -201,7 +201,7 @@ static int read_ind(const struct ffsp* fs, struct ffsp_inode* ino, char* buf,
     return count - bytes_left;
 }
 
-static int trunc_emb2ind(struct ffsp* fs, struct write_context* ctx,
+static int trunc_emb2ind(ffsp* fs, write_context* ctx,
                          const char* ind_buf)
 {
     int rc;
@@ -226,7 +226,7 @@ static int trunc_emb2ind(struct ffsp* fs, struct write_context* ctx,
     return 0;
 }
 
-static int trunc_ind2emb(struct ffsp* fs, struct write_context* ctx)
+static int trunc_ind2emb(ffsp* fs, write_context* ctx)
 {
     int rc;
     int ind_last;
@@ -255,7 +255,7 @@ static int trunc_ind2emb(struct ffsp* fs, struct write_context* ctx)
     return 0;
 }
 
-static int trunc_clin2ebin(struct ffsp* fs, struct write_context* ctx)
+static int trunc_clin2ebin(ffsp* fs, write_context* ctx)
 {
     int rc;
     uint64_t written;
@@ -324,7 +324,7 @@ error:
     return rc;
 }
 
-static int trunc_ind(struct ffsp* fs, struct write_context* ctx)
+static int trunc_ind(ffsp* fs, write_context* ctx)
 {
     int ind_first;
     int ind_last;
@@ -359,7 +359,7 @@ static int trunc_ind(struct ffsp* fs, struct write_context* ctx)
     return 0;
 }
 
-static int trunc_clin(struct ffsp* fs, struct write_context* ctx)
+static int trunc_clin(ffsp* fs, write_context* ctx)
 {
     if (ctx->new_type == FFSP_DATA_EBIN)
         return trunc_clin2ebin(fs, ctx);
@@ -369,7 +369,7 @@ static int trunc_clin(struct ffsp* fs, struct write_context* ctx)
         return trunc_ind(fs, ctx);
 }
 
-static int trunc_ebin(struct ffsp* fs, struct write_context* ctx)
+static int trunc_ebin(ffsp* fs, write_context* ctx)
 {
     if (ctx->new_type == FFSP_DATA_EMB)
         return trunc_ind2emb(fs, ctx);
@@ -377,7 +377,7 @@ static int trunc_ebin(struct ffsp* fs, struct write_context* ctx)
         return trunc_ind(fs, ctx);
 }
 
-static int write_emb(struct ffsp* fs, struct write_context* ctx)
+static int write_emb(ffsp* fs, write_context* ctx)
 {
     int rc;
     size_t count;
@@ -454,7 +454,7 @@ static int write_emb(struct ffsp* fs, struct write_context* ctx)
     return count - ctx->bytes_left;
 }
 
-static int write_clin(struct ffsp* fs, struct write_context* ctx)
+static int write_clin(ffsp* fs, write_context* ctx)
 {
     int rc;
     size_t count;
@@ -510,7 +510,7 @@ static int write_clin(struct ffsp* fs, struct write_context* ctx)
     return count - ctx->bytes_left;
 }
 
-static int write_ebin(struct ffsp* fs, struct write_context* ctx)
+static int write_ebin(ffsp* fs, write_context* ctx)
 {
     /*
 	 * TODO: Split this function into smaller functions.
@@ -606,7 +606,7 @@ static int write_ebin(struct ffsp* fs, struct write_context* ctx)
     return count - ctx->bytes_left;
 }
 
-int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
+int ffsp_read(const ffsp* fs, ffsp_inode* ino, void* buf,
               size_t count, uint64_t offset)
 {
     int rc;
@@ -643,11 +643,11 @@ int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
     return rc;
 }
 
-int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino, uint64_t length)
+int ffsp_truncate(ffsp* fs, ffsp_inode* ino, uint64_t length)
 {
     int rc;
     uint32_t i_flags;
-    struct write_context ctx;
+    write_context ctx;
 
     if (length > max_ebin_size(fs))
         return -EFBIG;
@@ -705,12 +705,12 @@ int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino, uint64_t length)
     return rc;
 }
 
-int ffsp_write(struct ffsp* fs, struct ffsp_inode* ino,
+int ffsp_write(ffsp* fs, ffsp_inode* ino,
                const void* buf, size_t count, uint64_t offset)
 {
     int rc;
     uint32_t i_flags;
-    struct write_context ctx;
+    write_context ctx;
 
     if (count == 0)
         return 0;

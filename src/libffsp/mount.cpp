@@ -39,12 +39,12 @@
 #include <unistd.h>
 #endif
 
-static void read_super(struct ffsp* fs)
+static void read_super(ffsp* fs)
 {
     int rc;
-    struct ffsp_super sb;
+    ffsp_super sb;
 
-    rc = ffsp_read_raw(fs->fd, &sb, sizeof(struct ffsp_super), 0);
+    rc = ffsp_read_raw(fs->fd, &sb, sizeof(ffsp_super), 0);
     if (rc < 0)
     {
         ffsp_log().critical("reading super block failed");
@@ -66,15 +66,15 @@ static void read_super(struct ffsp* fs)
     fs->nerasewrites = get_be32(sb.s_nerasewrites);
 }
 
-static void read_eb_usage(struct ffsp* fs)
+static void read_eb_usage(ffsp* fs)
 {
     int size;
     uint64_t offset;
 
     // Size of the array that holds the erase block meta information
-    size = fs->neraseblocks * sizeof(struct ffsp_eraseblk);
+    size = fs->neraseblocks * sizeof(ffsp_eraseblk);
 
-    fs->eb_usage = (struct ffsp_eraseblk*)malloc(size);
+    fs->eb_usage = (ffsp_eraseblk*)malloc(size);
     if (!fs->eb_usage)
     {
         ffsp_log().critical("malloc(erase blocks - size=%d) failed", size);
@@ -90,7 +90,7 @@ static void read_eb_usage(struct ffsp* fs)
     }
 }
 
-static void read_ino_map(struct ffsp* fs)
+static void read_ino_map(ffsp* fs)
 {
     int size;
     uint64_t offset;
@@ -114,7 +114,7 @@ static void read_ino_map(struct ffsp* fs)
     }
 }
 
-static void read_cl_occupancy(struct ffsp* fs)
+static void read_cl_occupancy(ffsp* fs)
 {
     off_t size;
     int cl_occ_size;
@@ -146,7 +146,7 @@ static void read_cl_occupancy(struct ffsp* fs)
     }
 }
 
-void init_gcinfo(struct ffsp* fs)
+void init_gcinfo(ffsp* fs)
 {
     // FIXME: Too much hard coded crap in here!
 
@@ -196,7 +196,7 @@ void init_gcinfo(struct ffsp* fs)
     }
 }
 
-int ffsp_mount(struct ffsp* fs, const char* path)
+int ffsp_mount(ffsp* fs, const char* path)
 {
     int ino_bitmask_size;
     int gcinfo_size;
@@ -240,8 +240,8 @@ int ffsp_mount(struct ffsp* fs, const char* path)
 
     fs->dirty_ino_cnt = 0;
 
-    gcinfo_size = (fs->neraseopen - 1) * sizeof(struct ffsp_gcinfo);
-    fs->gcinfo = (struct ffsp_gcinfo*)malloc(gcinfo_size);
+    gcinfo_size = (fs->neraseopen - 1) * sizeof(ffsp_gcinfo);
+    fs->gcinfo = (ffsp_gcinfo*)malloc(gcinfo_size);
     if (!fs->gcinfo)
     {
         ffsp_log().critical("malloc(gcinfo) failed");
@@ -269,7 +269,7 @@ error:
     return -1;
 }
 
-void ffsp_unmount(struct ffsp* fs)
+void ffsp_unmount(ffsp* fs)
 {
     if (!fs)
         return;

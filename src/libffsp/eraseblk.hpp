@@ -23,19 +23,19 @@
 
 #include "ffsp.hpp"
 
-int ffsp_eb_get_cvalid(const struct ffsp* fs, unsigned int eb_id);
-void ffsp_eb_inc_cvalid(struct ffsp* fs, unsigned int eb_id);
-void ffsp_eb_dec_cvalid(struct ffsp* fs, unsigned int eb_id);
+int ffsp_eb_get_cvalid(const ffsp* fs, unsigned int eb_id);
+void ffsp_eb_inc_cvalid(ffsp* fs, unsigned int eb_id);
+void ffsp_eb_dec_cvalid(ffsp* fs, unsigned int eb_id);
 
-unsigned int ffsp_emtpy_eraseblk_count(const struct ffsp* fs);
-int ffsp_get_eraseblk_type(const struct ffsp* fs, int data_type,
+unsigned int ffsp_emtpy_eraseblk_count(const ffsp* fs);
+int ffsp_get_eraseblk_type(const ffsp* fs, int data_type,
                            uint32_t mode);
 
-int ffsp_find_writable_cluster(struct ffsp* fs, int eb_type,
+int ffsp_find_writable_cluster(ffsp* fs, int eb_type,
                                uint32_t* eb_id, uint32_t* cl_id);
-void ffsp_commit_write_operation(struct ffsp* fs, int eb_type,
+void ffsp_commit_write_operation(ffsp* fs, int eb_type,
                                  uint32_t eb_id, be32_t ino_no);
-void ffsp_close_eraseblks(struct ffsp* fs);
-int ffsp_write_meta_data(const struct ffsp* fs);
+void ffsp_close_eraseblks(ffsp* fs);
+int ffsp_write_meta_data(const ffsp* fs);
 
 #endif /* ERASEBLK_H */

@@ -47,7 +47,7 @@ static bool is_eb_type_collectable(int type)
     return false;
 }
 
-static bool is_eb_collectable(const struct ffsp* fs, unsigned int eb_id)
+static bool is_eb_collectable(const ffsp* fs, unsigned int eb_id)
 {
     int type;
     int cvalid;
@@ -81,11 +81,11 @@ static bool is_eb_collectable(const struct ffsp* fs, unsigned int eb_id)
  * Checks if a given inode (specified by its inode number) still contains
  * an indirect cluster pointer to the given cluster id.
  */
-static bool is_clin_valid(struct ffsp* fs, unsigned int cl_id,
+static bool is_clin_valid(ffsp* fs, unsigned int cl_id,
                           unsigned int ino_no)
 {
     int rc;
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
     unsigned int flags;
     uint64_t size;
     be32_t* ind_ptr;
@@ -113,10 +113,10 @@ static bool is_clin_valid(struct ffsp* fs, unsigned int cl_id,
     return false;
 }
 
-static void swap_cluster_id(struct ffsp* fs, unsigned int ino_no,
+static void swap_cluster_id(ffsp* fs, unsigned int ino_no,
                             unsigned int old_cl_id, unsigned int new_cl_id)
 {
-    struct ffsp_inode* ino;
+    ffsp_inode* ino;
     be32_t* ind_ptr;
     int ind_last;
 
@@ -140,7 +140,7 @@ static void swap_cluster_id(struct ffsp* fs, unsigned int ino_no,
  * Searches inside the erase block usage map for erase blocks that contain
  * no valid data clusters and sets them to "free".
  */
-static void collect_empty_eraseblks(struct ffsp* fs)
+static void collect_empty_eraseblks(ffsp* fs)
 {
     /* erase block id "0" is always reserved */
     for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++)
@@ -161,7 +161,7 @@ static void collect_empty_eraseblks(struct ffsp* fs)
     }
 }
 
-static unsigned int find_empty_eraseblk(const struct ffsp* fs)
+static unsigned int find_empty_eraseblk(const ffsp* fs)
 {
     /* erase block id "0" is always reserved */
     for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++)
@@ -171,7 +171,7 @@ static unsigned int find_empty_eraseblk(const struct ffsp* fs)
 }
 
 /* get a pointer to the gcinfo structure of a specific erase block type */
-static struct ffsp_gcinfo* get_gcinfo(const struct ffsp* fs, int eb_type)
+static ffsp_gcinfo* get_gcinfo(const ffsp* fs, int eb_type)
 {
     for (unsigned int i = 0; i < (fs->neraseopen - 1); i++)
         if (fs->gcinfo[i].eb_type == eb_type)
@@ -187,7 +187,7 @@ static struct ffsp_gcinfo* get_gcinfo(const struct ffsp* fs, int eb_type)
  * TODO: Introduce some sort of garbage collection policies to also take
  * other criteria into account (like last write time).
  */
-static int find_collectable_eb_type(const struct ffsp* fs /*, GC_POLICY*/)
+static int find_collectable_eb_type(const ffsp* fs /*, GC_POLICY*/)
 {
     for (unsigned int i = 0; i < (fs->neraseopen - 1); i++)
         if (fs->gcinfo[i].write_cnt >= fs->nerasewrites)
@@ -199,7 +199,7 @@ static int find_collectable_eb_type(const struct ffsp* fs /*, GC_POLICY*/)
  * Finds the erase block of a given type that contains the least amount
  * of valid clusters.
  */
-static unsigned int find_collectable_eraseblk(struct ffsp* fs, int eb_type)
+static unsigned int find_collectable_eraseblk(ffsp* fs, int eb_type)
 {
     int least_cvalid;
     unsigned int least_cvalid_id;
@@ -238,7 +238,7 @@ static unsigned int find_collectable_eraseblk(struct ffsp* fs, int eb_type)
  * Returns the number of valid inode clusters inside the destination
  * erase block.
  */
-static int move_inodes(struct ffsp* fs, unsigned int src_eb_id,
+static int move_inodes(ffsp* fs, unsigned int src_eb_id,
                        unsigned int dest_eb_id, int dest_moved)
 {
     /* TODO: Error handling missing! */
@@ -246,15 +246,15 @@ static int move_inodes(struct ffsp* fs, unsigned int src_eb_id,
     int max_cvalid;
     uint64_t eb_off;
     uint64_t cl_off;
-    struct ffsp_inode** inodes;
+    ffsp_inode** inodes;
     int ino_cnt;
     unsigned int cl_id;
 
     max_cvalid = fs->erasesize / fs->clustersize;
 
     /* How many inodes may fit into one cluster? */
-    inodes = (struct ffsp_inode**)malloc((fs->clustersize / sizeof(struct ffsp_inode)) *
-                                         sizeof(struct ffsp_inode*));
+    inodes = (ffsp_inode**)malloc((fs->clustersize / sizeof(ffsp_inode)) *
+                                  sizeof(ffsp_inode*));
     if (!inodes)
     {
         ffsp_log().critical("malloc(valid inode pointers) failed");
@@ -298,7 +298,7 @@ static int move_inodes(struct ffsp* fs, unsigned int src_eb_id,
 /*
  * Collects one inode erase block.
  */
-static void collect_inodes(struct ffsp* fs, int eb_type)
+static void collect_inodes(ffsp* fs, int eb_type)
 {
     /* TODO: Error handling missing! */
 
@@ -336,7 +336,7 @@ static void collect_inodes(struct ffsp* fs, int eb_type)
     }
 }
 
-static int move_clin(struct ffsp* fs, unsigned int src_eb_id,
+static int move_clin(ffsp* fs, unsigned int src_eb_id,
                      unsigned int dest_eb_id, int dest_moved, be32_t* dest_eb_summary)
 {
     /* TODO: Error handling missing! */
@@ -384,7 +384,7 @@ static int move_clin(struct ffsp* fs, unsigned int src_eb_id,
     return dest_moved;
 }
 
-static void collect_clin(struct ffsp* fs, int eb_type)
+static void collect_clin(ffsp* fs, int eb_type)
 {
     /* TODO: Error handling missing! */
 
@@ -429,22 +429,22 @@ static void collect_clin(struct ffsp* fs, int eb_type)
     ffsp_delete_summary(eb_summary);
 }
 
-unsigned int ffsp_gcinfo_update_writetime(struct ffsp* fs, int eb_type)
+unsigned int ffsp_gcinfo_update_writetime(ffsp* fs, int eb_type)
 {
-    struct ffsp_gcinfo* gcinfo = get_gcinfo(fs, eb_type);
+    ffsp_gcinfo* gcinfo = get_gcinfo(fs, eb_type);
     return ++gcinfo->write_time;
 }
 
-unsigned int ffsp_gcinfo_inc_writecnt(struct ffsp* fs, int eb_type)
+unsigned int ffsp_gcinfo_inc_writecnt(ffsp* fs, int eb_type)
 {
-    struct ffsp_gcinfo* gcinfo = get_gcinfo(fs, eb_type);
+    ffsp_gcinfo* gcinfo = get_gcinfo(fs, eb_type);
     return ++gcinfo->write_cnt;
 }
 
-void ffsp_gc(struct ffsp* fs)
+void ffsp_gc(ffsp* fs)
 {
     int eb_type;
-    struct ffsp_gcinfo* gcinfo;
+    ffsp_gcinfo* gcinfo;
 
     ffsp_log().debug("ffsp_gc()");
 

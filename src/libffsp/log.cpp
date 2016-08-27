@@ -22,8 +22,8 @@
 
 #include "spdlog/sinks/null_sink.h"
 
-static std::string logname{"ffsp_api"};
-static auto loglevel{spdlog::level::debug};
+static std::string logname{ "ffsp_api" };
+static auto loglevel{ spdlog::level::debug };
 
 void ffsp_log_init()
 {
@@ -58,7 +58,7 @@ spdlog::logger& ffsp_log()
     }
     else
     {
-        static auto null_logger{std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_st>())};
+        static auto null_logger{ std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_st>()) };
         return *null_logger;
     }
 }

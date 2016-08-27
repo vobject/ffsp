@@ -24,20 +24,20 @@
 #include <cstdlib>
 #include <cstring>
 
-void ffsp_inode_cache_init(const struct ffsp* fs,
-                           struct ffsp_inode_cache** cache)
+void ffsp_inode_cache_init(const ffsp* fs,
+                           ffsp_inode_cache** cache)
 {
     int buf_size;
     void* buf;
 
-    *cache = (struct ffsp_inode_cache*)malloc(sizeof(struct ffsp_inode_cache));
+    *cache = (ffsp_inode_cache*)malloc(sizeof(ffsp_inode_cache));
     if (!*cache)
     {
         ffsp_log().critical("malloc(ffsp_inode_cache) failed");
         abort();
     }
 
-    buf_size = fs->nino * sizeof(struct ffsp_inode*);
+    buf_size = fs->nino * sizeof(ffsp_inode*);
     buf = malloc(buf_size);
     if (!buf)
     {
@@ -48,48 +48,48 @@ void ffsp_inode_cache_init(const struct ffsp* fs,
 
     (*cache)->count = fs->nino;
     (*cache)->valid = 0;
-    (*cache)->buf = (struct ffsp_inode**)buf;
+    (*cache)->buf = (ffsp_inode**)buf;
 }
 
-void ffsp_inode_cache_uninit(struct ffsp_inode_cache** cache)
+void ffsp_inode_cache_uninit(ffsp_inode_cache** cache)
 {
     free((*cache)->buf);
     free(*cache);
     *cache = NULL;
 }
 
-void ffsp_inode_cache_insert(struct ffsp_inode_cache* cache,
-                             struct ffsp_inode* ino)
+void ffsp_inode_cache_insert(ffsp_inode_cache* cache,
+                             ffsp_inode* ino)
 {
     cache->buf[get_be32(ino->i_no)] = ino;
     cache->valid++;
 }
 
-int ffsp_inode_cache_entry_count(struct ffsp_inode_cache* cache)
+int ffsp_inode_cache_entry_count(ffsp_inode_cache* cache)
 {
     return cache->valid;
 }
 
-void ffsp_inode_cache_remove(struct ffsp_inode_cache* cache,
-                             struct ffsp_inode* ino)
+void ffsp_inode_cache_remove(ffsp_inode_cache* cache,
+                             ffsp_inode* ino)
 {
     cache->buf[get_be32(ino->i_no)] = FFSP_INVALID_INO_NO;
     cache->valid--;
 }
 
-struct ffsp_inode* ffsp_inode_cache_find(struct ffsp_inode_cache* cache,
-                                         be32_t ino_no)
+ffsp_inode* ffsp_inode_cache_find(ffsp_inode_cache* cache,
+                                  be32_t ino_no)
 {
     return cache->buf[get_be32(ino_no)];
 }
 
-void ffsp_inode_cache_init_status(struct ffsp_inode_cache_status* status)
+void ffsp_inode_cache_init_status(ffsp_inode_cache_status* status)
 {
     status->last_valid_index = 0;
 }
 
-struct ffsp_inode* ffsp_inode_cache_next(struct ffsp_inode_cache* cache,
-                                         struct ffsp_inode_cache_status* status)
+ffsp_inode* ffsp_inode_cache_next(ffsp_inode_cache* cache,
+                                  ffsp_inode_cache_status* status)
 {
     int next_index;
 

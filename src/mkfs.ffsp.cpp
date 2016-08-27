@@ -29,7 +29,7 @@
 #include <cstdlib>
 #include <getopt.h>
 
-struct arguments
+struct mkfs_arguments
 {
     const char* device;
     unsigned int clustersize;
@@ -52,9 +52,9 @@ static void show_usage(const char* progname)
     printf("-w, --write-eb=N Perform garbage collection after N erase blocks have been written (default:5)\n");
 }
 
-static int parse_arguments(int argc, char** argv, struct arguments* args)
+static int parse_arguments(int argc, char** argv, mkfs_arguments* args)
 {
-    static const struct option long_options[] = {
+    static const option long_options[] = {
         { "clustersize", 1, NULL, 'c' },
         { "erasesize", 1, NULL, 'e' },
         { "open-ino", 1, NULL, 'i' },
@@ -124,17 +124,9 @@ static int parse_arguments(int argc, char** argv, struct arguments* args)
     return 0;
 }
 
-static int setup_fs(const struct arguments* args)
+static int setup_fs(const mkfs_arguments* args)
 {
     auto console = spdlog::stdout_logger_mt("console");
-    console->info("Size of in memory data structures:");
-    console->info("\tffsp={}", sizeof(struct ffsp));
-    console->info("\tffsp_super={}", sizeof(struct ffsp_super));
-    console->info("\tffsp_inode={}", sizeof(struct ffsp_inode));
-    console->info("\tffsp_dentry={}", sizeof(struct ffsp_dentry));
-    console->info("\tffsp_timespec={}", sizeof(struct ffsp_timespec));
-    console->info("\tffsp_eraseblk={}", sizeof(struct ffsp_eraseblk));
-
     console->info("Setup file system:");
     console->info("\tdevice={}", args->device);
     console->info("\tclustersize={}", args->clustersize);
@@ -152,7 +144,7 @@ static int setup_fs(const struct arguments* args)
 
 int main(int argc, char* argv[])
 {
-    struct arguments args;
+    mkfs_arguments args;
 
     if (parse_arguments(argc, argv, &args) < 0)
         return EXIT_FAILURE;

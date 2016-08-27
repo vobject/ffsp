@@ -25,7 +25,7 @@
 #include <cstdlib>
 #include <cstring>
 
-be32_t* ffsp_alloc_summary(const struct ffsp* fs)
+be32_t* ffsp_alloc_summary(const ffsp* fs)
 {
     be32_t* summary;
 
@@ -44,12 +44,12 @@ void ffsp_delete_summary(be32_t* summary)
     free(summary);
 }
 
-void ffsp_summary_list_add(struct ffsp_summary_list_node* head,
+void ffsp_summary_list_add(ffsp_summary_list_node* head,
                            be32_t* summary, int eb_type)
 {
-    struct ffsp_summary_list_node* node;
+    ffsp_summary_list_node* node;
 
-    node = (struct ffsp_summary_list_node*)malloc(sizeof(struct ffsp_summary_list_node));
+    node = (ffsp_summary_list_node*)malloc(sizeof(ffsp_summary_list_node));
     if (!node)
     {
         ffsp_log().critical("malloc(summary list node) failed");
@@ -61,11 +61,11 @@ void ffsp_summary_list_add(struct ffsp_summary_list_node* head,
     head->next = node;
 }
 
-void ffsp_summary_list_del(struct ffsp_summary_list_node* head,
+void ffsp_summary_list_del(ffsp_summary_list_node* head,
                            int eb_type)
 {
-    struct ffsp_summary_list_node* tmp;
-    struct ffsp_summary_list_node* node = head;
+    ffsp_summary_list_node* tmp;
+    ffsp_summary_list_node* node = head;
 
     while (node->next && (node->next->eb_type != eb_type))
         node = node->next;
@@ -78,10 +78,10 @@ void ffsp_summary_list_del(struct ffsp_summary_list_node* head,
     }
 }
 
-be32_t* ffsp_summary_list_find(struct ffsp_summary_list_node* head,
+be32_t* ffsp_summary_list_find(ffsp_summary_list_node* head,
                                int eb_type)
 {
-    struct ffsp_summary_list_node* node = head;
+    ffsp_summary_list_node* node = head;
 
     while (node->next && (node->next->eb_type != eb_type))
         node = node->next;
@@ -109,7 +109,7 @@ bool ffsp_has_summary(int eb_type)
     return false;
 }
 
-int ffsp_read_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary)
+int ffsp_read_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary)
 {
     int rc;
     uint64_t eb_off;
@@ -124,7 +124,7 @@ int ffsp_read_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary)
     return rc;
 }
 
-int ffsp_write_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary)
+int ffsp_write_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary)
 {
     int rc;
     uint64_t eb_off;

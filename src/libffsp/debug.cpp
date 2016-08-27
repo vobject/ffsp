@@ -27,14 +27,14 @@
 
 static struct ffsp_debug_info
 {
-    int errors;
     uint64_t read_raw;
     uint64_t write_raw;
     uint64_t fuse_read;
     uint64_t fuse_write;
     uint64_t gc_read;
     uint64_t gc_write;
-} debug_info = { 0, 0, 0, 0, 0, 0, 0 };
+    int errors;
+} debug_info = {};
 
 void ffsp_debug_fuse_stat(struct stat* stbuf)
 {

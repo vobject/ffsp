@@ -25,11 +25,11 @@
 
 #include <cstddef>
 
-int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino,
+int ffsp_truncate(ffsp* fs, ffsp_inode* ino,
                   uint64_t length);
-int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
+int ffsp_read(const ffsp* fs, ffsp_inode* ino, void* buf,
               size_t count, uint64_t offset);
-int ffsp_write(struct ffsp* fs, struct ffsp_inode* ino,
+int ffsp_write(ffsp* fs, ffsp_inode* ino,
                const void* buf, size_t count, uint64_t offset);
 
 #endif /* IO_H */

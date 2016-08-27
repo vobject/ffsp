@@ -23,19 +23,19 @@
 
 #include "ffsp.hpp"
 
-be32_t* ffsp_alloc_summary(const struct ffsp* fs);
+be32_t* ffsp_alloc_summary(const ffsp* fs);
 void ffsp_delete_summary(be32_t* summary);
 
-void ffsp_summary_list_add(struct ffsp_summary_list_node* head,
+void ffsp_summary_list_add(ffsp_summary_list_node* head,
                            be32_t* summary, int eb_type);
-void ffsp_summary_list_del(struct ffsp_summary_list_node* head,
+void ffsp_summary_list_del(ffsp_summary_list_node* head,
                            int eb_type);
-be32_t* ffsp_summary_list_find(struct ffsp_summary_list_node* head,
+be32_t* ffsp_summary_list_find(ffsp_summary_list_node* head,
                                int eb_type);
 
 bool ffsp_has_summary(int eb_type);
-int ffsp_read_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary);
-int ffsp_write_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary);
+int ffsp_read_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary);
+int ffsp_write_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary);
 void ffsp_add_summary_ref(be32_t* summary, unsigned int ino_no, int writeops);
 
 #endif /* SUMMARY_H */

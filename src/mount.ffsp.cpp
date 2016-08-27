@@ -22,8 +22,8 @@
 
 #include "fuse_ffsp.hpp"
 
-#include "spdlog/spdlog.h"
 #include "spdlog/fmt/ostr.h"
+#include "spdlog/spdlog.h"
 
 #include <atomic>
 #include <string>
@@ -58,7 +58,7 @@ std::ostream& operator<<(std::ostream& os, const struct stat& stat)
               << "}";
 }
 
-std::ostream& operator<<(std::ostream& os, const struct fuse_file_info& fi)
+std::ostream& operator<<(std::ostream& os, const fuse_file_info& fi)
 {
     return os << "{"
               << "flags=0x" << std::hex << fi.flags << std::dec
@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& os, const struct statvfs& sfs)
               << "}";
 }
 
-std::ostream& operator<<(std::ostream& os, const struct fuse_conn_info& conn)
+std::ostream& operator<<(std::ostream& os, const fuse_conn_info& conn)
 {
     return os << "{"
               << "protocol_version=" << conn.proto_major << "." << conn.proto_minor
@@ -276,7 +276,7 @@ struct fuse_ffsp_operations
             return rc;
         };
 
-        ops_.open = [](const char* path, struct fuse_file_info* fi) {
+        ops_.open = [](const char* path, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} open(path={}, fi={})", id, deref(path), deref(fi));
@@ -286,7 +286,7 @@ struct fuse_ffsp_operations
         };
 
         ops_.read = [](const char* path, char* buf, size_t count,
-                       FUSE_OFF_T offset, struct fuse_file_info* fi) {
+                       FUSE_OFF_T offset, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} read(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), count, offset, deref(fi));
@@ -296,7 +296,7 @@ struct fuse_ffsp_operations
         };
 
         ops_.write = [](const char* path, const char* buf, size_t count,
-                        FUSE_OFF_T offset, struct fuse_file_info* fi) {
+                        FUSE_OFF_T offset, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} write(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), count, offset, deref(fi));
@@ -314,7 +314,7 @@ struct fuse_ffsp_operations
             return rc;
         };
 
-        ops_.flush = [](const char* path, struct fuse_file_info* fi) {
+        ops_.flush = [](const char* path, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} flush(path={}, fi={})", id, deref(path), deref(fi));
@@ -323,7 +323,7 @@ struct fuse_ffsp_operations
             return rc;
         };
 
-        ops_.release = [](const char* path, struct fuse_file_info* fi) {
+        ops_.release = [](const char* path, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} release(path={}, fi={})", id, deref(path), deref(fi));
@@ -332,7 +332,7 @@ struct fuse_ffsp_operations
             return rc;
         };
 
-        ops_.fsync = [](const char* path, int datasync, struct fuse_file_info* fi) {
+        ops_.fsync = [](const char* path, int datasync, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} fsync(path={}, datasync={}, fi={})", id, deref(path), datasync, deref(fi));
@@ -343,7 +343,7 @@ struct fuse_ffsp_operations
 
         ops_.readdir = [](const char* path, void* buf,
                           fuse_fill_dir_t filler, FUSE_OFF_T offset,
-                          struct fuse_file_info* fi) {
+                          fuse_file_info* fi) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, deref(path), buf, (filler != nullptr), offset, deref(fi));
@@ -352,7 +352,7 @@ struct fuse_ffsp_operations
             return rc;
         };
 
-        ops_.init = [](struct fuse_conn_info* conn) {
+        ops_.init = [](fuse_conn_info* conn) {
             auto id = ++op_id_;
             logger_->info("> {} init(conn={})", id, deref(conn));
             void* private_data = fuse_ffsp::init(conn);
@@ -422,7 +422,7 @@ struct fuse_ffsp_operations
         spdlog::drop("ffsp_api");
     }
 
-    static struct ffsp* get_fs(struct fuse_context* ctx)
+    static ffsp* get_fs(fuse_context* ctx)
     {
         return static_cast<ffsp*>(ctx->private_data);
     }
@@ -463,7 +463,7 @@ enum
     KEY_VERSION,
 };
 
-static struct fuse_opt ffsp_opt[] = {
+static fuse_opt ffsp_opt[] = {
     FUSE_OPT_KEY("-h", KEY_HELP),
     FUSE_OPT_KEY("--help", KEY_HELP),
     FUSE_OPT_KEY("-V", KEY_VERSION),
