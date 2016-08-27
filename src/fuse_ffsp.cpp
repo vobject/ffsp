@@ -73,11 +73,13 @@ void set_params(const std::string& device)
 
 void* init(struct fuse_conn_info* conn)
 {
+    ffsp_log_init();
+
     auto* fs = new ffsp;
 
     if (ffsp_mount(fs, params.device.c_str()) < 0)
     {
-        FFSP_ERROR("ffsp_mount() failed. exiting...");
+        ffsp_log().error("ffsp_mount() failed. exiting...");
         exit(EXIT_FAILURE);
     }
 
@@ -91,11 +93,11 @@ void* init(struct fuse_conn_info* conn)
     {
         conn->want |= FUSE_CAP_BIG_WRITES;
         conn->max_write = fs->clustersize;
-        FFSP_DEBUG("Setting max_write to %u", conn->max_write);
+        ffsp_log().debug("Setting max_write to {}", conn->max_write);
     }
 #else
     conn->max_write = fs->clustersize;
-    FFSP_DEBUG("Setting max_write to %u", conn->max_write);
+    ffsp_log().debug("Setting max_write to {}", conn->max_write);
 #endif
 
     // TODO: Would it be ok to read all existing inode + dentry structs
@@ -111,6 +113,8 @@ void destroy(void* user)
     ffsp* fs = static_cast<ffsp*>(user);
     ffsp_unmount(fs);
     delete fs;
+
+    ffsp_log_deinit();
 }
 
 #ifdef _WIN32
@@ -199,7 +203,7 @@ int readdir(ffsp& fs, const char* path, void* buf,
         if (get_be32(dent_buf[i].ino) == FFSP_INVALID_INO_NO)
             continue; // Invalid ffsp_entry
         if (filler(buf, dent_buf[i].name, NULL, 0))
-            FFSP_DEBUG("readdir(): filler full!");
+            ffsp_log().debug("readdir(): filler full!");
     }
     // TODO: Handle directory cache inside ffsp structure.
     free(dent_buf);
@@ -226,8 +230,6 @@ int open(ffsp& fs, const char* path, struct fuse_file_info* fi)
             return rc;
     }
     set_inode(fi, ino);
-
-    //	FFSP_DEBUG("open(path=%s, trunc=%s) with flags=0x%x fh=0x%llx", path, (fi->flags & O_TRUNC) ? "true" : "false", fi->flags, fi->fh);
     return 0;
 }
 

@@ -50,7 +50,7 @@ struct ffsp_inode* ffsp_allocate_inode(const struct ffsp* fs)
     ino = (struct ffsp_inode*)malloc(fs->clustersize);
     if (!ino)
     {
-        FFSP_ERROR("malloc(inode) failed");
+        ffsp_log().critical("malloc(inode) failed");
         abort();
     }
     memset(ino, 0, fs->clustersize);
@@ -326,7 +326,7 @@ int ffsp_lookup_no(struct ffsp* fs, struct ffsp_inode** ino, uint32_t ino_no)
                                          sizeof(struct ffsp_inode*));
     if (!inodes)
     {
-        FFSP_ERROR("malloc(valid inode pointers) failed");
+        ffsp_log().critical("malloc(valid inode pointers) failed");
         abort();
     }
 
@@ -452,7 +452,7 @@ int ffsp_flush_inodes(struct ffsp* fs, bool force)
     inodes = (struct ffsp_inode**)malloc(fs->dirty_ino_cnt * sizeof(struct ffsp_inode*));
     if (!inodes)
     {
-        FFSP_ERROR("malloc(dirty inodes cache) failed");
+        ffsp_log().critical("malloc(dirty inodes cache) failed");
         abort();
     }
 
@@ -687,7 +687,7 @@ int ffsp_unlink(struct ffsp* fs, const char* path)
             }
             else
             {
-                FFSP_ERROR("ffsp_unlink(): Invalid inode flags");
+                ffsp_log().error("ffsp_unlink(): Invalid inode flags");
                 return -1;
             }
             ind_cnt = ((file_size - 1) / ind_size) + 1;
@@ -700,7 +700,7 @@ int ffsp_unlink(struct ffsp* fs, const char* path)
     }
     else
     {
-        FFSP_ERROR("ffsp_unlink(): Invalid inode link count");
+        ffsp_log().error("ffsp_unlink(): Invalid inode link count");
         return -1;
     }
     ffsp_flush_inodes(fs, false);
@@ -783,7 +783,7 @@ int ffsp_rmdir(struct ffsp* fs, const char* path)
         }
         else
         {
-            FFSP_ERROR("ffsp_rmdir(): Invalid inode flags");
+            ffsp_log().error("ffsp_rmdir(): Invalid inode flags");
             return -1;
         }
         ind_cnt = ((file_size - 1) / ind_size) + 1;
@@ -852,7 +852,7 @@ void ffsp_mark_dirty(struct ffsp* fs, struct ffsp_inode* ino)
     set_bit(fs->ino_status_map, ino_no);
     fs->dirty_ino_cnt++;
 
-    FFSP_DEBUG("inode %u is now DIRTY - dirty_ino_cnt=%u",
+    ffsp_log().debug("inode {} is now DIRTY - dirty_ino_cnt={}",
                ino_no, fs->dirty_ino_cnt);
 
     /* decrement the number of valid inodes inside the old inode's
@@ -883,7 +883,7 @@ void ffsp_reset_dirty(struct ffsp* fs, struct ffsp_inode* ino)
         ino_no = get_be32(ino->i_no);
         clear_bit(fs->ino_status_map, ino_no);
         fs->dirty_ino_cnt--;
-        FFSP_DEBUG("inode %u is now CLEAN - dirty_ino_cnt=%u",
+        ffsp_log().debug("inode {} is now CLEAN - dirty_ino_cnt={}",
                    ino_no, fs->dirty_ino_cnt);
     }
 }
@@ -900,7 +900,7 @@ int ffsp_cache_dir(const struct ffsp* fs, struct ffsp_inode* ino,
     *dent_buf = (struct ffsp_dentry*)malloc(data_size);
     if (!*dent_buf)
     {
-        FFSP_ERROR("ffsp_cache_dir(): malloc() failed.");
+        ffsp_log().critical("ffsp_cache_dir(): malloc() failed.");
         return -1;
     }
 

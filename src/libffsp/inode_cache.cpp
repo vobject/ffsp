@@ -33,7 +33,7 @@ void ffsp_inode_cache_init(const struct ffsp* fs,
     *cache = (struct ffsp_inode_cache*)malloc(sizeof(struct ffsp_inode_cache));
     if (!*cache)
     {
-        FFSP_ERROR("malloc(ffsp_inode_cache) failed");
+        ffsp_log().critical("malloc(ffsp_inode_cache) failed");
         abort();
     }
 
@@ -41,7 +41,7 @@ void ffsp_inode_cache_init(const struct ffsp* fs,
     buf = malloc(buf_size);
     if (!buf)
     {
-        FFSP_ERROR("malloc(ffsp_inode_cache buffer) failed");
+        ffsp_log().critical("malloc(ffsp_inode_cache buffer) failed");
         abort();
     }
     memset(buf, FFSP_INVALID_INO_NO, buf_size);

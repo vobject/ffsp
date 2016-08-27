@@ -86,14 +86,14 @@ int ffsp_read_raw(int fd, void* buf, size_t count, off_t offset)
 
     if (count > SSIZE_MAX)
     {
-        FFSP_DEBUG("ffsp_read_internal(): count > SSIZE_MAX");
+        ffsp_log().debug("ffsp_read_internal(): count > SSIZE_MAX");
     }
 
     rc = do_pread(fd, buf, count, offset);
     if (rc == -1)
     {
         rc = -errno;
-        FFSP_ERROR("ffsp_read_raw(): pread() failed; errno=%d", errno);
+        ffsp_log().error("ffsp_read_raw(): pread() failed; errno={}", errno);
     }
 
     ffsp_debug_update(FFSP_DEBUG_READ_RAW, count);
@@ -111,14 +111,14 @@ int ffsp_write_raw(int fd, const void* buf, size_t count, off_t offset)
 
     if (count > SSIZE_MAX)
     {
-        FFSP_DEBUG("ffsp_write_internal(): count > SSIZE_MAX");
+        ffsp_log().debug("ffsp_write_internal(): count > SSIZE_MAX");
     }
 
     rc = do_pwrite(fd, buf, count, offset);
     if (rc == -1)
     {
         rc = -errno; // Return negative errno
-        FFSP_ERROR("ffsp_write_raw(): pwrite() failed; errno=%d", errno);
+        ffsp_log().error("ffsp_write_raw(): pwrite() failed; errno={}", errno);
     }
 
     ffsp_debug_update(FFSP_DEBUG_WRITE_RAW, count);

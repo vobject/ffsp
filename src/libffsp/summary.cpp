@@ -32,7 +32,7 @@ be32_t* ffsp_alloc_summary(const struct ffsp* fs)
     summary = (be32_t*)malloc(fs->clustersize);
     if (!summary)
     {
-        FFSP_ERROR("malloc(summary) failed");
+        ffsp_log().critical("malloc(summary) failed");
         abort();
     }
     memset(summary, 0, fs->clustersize);
@@ -52,7 +52,7 @@ void ffsp_summary_list_add(struct ffsp_summary_list_node* head,
     node = (struct ffsp_summary_list_node*)malloc(sizeof(struct ffsp_summary_list_node));
     if (!node)
     {
-        FFSP_ERROR("malloc(summary list node) failed");
+        ffsp_log().critical("malloc(summary list node) failed");
         abort();
     }
     node->eb_type = eb_type;
@@ -105,7 +105,7 @@ bool ffsp_has_summary(int eb_type)
         case FFSP_EB_FILE_CLIN:
             return true;
     }
-    FFSP_ERROR("ffsp_has_summary(): Invalid erase block type.");
+    ffsp_log().error("ffsp_has_summary(): Invalid erase block type.");
     return false;
 }
 
@@ -120,7 +120,7 @@ int ffsp_read_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary)
 
     rc = ffsp_read_raw(fs->fd, summary, fs->clustersize, summary_off);
     if (rc < 0)
-        FFSP_ERROR("failed to read erase block summary");
+        ffsp_log().error("failed to read erase block summary");
     return rc;
 }
 
@@ -135,7 +135,7 @@ int ffsp_write_summary(const struct ffsp* fs, uint32_t eb_id, be32_t* summary)
 
     rc = ffsp_write_raw(fs->fd, summary, fs->clustersize, summary_off);
     if (rc < 0)
-        FFSP_ERROR("Failed to write summary for erase block.");
+        ffsp_log().error("Failed to write summary for erase block.");
     return rc;
 }
 

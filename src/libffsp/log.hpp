@@ -21,11 +21,10 @@
 #ifndef LOG_H
 #define LOG_H
 
-#ifndef __GNUC__
-#define __attribute__(x) /* NOTHING */
-#endif
+#include "spdlog/spdlog.h"
 
-void FFSP_DEBUG(const char* format, ...) __attribute__((format(printf, 1, 2)));
-void FFSP_ERROR(const char* format, ...) __attribute__((format(printf, 1, 2)));
+void ffsp_log_init();
+void ffsp_log_deinit();
+spdlog::logger& ffsp_log();
 
 #endif /* LOG_H */

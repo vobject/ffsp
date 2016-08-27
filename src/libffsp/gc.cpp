@@ -257,7 +257,7 @@ static int move_inodes(struct ffsp* fs, unsigned int src_eb_id,
                                          sizeof(struct ffsp_inode*));
     if (!inodes)
     {
-        FFSP_ERROR("malloc(valid inode pointers) failed");
+        ffsp_log().critical("malloc(valid inode pointers) failed");
         abort();
     }
 
@@ -446,11 +446,11 @@ void ffsp_gc(struct ffsp* fs)
     int eb_type;
     struct ffsp_gcinfo* gcinfo;
 
-    FFSP_DEBUG("ffsp_gc()");
+    ffsp_log().debug("ffsp_gc()");
 
     if (ffsp_emtpy_eraseblk_count(fs) < fs->nerasereserve)
     {
-        FFSP_DEBUG("ffsp_gc(): too few free erase blocks present.");
+        ffsp_log().debug("ffsp_gc(): too few free erase blocks present.");
         return;
     }
 
@@ -458,7 +458,7 @@ void ffsp_gc(struct ffsp* fs)
 
     while ((eb_type = find_collectable_eb_type(fs)) != -1)
     {
-        FFSP_DEBUG("ffsp_gc(): collecting eb_type %d", eb_type);
+        ffsp_log().debug("ffsp_gc(): collecting eb_type {}", eb_type);
 
         if (ffsp_has_summary(eb_type))
             /* FIXME: Enable GC of cluster indirect data!

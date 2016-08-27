@@ -251,7 +251,7 @@ void ffsp_commit_write_operation(struct ffsp* fs, int eb_type,
         // The summary for this erase block should already exist.
         eb_summary = ffsp_summary_list_find(&fs->summary_head, eb_type);
         if (!eb_summary)
-            FFSP_ERROR("Cannot find summary for open erase block");
+            ffsp_log().error("Cannot find summary for open erase block");
     }
     // The last cluster of a cluster indirect erase block contains the
     //  inode ids of all inodes that have data inside this erase block.
@@ -309,7 +309,7 @@ void ffsp_close_eraseblks(struct ffsp* fs)
 
         eb_summary = ffsp_summary_list_find(&fs->summary_head, eb_type);
         if (!eb_summary)
-            FFSP_ERROR("Cannot find summary for open erase block");
+            ffsp_log().error("Cannot find summary for open erase block");
 
         ffsp_write_summary(fs, eb_id, eb_summary);
         ffsp_delete_summary(eb_summary);
@@ -346,6 +346,6 @@ int ffsp_write_meta_data(const struct ffsp* fs)
 
     rc = ffsp_write_raw(fs->fd, fs->buf, meta_data_size, offset);
     if (rc < 0)
-        FFSP_ERROR("writing meta data to first erase block failed");
+        ffsp_log().error("writing meta data to first erase block failed");
     return rc;
 }

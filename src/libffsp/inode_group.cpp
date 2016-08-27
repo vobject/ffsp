@@ -146,7 +146,7 @@ int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt)
     group = (struct ffsp_inode**)malloc(ino_cnt * sizeof(struct ffsp_inode*));
     if (!group)
     {
-        FFSP_ERROR("malloc(inode group) failed");
+        ffsp_log().critical("malloc(inode group) failed");
         abort();
     }
 
@@ -158,7 +158,7 @@ int ffsp_write_inodes(struct ffsp* fs, struct ffsp_inode** inodes, int ino_cnt)
         rc = ffsp_find_writable_cluster(fs, eb_type, &eb_id, &cl_id);
         if (rc < 0)
         {
-            FFSP_DEBUG("Failed to find writable cluster or erase block");
+            ffsp_log().debug("Failed to find writable cluster or erase block");
             free(group);
             return rc;
         }

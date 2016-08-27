@@ -19,39 +19,46 @@
  */
 
 #include "log.hpp"
-#include "debug.hpp"
 
-#include <cstdarg>
-#include <cstdio>
+#include "spdlog/sinks/null_sink.h"
 
-void FFSP_DEBUG(const char* format, ...)
+static std::string logname{"ffsp_api"};
+static auto loglevel{spdlog::level::debug};
+
+void ffsp_log_init()
 {
-    va_list ap;
-
-    fflush(stdout);
-    fputs("---> DEBUG: ", stderr);
-
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    va_end(ap);
-
-    fputs("\n", stderr);
-    fflush(stderr);
+    auto logger = spdlog::get(logname);
+    if (logger)
+    {
+        logger->warn("logger already initialized");
+    }
+    else
+    {
+        const std::vector<spdlog::sink_ptr> sinks{
+            std::make_shared<spdlog::sinks::stdout_sink_mt>(),
+            std::make_shared<spdlog::sinks::simple_file_sink_mt>(logname + ".log", true)
+        };
+        logger = std::make_shared<spdlog::logger>(logname, std::begin(sinks), std::end(sinks));
+        logger->set_level(loglevel);
+        spdlog::register_logger(logger);
+    }
 }
 
-void FFSP_ERROR(const char* format, ...)
+void ffsp_log_deinit()
 {
-    va_list ap;
+    spdlog::drop(logname);
+}
 
-    fflush(stdout);
-    fputs("---> ERROR: ", stderr);
-
-    va_start(ap, format);
-    vfprintf(stderr, format, ap);
-    va_end(ap);
-
-    fputs("\n", stderr);
-    fflush(stderr);
-
-    ffsp_debug_update(FFSP_DEBUG_LOG_ERROR, 1);
+spdlog::logger& ffsp_log()
+{
+    auto logger = spdlog::get(logname);
+    if (logger)
+    {
+        return *logger;
+    }
+    else
+    {
+        static auto null_logger{std::make_shared<spdlog::logger>("null", std::make_shared<spdlog::sinks::null_sink_st>())};
+        return *null_logger;
+    }
 }

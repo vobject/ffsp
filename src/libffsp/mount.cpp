@@ -47,7 +47,7 @@ static void read_super(struct ffsp* fs)
     rc = ffsp_read_raw(fs->fd, &sb, sizeof(struct ffsp_super), 0);
     if (rc < 0)
     {
-        FFSP_ERROR("reading super block failed");
+        ffsp_log().critical("reading super block failed");
         abort();
     }
 
@@ -77,14 +77,14 @@ static void read_eb_usage(struct ffsp* fs)
     fs->eb_usage = (struct ffsp_eraseblk*)malloc(size);
     if (!fs->eb_usage)
     {
-        FFSP_ERROR("malloc(erase blocks - size=%d) failed", size);
+        ffsp_log().critical("malloc(erase blocks - size=%d) failed", size);
         abort();
     }
 
     offset = fs->clustersize;
     if ((ffsp_read_raw(fs->fd, fs->eb_usage, size, offset)) < 0)
     {
-        FFSP_ERROR("reading erase block info failed");
+        ffsp_log().critical("reading erase block info failed");
         free(fs->eb_usage);
         abort();
     }
@@ -101,14 +101,14 @@ static void read_ino_map(struct ffsp* fs)
     fs->ino_map = (be32_t*)malloc(size);
     if (!fs->ino_map)
     {
-        FFSP_ERROR("malloc(inode ids - size=%d) failed", size);
+        ffsp_log().critical("malloc(inode ids - size=%d) failed", size);
         abort();
     }
 
     offset = fs->erasesize - size; // read the invalid inode, too
     if ((ffsp_read_raw(fs->fd, fs->ino_map, size, offset)) < 0)
     {
-        FFSP_ERROR("reading cluster ids failed");
+        ffsp_log().critical("reading cluster ids failed");
         free(fs->ino_map);
         abort();
     }
@@ -123,7 +123,7 @@ static void read_cl_occupancy(struct ffsp* fs)
     size = lseek(fs->fd, 0, SEEK_END);
     if (size == -1)
     {
-        FFSP_ERROR("lseek() on device failed");
+        ffsp_log().critical("lseek() on device failed");
         exit(EXIT_FAILURE);
     }
 
@@ -131,7 +131,7 @@ static void read_cl_occupancy(struct ffsp* fs)
     fs->cl_occupancy = (int*)malloc(cl_occ_size);
     if (!fs->cl_occupancy)
     {
-        FFSP_ERROR("malloc(cluster occupancy array) failed");
+        ffsp_log().critical("malloc(cluster occupancy array) failed");
         abort();
     }
     memset(fs->cl_occupancy, 0, cl_occ_size);
@@ -213,7 +213,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
 #endif
     if (fs->fd == -1)
     {
-        FFSP_ERROR("ffsp_mount(): open(path=%s) failed", path);
+        ffsp_log().error("ffsp_mount(): open(path={}) failed", path);
         return -1;
     }
     read_super(fs);
@@ -231,7 +231,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
     fs->ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
     if (!fs->ino_status_map)
     {
-        FFSP_ERROR("malloc(dirty inodes mask) failed");
+        ffsp_log().critical("malloc(dirty inodes mask) failed");
         goto error;
     }
     memset(fs->ino_status_map, 0, ino_bitmask_size);
@@ -244,7 +244,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
     fs->gcinfo = (struct ffsp_gcinfo*)malloc(gcinfo_size);
     if (!fs->gcinfo)
     {
-        FFSP_ERROR("malloc(gcinfo) failed");
+        ffsp_log().critical("malloc(gcinfo) failed");
         goto error;
     }
     init_gcinfo(fs);
@@ -252,7 +252,7 @@ int ffsp_mount(struct ffsp* fs, const char* path)
     fs->buf = (char*)malloc(fs->erasesize);
     if (!fs->buf)
     {
-        FFSP_ERROR("ffsp_mount(): malloc(erasesize) failed");
+        ffsp_log().critical("ffsp_mount(): malloc(erasesize) failed");
         goto error;
     }
     return 0;
@@ -279,7 +279,7 @@ void ffsp_unmount(struct ffsp* fs)
     ffsp_write_meta_data(fs);
 
     if ((fs->fd != -1) && (close(fs->fd) == -1))
-        FFSP_DEBUG("ffsp_unmount(): close(fd) failed");
+        ffsp_log().debug("ffsp_unmount(): close(fd) failed");
 
     ffsp_inode_cache_uninit(&fs->ino_cache);
     free(fs->eb_usage);

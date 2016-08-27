@@ -74,7 +74,7 @@ void ffsp_update_time(struct ffsp_timespec* dest)
 
     if (gettimeofday(&tv, NULL) == -1)
     {
-        FFSP_ERROR("call to gettimeofday() failed");
+        ffsp_log().error("call to gettimeofday() failed");
         dest->sec = put_be64(0);
         dest->nsec = put_be32(0);
         return;

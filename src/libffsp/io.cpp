@@ -28,7 +28,6 @@
 #include "utils.hpp"
 
 #include <cerrno>
-#include <cinttypes>
 #include <cstdlib>
 #include <cstring>
 
@@ -128,7 +127,7 @@ static int write_ind(struct ffsp* fs, struct write_context* ctx,
     rc = ffsp_find_writable_cluster(fs, eb_type, &eb_id, &cl_id);
     if (rc < 0)
     {
-        FFSP_DEBUG("Failed to find writable cluster or erase block");
+        ffsp_log().debug("Failed to find writable cluster or erase block");
         return rc;
     }
     cl_off = cl_id * ctx->new_ind_size;
@@ -270,7 +269,7 @@ static int trunc_clin2ebin(struct ffsp* fs, struct write_context* ctx)
     old_ptr = (be32_t*)malloc(max_emb_size(fs));
     if (!old_ptr)
     {
-        FFSP_ERROR("malloc(max_emb_size) failed!");
+        ffsp_log().critical("malloc(max_emb_size) failed!");
         abort();
     }
     memcpy(old_ptr, ctx->ind_ptr, max_emb_size(fs));
@@ -618,7 +617,7 @@ int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
 
     if (offset >= get_be64(ino->i_size))
     {
-        FFSP_DEBUG("ffsp_read(off=%" PRIu64 "): too big", offset);
+        ffsp_log().debug("ffsp_read(off={}): too big", offset);
         return 0;
     }
     i_flags = get_be32(ino->i_flags);
@@ -631,7 +630,7 @@ int ffsp_read(const struct ffsp* fs, struct ffsp_inode* ino, void* buf,
         rc = read_ind(fs, ino, (char*)buf, count, offset, fs->erasesize);
     else
     {
-        FFSP_ERROR("ffsp_read(): unknown inode type");
+        ffsp_log().error("ffsp_read(): unknown inode type");
         return -1;
     }
     if (rc < 0)
@@ -687,7 +686,7 @@ int ffsp_truncate(struct ffsp* fs, struct ffsp_inode* ino, uint64_t length)
     }
     else
     {
-        FFSP_ERROR("ffsp_truncate(): unknown inode type");
+        ffsp_log().error("ffsp_truncate(): unknown inode type");
         return -1;
     }
     if (rc < 0)
@@ -775,7 +774,7 @@ int ffsp_write(struct ffsp* fs, struct ffsp_inode* ino,
     }
     else
     {
-        FFSP_ERROR("ffsp_write(): unknown inode type");
+        ffsp_log().error("ffsp_write(): unknown inode type");
         return -1;
     }
     if (rc < 0)

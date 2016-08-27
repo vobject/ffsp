@@ -23,7 +23,7 @@
 #include "fuse_ffsp.hpp"
 
 #include "spdlog/spdlog.h"
-#include "spdlog/fmt/bundled/ostream.h"
+#include "spdlog/fmt/ostr.h"
 
 #include <atomic>
 #include <string>
@@ -418,7 +418,8 @@ struct fuse_ffsp_operations
 
     ~fuse_ffsp_operations()
     {
-        spdlog::drop_all();
+        logger_.reset();
+        spdlog::drop("ffsp_api");
     }
 
     static struct ffsp* get_fs(struct fuse_context* ctx)
