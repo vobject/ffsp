@@ -136,10 +136,9 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
     memset(eb_buf.data() + eb_buf_written, 0, options.erasesize - eb_buf_written);
 
     // Write the first erase block into the file.
-    int rc = ffsp_write_raw(fd, eb_buf.data(), options.erasesize, 0);
-    if (rc < 0)
+    uint64_t written_bytes = 0;
+    if (!ffsp_write_raw(fd, eb_buf.data(), options.erasesize, 0, written_bytes))
     {
-        errno = -rc;
         perror("create_super_eb");
         return false;
     }
@@ -185,10 +184,9 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     memcpy(eb_buf.data() + eb_buf_written, &dotdot, sizeof(dotdot));
     eb_buf_written += sizeof(dotdot);
 
-    int rc = ffsp_write_raw(fd, eb_buf.data(), eb_buf_written, options.erasesize);
-    if (rc < 0)
+    uint64_t written_bytes = 0;
+    if (!ffsp_write_raw(fd, eb_buf.data(), eb_buf_written, options.erasesize, written_bytes))
     {
-        errno = -rc;
         perror("create_inode_eb");
         return false;
     }

@@ -21,10 +21,9 @@
 #ifndef IO_RAW_H
 #define IO_RAW_H
 
-#include <cstddef>
-#include <sys/types.h>
+#include <cstdint>
 
-int ffsp_read_raw(int fd, void* buf, size_t count, off_t offset);
-int ffsp_write_raw(int fd, const void* buf, size_t count, off_t offset);
+bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read);
+bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written);
 
 #endif /* IO_RAW_H */

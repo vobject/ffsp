@@ -23,7 +23,9 @@
 #include "log.hpp"
 
 #include <cerrno>
-#include <climits>
+#include <limits>
+
+#include <sys/types.h>
 
 #ifdef _WIN32
 #include <BaseTsd.h>
@@ -80,20 +82,27 @@ static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset)
 #endif
 }
 
-int ffsp_read_raw(int fd, void* buf, size_t count, off_t offset)
+bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read)
 {
-    ssize_t rc;
-
-    if (count > SSIZE_MAX)
+    if (count > std::numeric_limits<ssize_t>::max())
     {
-        ffsp_log().debug("ffsp_read_internal(): count > SSIZE_MAX");
+        ffsp_log().error("ffsp_read_raw(): count > ssize_t max");
+        errno = -EOVERFLOW; // implementation defined
+        return false;
     }
 
-    rc = do_pread(fd, buf, count, offset);
+    if (offset > std::numeric_limits<off_t>::max())
+    {
+        ffsp_log().error("ffsp_read_raw(): offset > off_t max");
+        errno = -EOVERFLOW;
+        return false;
+    }
+
+    ssize_t rc = do_pread(fd, buf, count, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        rc = -errno;
-        ffsp_log().error("ffsp_read_raw(): pread() failed; errno={}", errno);
+        ffsp_log().error("ffsp_read_raw(): pread() failed with errno={}", errno);
+        return false;
     }
 
     ffsp_debug_update(FFSP_DEBUG_READ_RAW, count);
@@ -102,23 +111,31 @@ int ffsp_read_raw(int fd, void* buf, size_t count, off_t offset)
     // TODO: Find out if interrupts can occur when the file system was
     //        not started with the "-o intr" flag.
 
-    return rc;
+    read = static_cast<uint64_t>(rc);
+    return true;
 }
 
-int ffsp_write_raw(int fd, const void* buf, size_t count, off_t offset)
+bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written)
 {
-    ssize_t rc;
-
-    if (count > SSIZE_MAX)
+    if (count > std::numeric_limits<ssize_t>::max())
     {
-        ffsp_log().debug("ffsp_write_internal(): count > SSIZE_MAX");
+        ffsp_log().error("ffsp_write_raw(): count > ssize_t max");
+        errno = -EOVERFLOW; // implementation defined
+        return false;
     }
 
-    rc = do_pwrite(fd, buf, count, offset);
+    if (offset > std::numeric_limits<off_t>::max())
+    {
+        ffsp_log().error("ffsp_write_raw(): offset > off_t max");
+        errno = -EOVERFLOW;
+        return false;
+    }
+
+    ssize_t rc = do_pwrite(fd, buf, count, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        rc = -errno; // Return negative errno
-        ffsp_log().error("ffsp_write_raw(): pwrite() failed; errno={}", errno);
+        ffsp_log().error("ffsp_write_raw(): pwrite() failed with errno={}", errno);
+        return false;
     }
 
     ffsp_debug_update(FFSP_DEBUG_WRITE_RAW, count);
@@ -127,5 +144,6 @@ int ffsp_write_raw(int fd, const void* buf, size_t count, off_t offset)
     // TODO: Find out if interrupts can occur when the file system was
     //        not started with the "-o intr" flag.
 
-    return rc;
+    written = static_cast<uint64_t>(rc);
+    return true;
 }

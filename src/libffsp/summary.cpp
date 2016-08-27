@@ -111,32 +111,30 @@ bool ffsp_has_summary(int eb_type)
 
 int ffsp_read_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary)
 {
-    int rc;
-    uint64_t eb_off;
-    uint64_t summary_off;
+    uint64_t eb_off = eb_id * fs->erasesize;
+    uint64_t summary_off = eb_off + fs->erasesize - fs->clustersize;
 
-    eb_off = eb_id * fs->erasesize;
-    summary_off = eb_off + fs->erasesize - fs->clustersize;
-
-    rc = ffsp_read_raw(fs->fd, summary, fs->clustersize, summary_off);
-    if (rc < 0)
+    uint64_t read_bytes = 0;
+    if (!ffsp_read_raw(fs->fd, summary, fs->clustersize, summary_off, read_bytes))
         ffsp_log().error("failed to read erase block summary");
-    return rc;
+    return -errno;
 }
 
 int ffsp_write_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary)
 {
-    int rc;
     uint64_t eb_off;
     uint64_t summary_off;
 
     eb_off = eb_id * fs->erasesize;
     summary_off = eb_off + (fs->erasesize - fs->clustersize);
 
-    rc = ffsp_write_raw(fs->fd, summary, fs->clustersize, summary_off);
-    if (rc < 0)
+    uint64_t written_bytes = 0;
+    if (!ffsp_write_raw(fs->fd, summary, fs->clustersize, summary_off, written_bytes))
+    {
         ffsp_log().error("Failed to write summary for erase block.");
-    return rc;
+        return -errno;
+    }
+    return written_bytes;
 }
 
 void ffsp_add_summary_ref(be32_t* summary, unsigned int ino_no, int writeops)

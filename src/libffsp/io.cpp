@@ -27,6 +27,8 @@
 #include "log.hpp"
 #include "utils.hpp"
 
+#include <algorithm>
+
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -132,15 +134,15 @@ static int write_ind(ffsp* fs, write_context* ctx,
     }
     cl_off = cl_id * ctx->new_ind_size;
 
-    rc = ffsp_write_raw(fs->fd, buf, ctx->new_ind_size, cl_off);
-    if (rc < 0)
-        return rc;
+    uint64_t written_bytes = 0;
+    if (!ffsp_write_raw(fs->fd, buf, ctx->new_ind_size, cl_off, written_bytes))
+        return -errno;
 
     // This operation may internally finalize erase blocks by
     //  writing their erase block summary.
     ffsp_commit_write_operation(fs, eb_type, eb_id, ctx->ino->i_no);
     *ind_id = put_be32(cl_id);
-    return rc;
+    return written_bytes;
 }
 
 static int read_emb(const ffsp* fs, ffsp_inode* ino,
@@ -187,10 +189,10 @@ static int read_ind(const ffsp* fs, ffsp_inode* ino, char* buf,
         }
         else
         {
-            cl_off = get_be32(ind_ptr[ind_index]) *
-                         ind_size +
-                     ind_offset;
-            ffsp_read_raw(fs->fd, buf, ind_left, cl_off);
+            cl_off = get_be32(ind_ptr[ind_index]) * ind_size + ind_offset;
+
+            uint64_t read_bytes = 0;
+            ffsp_read_raw(fs->fd, buf, ind_left, cl_off, read_bytes);
         }
 
         buf += ind_left;
@@ -480,9 +482,10 @@ static int write_clin(ffsp* fs, write_context* ctx)
         if ((ind_left < ctx->new_ind_size) && get_be32(ctx->ind_ptr[ind_index]))
         {
             cl_off = get_be32(ctx->ind_ptr[ind_index]) * ctx->new_ind_size;
-            rc = ffsp_read_raw(fs->fd, fs->buf, ctx->new_ind_size, cl_off);
-            if (rc < 0)
-                return rc;
+
+            uint64_t read_bytes = 0;
+            if (!ffsp_read_raw(fs->fd, fs->buf, ctx->new_ind_size, cl_off, read_bytes))
+                return -errno;
             overwrite = true;
         }
         else
@@ -563,9 +566,9 @@ static int write_ebin(ffsp* fs, write_context* ctx)
 					 * read the content of the to-be-written-into
 					 * cluster to initiate a cluster aligned
 					 * write later. */
-                    rc = ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, offset);
-                    if (rc < 0)
-                        return rc;
+                    uint64_t read_bytes = 0;
+                    if (!ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, offset, read_bytes))
+                        return -errno;
                 }
                 else
                 {
@@ -573,9 +576,9 @@ static int write_ebin(ffsp* fs, write_context* ctx)
                 }
                 memcpy(fs->buf + cl_offset, ctx->buf, cl_left);
 
-                rc = ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, offset);
-                if (rc < 0)
-                    return rc;
+                uint64_t written_bytes = 0;
+                if (!ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, offset, written_bytes))
+                    return -errno;
 
                 ctx->buf += cl_left;
                 cl_count -= cl_left;

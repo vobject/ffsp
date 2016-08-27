@@ -41,11 +41,10 @@
 
 static void read_super(ffsp* fs)
 {
-    int rc;
     ffsp_super sb;
 
-    rc = ffsp_read_raw(fs->fd, &sb, sizeof(ffsp_super), 0);
-    if (rc < 0)
+    uint64_t read_bytes;
+    if (!ffsp_read_raw(fs->fd, &sb, sizeof(ffsp_super), 0, read_bytes))
     {
         ffsp_log().critical("reading super block failed");
         abort();
@@ -68,11 +67,8 @@ static void read_super(ffsp* fs)
 
 static void read_eb_usage(ffsp* fs)
 {
-    int size;
-    uint64_t offset;
-
     // Size of the array that holds the erase block meta information
-    size = fs->neraseblocks * sizeof(ffsp_eraseblk);
+    uint64_t size = fs->neraseblocks * sizeof(ffsp_eraseblk);
 
     fs->eb_usage = (ffsp_eraseblk*)malloc(size);
     if (!fs->eb_usage)
@@ -81,8 +77,9 @@ static void read_eb_usage(ffsp* fs)
         abort();
     }
 
-    offset = fs->clustersize;
-    if ((ffsp_read_raw(fs->fd, fs->eb_usage, size, offset)) < 0)
+    uint64_t offset = fs->clustersize;
+    uint64_t read_bytes = 0;
+    if (!ffsp_read_raw(fs->fd, fs->eb_usage, size, offset, read_bytes))
     {
         ffsp_log().critical("reading erase block info failed");
         free(fs->eb_usage);
@@ -92,11 +89,8 @@ static void read_eb_usage(ffsp* fs)
 
 static void read_ino_map(ffsp* fs)
 {
-    int size;
-    uint64_t offset;
-
     // Size of the array in bytes holding the cluster ids.
-    size = fs->nino * sizeof(uint32_t);
+    uint64_t size = fs->nino * sizeof(uint32_t);
 
     fs->ino_map = (be32_t*)malloc(size);
     if (!fs->ino_map)
@@ -105,8 +99,9 @@ static void read_ino_map(ffsp* fs)
         abort();
     }
 
-    offset = fs->erasesize - size; // read the invalid inode, too
-    if ((ffsp_read_raw(fs->fd, fs->ino_map, size, offset)) < 0)
+    uint64_t offset = fs->erasesize - size; // read the invalid inode, too
+    uint64_t read_bytes = 0;
+    if (!ffsp_read_raw(fs->fd, fs->ino_map, size, offset, read_bytes))
     {
         ffsp_log().critical("reading cluster ids failed");
         free(fs->ino_map);

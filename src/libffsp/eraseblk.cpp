@@ -344,8 +344,11 @@ int ffsp_write_meta_data(const ffsp* fs)
     meta_data_size = eb_usage_size + ino_map_size;
     offset = fs->clustersize;
 
-    rc = ffsp_write_raw(fs->fd, fs->buf, meta_data_size, offset);
-    if (rc < 0)
+    uint64_t written_bytes = 0;
+    if (!ffsp_write_raw(fs->fd, fs->buf, meta_data_size, offset, written_bytes))
+    {
         ffsp_log().error("writing meta data to first erase block failed");
-    return rc;
+        return -errno;
+    }
+    return written_bytes;
 }

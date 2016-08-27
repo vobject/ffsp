@@ -271,10 +271,13 @@ static int move_inodes(ffsp* fs, unsigned int src_eb_id,
         if (!ino_cnt)
             continue;
 
-        ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_off);
+        uint64_t read_bytes = 0;
+        ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_off, read_bytes);
+
         eb_off = dest_eb_id * fs->erasesize;
         cl_off = eb_off + (dest_moved * fs->clustersize);
-        ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, cl_off);
+        uint64_t written_bytes = 0;
+        ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, cl_off, written_bytes);
         ffsp_debug_update(FFSP_DEBUG_GC_WRITE, fs->clustersize);
 
         cl_id = cl_off / fs->clustersize;
@@ -364,11 +367,13 @@ static int move_clin(ffsp* fs, unsigned int src_eb_id,
             continue;
 
         cl_off = src_cl_id * fs->clustersize;
-        ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_off);
+        uint64_t read_bytes = 0;
+        ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_off, read_bytes);
 
         dest_cl_id = dest_eb_id * fs->erasesize / fs->clustersize + dest_moved;
         cl_off = dest_cl_id * fs->clustersize;
-        ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, cl_off);
+        uint64_t written_bytes = 0;
+        ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, cl_off, written_bytes);
         ffsp_debug_update(FFSP_DEBUG_GC_WRITE, fs->clustersize);
 
         swap_cluster_id(fs, ino_no, src_cl_id, dest_cl_id);

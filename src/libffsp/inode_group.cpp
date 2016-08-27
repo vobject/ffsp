@@ -50,7 +50,6 @@ static void group_inodes(const ffsp* fs, ffsp_inode** group,
 int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
                           ffsp_inode** inodes)
 {
-    int rc;
     uint64_t cl_offset;
     int ino_cnt;
     char* ino_buf;
@@ -58,9 +57,10 @@ int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
     unsigned int ino_size;
 
     cl_offset = cl_id * fs->clustersize;
-    rc = ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_offset);
-    if (rc < 0)
-        return rc;
+
+    uint64_t read_bytes = 0;
+    if (!ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_offset, read_bytes))
+        return -errno;
 
     ino_cnt = 0;
     ino_buf = fs->buf;
@@ -165,11 +165,11 @@ int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, int ino_cnt)
         offset = cl_id * fs->clustersize;
 
         group_inodes(fs, group, group_elem_cnt, fs->buf);
-        rc = ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, offset);
-        if (rc < 0)
+        uint64_t written_bytes = 0;
+        if (!ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, offset, written_bytes))
         {
             free(group);
-            return rc;
+            return -errno;
         }
 
         /* ignore the last parameter - it is only needed if we wrote
