@@ -323,17 +323,16 @@ void ffsp_close_eraseblks(ffsp* fs)
 
 int ffsp_write_meta_data(const ffsp* fs)
 {
-    int rc;
     int eb_usage_size;
     int ino_map_size;
     int meta_data_size;
     uint64_t offset;
 
     /*
-	 * Copy erase block usage info and the content of the inode map
-	 * into one continuous buffer so that we can initiate one
-	 * cluster-aligned write request into the first erase block.
-	 */
+     * Copy erase block usage info and the content of the inode map
+     * into one continuous buffer so that we can initiate one
+     * cluster-aligned write request into the first erase block.
+     */
 
     eb_usage_size = fs->neraseblocks * sizeof(ffsp_eraseblk);
     memcpy(fs->buf, fs->eb_usage, eb_usage_size);

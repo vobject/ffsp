@@ -59,12 +59,12 @@ bool make_fs(const char* file_path, const ffsp_mkfs_options& opts)
 
 bool mount_fs(ffsp& fs, const char* file_path)
 {
-    return ffsp_mount(&fs, file_path) == 0;
+    return ffsp_mount(fs, file_path);
 }
 
 bool unmount_fs(ffsp& fs)
 {
-    ffsp_unmount(&fs);
+    ffsp_unmount(fs);
     return true;
 }
 

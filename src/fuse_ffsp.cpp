@@ -77,7 +77,7 @@ void* init(fuse_conn_info* conn)
 
     auto* fs = new ffsp;
 
-    if (ffsp_mount(fs, params.device.c_str()) < 0)
+    if (!ffsp_mount(*fs, params.device.c_str()))
     {
         ffsp_log().error("ffsp_mount() failed. exiting...");
         exit(EXIT_FAILURE);
@@ -111,7 +111,7 @@ void* init(fuse_conn_info* conn)
 void destroy(void* user)
 {
     ffsp* fs = static_cast<ffsp*>(user);
-    ffsp_unmount(fs);
+    ffsp_unmount(*fs);
     delete fs;
 
     ffsp_log_deinit();
