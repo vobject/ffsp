@@ -33,8 +33,8 @@ struct ffsp_mkfs_options
     uint32_t nerasewrites;
 };
 
-int ffsp_mkfs(const char* path, const ffsp_mkfs_options* options);
+bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options);
 
-int ffsp_fmkfs(int fd, const ffsp_mkfs_options* options);
+bool ffsp_fmkfs(int fd, const ffsp_mkfs_options& options);
 
 #endif /* MKFS_H */

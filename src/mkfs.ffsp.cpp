@@ -42,7 +42,7 @@ struct mkfs_arguments
 
 static void show_usage(const char* progname)
 {
-    printf("%s [OPTION] [DEVICE]\n", progname);
+    printf("%s [OPTION] DEVICE\n", progname);
     printf("create a ffsp file system inside the given file [DEVICE]\n\n");
     printf("-c, --clustersize=N use a clusterblock size of N (default:4KiB)\n");
     printf("-e, --erasesize=N use a eraseblock size of N (default:4MiB)\n");
@@ -52,9 +52,10 @@ static void show_usage(const char* progname)
     printf("-w, --write-eb=N Perform garbage collection after N erase blocks have been written (default:5)\n");
 }
 
-static int parse_arguments(int argc, char** argv, mkfs_arguments* args)
+static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
 {
-    static const option long_options[] = {
+    static const option long_options[] =
+    {
         { "clustersize", 1, NULL, 'c' },
         { "erasesize", 1, NULL, 'e' },
         { "open-ino", 1, NULL, 'i' },
@@ -64,52 +65,49 @@ static int parse_arguments(int argc, char** argv, mkfs_arguments* args)
         { NULL, 0, NULL, 0 },
     };
 
-    memset(args, 0, sizeof(*args));
+    args = {};
     // Default size for clusters is 4 KiB
-    args->clustersize = 1024 * 32;
+    args.clustersize = 1024 * 32;
     // Default size for erase blocks is 4 MiB
-    args->erasesize = 1024 * 1024 * 4;
+    args.erasesize = 1024 * 1024 * 4;
     // Default number of cached dirty inodes is 100
-    args->ninoopen = 128;
+    args.ninoopen = 128;
     // Default number of open erase blocks is 5
-    args->neraseopen = 5;
+    args.neraseopen = 5;
     // Default number of reserved erase blocks is 3
-    args->nerasereserve = 3;
+    args.nerasereserve = 3;
     // Default number of erase block finalizations before GC is 5
-    args->nerasewrites = 5;
+    args.nerasewrites = 5;
 
     while (true)
     {
-        int c;
-
-        c = getopt_long(argc, argv, "c:e:i:o:r:w:", long_options, &optind);
-
+        int c = getopt_long(argc, argv, "c:e:i:o:r:w:", long_options, &optind);
         if (c == -1)
             break;
 
         switch (c)
         {
             case 'c':
-                args->clustersize = std::stoul(optarg);
+                args.clustersize = std::stoul(optarg);
                 break;
             case 'e':
-                args->erasesize = std::stoul(optarg);
+                args.erasesize = std::stoul(optarg);
                 break;
             case 'i':
-                args->ninoopen = std::stoul(optarg);
+                args.ninoopen = std::stoul(optarg);
                 break;
             case 'o':
-                args->neraseopen = std::stoul(optarg);
+                args.neraseopen = std::stoul(optarg);
                 break;
             case 'r':
-                args->nerasereserve = std::stoul(optarg);
+                args.nerasereserve = std::stoul(optarg);
                 break;
             case 'w':
-                args->nerasewrites = std::stoul(optarg);
+                args.nerasewrites = std::stoul(optarg);
                 break;
             case '?':
                 show_usage(argv[0]);
-                return -EINVAL;
+                exit(EXIT_SUCCESS);
             default:
                 break;
         }
@@ -118,38 +116,36 @@ static int parse_arguments(int argc, char** argv, mkfs_arguments* args)
     if (optind != (argc - 1))
     {
         fprintf(stderr, "%s: invalid arguments\n", argv[0]);
-        return -1;
+        return false;
     }
-    args->device = argv[optind];
-    return 0;
-}
-
-static int setup_fs(const mkfs_arguments* args)
-{
-    auto console = spdlog::stdout_logger_mt("console");
-    console->info("Setup file system:");
-    console->info("\tdevice={}", args->device);
-    console->info("\tclustersize={}", args->clustersize);
-    console->info("\terasesize={}", args->erasesize);
-    console->info("\tninoopen={}", args->ninoopen);
-    console->info("\tneraseopen={}", args->neraseopen);
-    console->info("\tnerasereserve={}", args->nerasereserve);
-    console->info("\tnerasewrites={}", args->nerasewrites);
-
-    const ffsp_mkfs_options options{ args->clustersize, args->erasesize,
-                                     args->ninoopen, args->neraseopen, args->nerasereserve,
-                                     args->nerasewrites };
-    return ffsp_mkfs(args->device, &options);
+    args.device = argv[optind];
+    return true;
 }
 
 int main(int argc, char* argv[])
 {
-    mkfs_arguments args;
-
-    if (parse_arguments(argc, argv, &args) < 0)
+    mkfs_arguments args = {};
+    if (!parse_arguments(argc, argv, args))
+    {
         return EXIT_FAILURE;
+    }
 
-    if (setup_fs(&args) == -1)
+    auto console = spdlog::stdout_logger_mt("console");
+    console->info("Setup file system:");
+    console->info("\tdevice={}", args.device);
+    console->info("\tclustersize={}", args.clustersize);
+    console->info("\terasesize={}", args.erasesize);
+    console->info("\tninoopen={}", args.ninoopen);
+    console->info("\tneraseopen={}", args.neraseopen);
+    console->info("\tnerasereserve={}", args.nerasereserve);
+    console->info("\tnerasewrites={}", args.nerasewrites);
+
+    if (!ffsp_mkfs(args.device, {args.clustersize,
+                                 args.erasesize,
+                                 args.ninoopen,
+                                 args.neraseopen,
+                                 args.nerasereserve,
+                                 args.nerasewrites}))
     {
         fprintf(stderr, "%s: failed to setup file system", argv[0]);
         return EXIT_FAILURE;

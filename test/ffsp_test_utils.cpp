@@ -54,7 +54,7 @@ bool remove_file(const char* file_path)
 
 bool make_fs(const char* file_path, const ffsp_mkfs_options& opts)
 {
-    return ffsp_mkfs(file_path, &opts) == 0;
+    return ffsp_mkfs(file_path, opts);
 }
 
 bool mount_fs(ffsp& fs, const char* file_path)
