@@ -521,7 +521,7 @@ int ffsp_create(ffsp* fs, const char* path, mode_t mode,
     ino->i_gid = put_be32(gid);
     ino->i_mode = put_be32(mode);
     ino->i_rdev = put_be64(device);
-    ffsp_update_time(&ino->i_ctime);
+    ffsp_update_time(ino->i_ctime);
 
     // Handle creation of a directory.
     if (S_ISDIR(mode))

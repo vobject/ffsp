@@ -165,7 +165,7 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     root.i_gid = put_be32(getgid());
     root.i_mode = put_be32(S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #endif
-    ffsp_update_time(&root.i_ctime);
+    ffsp_update_time(root.i_ctime);
     memcpy(eb_buf.data(), &root, sizeof(root));
     eb_buf_written = sizeof(root);
 

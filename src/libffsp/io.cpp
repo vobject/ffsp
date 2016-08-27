@@ -696,8 +696,8 @@ int ffsp_truncate(ffsp* fs, ffsp_inode* ino, uint64_t length)
         return -EIO;
 
     ino->i_size = put_be64(length);
-    ffsp_update_time(&ino->i_ctime);
-    ffsp_update_time(&ino->i_mtime);
+    ffsp_update_time(ino->i_ctime);
+    ffsp_update_time(ino->i_mtime);
     ffsp_mark_dirty(fs, ino);
     ffsp_flush_inodes(fs, false);
 
@@ -784,7 +784,7 @@ int ffsp_write(ffsp* fs, ffsp_inode* ino,
         return -EIO;
 
     ino->i_size = put_be64(ctx.new_size);
-    ffsp_update_time(&ino->i_mtime);
+    ffsp_update_time(ino->i_mtime);
     ffsp_mark_dirty(fs, ino);
     ffsp_flush_inodes(fs, false);
 

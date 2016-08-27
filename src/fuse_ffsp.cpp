@@ -167,7 +167,7 @@ int getattr(ffsp& fs, const char* path, struct stat* stbuf)
     ctim.tv_nsec = 0;
     stbuf->st_ctim = ctim; /* timestruc_t <- time_t */
 #else
-    ffsp_stat(&fs, ino, stbuf);
+    ffsp_stat(fs, *ino, *stbuf);
 #endif
 
     return 0;
@@ -396,7 +396,7 @@ int utimens(ffsp& fs, const char* path, const struct timespec tv[2])
     if (rc < 0)
         return rc;
 
-    ffsp_utimens(&fs, ino, tv);
+    ffsp_utimens(fs, *ino, tv);
     return 0;
 }
 
@@ -435,7 +435,7 @@ int statfs(ffsp& fs, const char* path, struct statvfs* sfs)
 {
     (void)path;
 
-    ffsp_statfs(&fs, sfs);
+    ffsp_statfs(fs, *sfs);
     return 0;
 }
 
