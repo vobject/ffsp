@@ -352,11 +352,11 @@ static int move_clin(ffsp* fs, unsigned int src_eb_id,
     unsigned int dest_cl_id;
 
     max_cvalid = (fs->erasesize / fs->clustersize) - 1;
-    src_eb_summary = ffsp_alloc_summary(fs);
+    src_eb_summary = ffsp_alloc_summary(*fs);
 
     /* We need the summary of the source erase block to check which
 	 * cluster is still valid. */
-    ffsp_read_summary(fs, src_eb_id, src_eb_summary);
+    ffsp_read_summary(*fs, src_eb_id, src_eb_summary);
 
     for (int i = 0; i < max_cvalid; i++)
     {
@@ -405,7 +405,7 @@ static void collect_clin(ffsp* fs, int eb_type)
     max_cvalid = max_writeops - 1;
 
     moved_cl_cnt = 0;
-    eb_summary = ffsp_alloc_summary(fs);
+    eb_summary = ffsp_alloc_summary(*fs);
     free_eb_id = find_empty_eraseblk(fs);
 
     do
@@ -421,7 +421,7 @@ static void collect_clin(ffsp* fs, int eb_type)
     /* still "0" if no collectable erase block was found */
     if (moved_cl_cnt)
     {
-        ffsp_write_summary(fs, free_eb_id, eb_summary);
+        ffsp_write_summary(*fs, free_eb_id, eb_summary);
         ffsp_debug_update(FFSP_DEBUG_GC_WRITE, fs->clustersize);
 
         /* tell gcinfo that we wrote an eb of a specific type */

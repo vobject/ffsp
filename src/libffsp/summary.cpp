@@ -25,17 +25,15 @@
 #include <cstdlib>
 #include <cstring>
 
-be32_t* ffsp_alloc_summary(const ffsp* fs)
+be32_t* ffsp_alloc_summary(const ffsp& fs)
 {
-    be32_t* summary;
-
-    summary = (be32_t*)malloc(fs->clustersize);
+    be32_t* summary = (be32_t*)malloc(fs.clustersize);
     if (!summary)
     {
         ffsp_log().critical("malloc(summary) failed");
         abort();
     }
-    memset(summary, 0, fs->clustersize);
+    memset(summary, 0, fs.clustersize);
     return summary;
 }
 
@@ -44,8 +42,7 @@ void ffsp_delete_summary(be32_t* summary)
     free(summary);
 }
 
-void ffsp_summary_list_add(ffsp_summary_list_node* head,
-                           be32_t* summary, int eb_type)
+void ffsp_summary_list_add(ffsp_summary_list_node& head, be32_t* summary, int eb_type)
 {
     ffsp_summary_list_node* node;
 
@@ -57,15 +54,14 @@ void ffsp_summary_list_add(ffsp_summary_list_node* head,
     }
     node->eb_type = eb_type;
     node->summary = summary;
-    node->next = head->next;
-    head->next = node;
+    node->next = head.next;
+    head.next = node;
 }
 
-void ffsp_summary_list_del(ffsp_summary_list_node* head,
-                           int eb_type)
+void ffsp_summary_list_del(ffsp_summary_list_node& head, int eb_type)
 {
     ffsp_summary_list_node* tmp;
-    ffsp_summary_list_node* node = head;
+    ffsp_summary_list_node* node = &head;
 
     while (node->next && (node->next->eb_type != eb_type))
         node = node->next;
@@ -78,24 +74,23 @@ void ffsp_summary_list_del(ffsp_summary_list_node* head,
     }
 }
 
-be32_t* ffsp_summary_list_find(ffsp_summary_list_node* head,
-                               int eb_type)
+be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, int eb_type)
 {
-    ffsp_summary_list_node* node = head;
+    ffsp_summary_list_node* node = &head;
 
     while (node->next && (node->next->eb_type != eb_type))
         node = node->next;
 
-    return node->next ? node->next->summary : NULL;
+    return node->next ? node->next->summary : nullptr;
 }
 
 bool ffsp_has_summary(int eb_type)
 {
     /*
-	 * Erase blocks containing cluster indirect data always
-	 * have an erase block summary section that cannot be used for
-	 * data at the end. Its size is always one cluster.
-	 */
+     * Erase blocks containing cluster indirect data always
+     * have an erase block summary section that cannot be used for
+     * data at the end. Its size is always one cluster.
+     */
     switch (eb_type)
     {
         case FFSP_EB_DENTRY_INODE:
@@ -109,32 +104,32 @@ bool ffsp_has_summary(int eb_type)
     return false;
 }
 
-int ffsp_read_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_read_summary(const ffsp& fs, uint32_t eb_id, be32_t* summary)
 {
-    uint64_t eb_off = eb_id * fs->erasesize;
-    uint64_t summary_off = eb_off + fs->erasesize - fs->clustersize;
+    uint64_t eb_off = eb_id * fs.erasesize;
+    uint64_t summary_off = eb_off + fs.erasesize - fs.clustersize;
 
     uint64_t read_bytes = 0;
-    if (!ffsp_read_raw(fs->fd, summary, fs->clustersize, summary_off, read_bytes))
+    if (!ffsp_read_raw(fs.fd, summary, fs.clustersize, summary_off, read_bytes))
+    {
         ffsp_log().error("failed to read erase block summary");
-    return -errno;
+        return false;
+    }
+    return true;
 }
 
-int ffsp_write_summary(const ffsp* fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_write_summary(const ffsp& fs, uint32_t eb_id, be32_t* summary)
 {
-    uint64_t eb_off;
-    uint64_t summary_off;
-
-    eb_off = eb_id * fs->erasesize;
-    summary_off = eb_off + (fs->erasesize - fs->clustersize);
+    uint64_t eb_off = eb_id * fs.erasesize;
+    uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
 
     uint64_t written_bytes = 0;
-    if (!ffsp_write_raw(fs->fd, summary, fs->clustersize, summary_off, written_bytes))
+    if (!ffsp_write_raw(fs.fd, summary, fs.clustersize, summary_off, written_bytes))
     {
-        ffsp_log().error("Failed to write summary for erase block.");
-        return -errno;
+        ffsp_log().error("failed to write erase block summary");
+        return false;
     }
-    return written_bytes;
+    return true;
 }
 
 void ffsp_add_summary_ref(be32_t* summary, unsigned int ino_no, int writeops)

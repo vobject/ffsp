@@ -243,13 +243,13 @@ void ffsp_commit_write_operation(ffsp* fs, int eb_type,
     {
         // Create a new erase block summary buffer for the newly
         //  opened erase block and add it to the summary list.
-        eb_summary = ffsp_alloc_summary(fs);
-        ffsp_summary_list_add(&fs->summary_head, eb_summary, eb_type);
+        eb_summary = ffsp_alloc_summary(*fs);
+        ffsp_summary_list_add(fs->summary_head, eb_summary, eb_type);
     }
     else
     {
         // The summary for this erase block should already exist.
-        eb_summary = ffsp_summary_list_find(&fs->summary_head, eb_type);
+        eb_summary = ffsp_summary_list_find(fs->summary_head, eb_type);
         if (!eb_summary)
             ffsp_log().error("Cannot find summary for open erase block");
     }
@@ -263,10 +263,10 @@ void ffsp_commit_write_operation(ffsp* fs, int eb_type,
     {
         // The last write operation filled the erase block.
         // Write its summary to finalize it.
-        ffsp_write_summary(fs, eb_id, eb_summary);
+        ffsp_write_summary(*fs, eb_id, eb_summary);
 
         ffsp_delete_summary(eb_summary);
-        ffsp_summary_list_del(&fs->summary_head, eb_type);
+        ffsp_summary_list_del(fs->summary_head, eb_type);
 
         /* we just performed another write operation;
 		 * tell gcinfo and update the erase block's usage data */
@@ -307,13 +307,13 @@ void ffsp_close_eraseblks(ffsp* fs)
         if (!ffsp_has_summary(eb_type))
             continue;
 
-        eb_summary = ffsp_summary_list_find(&fs->summary_head, eb_type);
+        eb_summary = ffsp_summary_list_find(fs->summary_head, eb_type);
         if (!eb_summary)
             ffsp_log().error("Cannot find summary for open erase block");
 
-        ffsp_write_summary(fs, eb_id, eb_summary);
+        ffsp_write_summary(*fs, eb_id, eb_summary);
         ffsp_delete_summary(eb_summary);
-        ffsp_summary_list_del(&fs->summary_head, eb_type);
+        ffsp_summary_list_del(fs->summary_head, eb_type);
 
         /* tell gcinfo an erase block of a specific type was written */
         write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
