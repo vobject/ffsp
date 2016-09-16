@@ -29,6 +29,7 @@
 #include "fuse.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -68,6 +69,37 @@ bool unmount_fs(ffsp& fs)
     return true;
 }
 
+bool mkfs_ffsp(const char* program,
+               uint32_t clustersize, uint32_t erasesize, uint32_t ninoopen,
+               uint32_t neraseopen, uint32_t nerasereserve, uint32_t nerasewrites,
+               const char* device)
+{
+    const std::string command = std::string(program)
+                              + " -c " + std::to_string(clustersize)
+                              + " -e " + std::to_string(erasesize)
+                              + " -i " + std::to_string(ninoopen)
+                              + " -o " + std::to_string(neraseopen)
+                              + " -r " + std::to_string(nerasereserve)
+                              + " -w " + std::to_string(nerasewrites)
+                              + " " + device;
+    return std::system(command.c_str()) == 0;
+}
+
+bool mount_ffsp(const char* program, const char* device, const char* mountpoint)
+{
+    const std::string command = std::string(program)
+                              + " " + device
+                              + " " + mountpoint;
+    return std::system(command.c_str()) == 0;
+}
+
+bool unmount_ffsp(const char* program, const char* mountpoint)
+{
+    const std::string command = std::string(program)
+                              + " " + mountpoint;
+    return std::system(command.c_str()) == 0;
+}
+
 bool default_create_file()
 {
     return create_file(default_fs_path, default_fs_size);
@@ -91,6 +123,28 @@ bool default_mount_fs(ffsp& fs)
 bool default_unmount_fs(ffsp& fs)
 {
     return unmount_fs(fs);
+}
+
+bool default_mkfs_ffsp()
+{
+    return mkfs_ffsp(default_bin_mkfs,
+                     default_mkfs_options.clustersize,
+                     default_mkfs_options.erasesize,
+                     default_mkfs_options.ninoopen,
+                     default_mkfs_options.neraseopen,
+                     default_mkfs_options.nerasereserve,
+                     default_mkfs_options.nerasewrites,
+                     default_fs_path);
+}
+
+bool default_mount_ffsp()
+{
+    return mount_ffsp(default_bin_mount, default_fs_path, default_dir_mountpoint);
+}
+
+bool default_unmount_ffsp()
+{
+    return unmount_ffsp(default_bin_unmount, default_dir_mountpoint);
 }
 
 } // namespace ffsp_testing
