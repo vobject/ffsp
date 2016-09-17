@@ -21,7 +21,14 @@ protected:
 
 TEST_F(BasicFileSystemOperationsTest, SmallFiles)
 {
-    const std::string command =
-        std::string("cp /etc/lsb-release ") + ffsp_testing::default_dir_mountpoint;
+    std::string command;
+
+//    command = std::string("cat ") + ffsp_testing::default_dir_mountpoint + "/.FFSP";
+//    ASSERT_TRUE(std::system(command.c_str()) == 0);
+
+    command = std::string("cp /etc/lsb-release ") + ffsp_testing::default_dir_mountpoint;
     ASSERT_TRUE(std::system(command.c_str()) == 0);
+
+//    command = std::string("cat ") + ffsp_testing::default_dir_mountpoint + "/.FFSP";
+//    ASSERT_TRUE(std::system(command.c_str()) == 0);
 }

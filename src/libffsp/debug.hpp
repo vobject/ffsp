@@ -23,7 +23,7 @@
 
 #include "ffsp.hpp"
 
-#include <cstddef>
+#include <string>
 
 struct stat;
 
@@ -37,9 +37,9 @@ struct stat;
 #define FFSP_DEBUG_GC_WRITE 6
 #define FFSP_DEBUG_LOG_ERROR 7
 
-void ffsp_debug_fuse_stat(struct stat* stbuf);
-int ffsp_debug_get_info(char* buf, size_t count);
-void ffsp_debug_update(int type, unsigned long val);
+void ffsp_debug_fuse_stat(ffsp& fs, struct stat* stbuf);
+std::string ffsp_debug_get_info(ffsp& fs);
+void ffsp_debug_update(ffsp& fs, int type, unsigned long val);
 
 /* TODO: Introduce some kind of 'debuginfo context':
  * 	ffsp_debug_set_context(FFSP_DEBUG_CTX_GC);

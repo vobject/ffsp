@@ -250,7 +250,7 @@ static int remove_dentry(ffsp* fs, const char* path,
     return 0;
 }
 
-static int find_dentry(const ffsp* fs, ffsp_inode* ino,
+static int find_dentry(ffsp* fs, ffsp_inode* ino,
                        const char* name, ffsp_dentry* dent)
 {
     int rc;
@@ -888,7 +888,7 @@ void ffsp_reset_dirty(ffsp* fs, ffsp_inode* ino)
     }
 }
 
-int ffsp_cache_dir(const ffsp* fs, ffsp_inode* ino,
+int ffsp_cache_dir(ffsp* fs, ffsp_inode* ino,
                    ffsp_dentry** dent_buf, int* dent_cnt)
 {
     int rc;

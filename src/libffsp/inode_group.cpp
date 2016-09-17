@@ -20,6 +20,7 @@
 
 #include "inode.hpp"
 #include "eraseblk.hpp"
+#include "debug.hpp"
 #include "ffsp.hpp"
 #include "inode_cache.hpp"
 #include "inode_group.hpp"
@@ -61,6 +62,7 @@ int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
     uint64_t read_bytes = 0;
     if (!ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_offset, read_bytes))
         return -errno;
+    ffsp_debug_update(*fs, FFSP_DEBUG_READ_RAW, read_bytes);
 
     ino_cnt = 0;
     ino_buf = fs->buf;
@@ -171,6 +173,7 @@ int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, int ino_cnt)
             free(group);
             return -errno;
         }
+        ffsp_debug_update(*fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
 
         /* ignore the last parameter - it is only needed if we wrote
 		 * into an erase block with a summary block at its end. but

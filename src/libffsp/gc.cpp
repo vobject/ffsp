@@ -273,12 +273,14 @@ static int move_inodes(ffsp* fs, unsigned int src_eb_id,
 
         uint64_t read_bytes = 0;
         ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_off, read_bytes);
+        ffsp_debug_update(*fs, FFSP_DEBUG_READ_RAW, read_bytes);
 
         eb_off = dest_eb_id * fs->erasesize;
         cl_off = eb_off + (dest_moved * fs->clustersize);
         uint64_t written_bytes = 0;
         ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, cl_off, written_bytes);
-        ffsp_debug_update(FFSP_DEBUG_GC_WRITE, fs->clustersize);
+        ffsp_debug_update(*fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
+        ffsp_debug_update(*fs, FFSP_DEBUG_GC_WRITE, fs->clustersize);
 
         cl_id = cl_off / fs->clustersize;
         for (int j = 0; j < ino_cnt; j++)
@@ -369,12 +371,14 @@ static int move_clin(ffsp* fs, unsigned int src_eb_id,
         cl_off = src_cl_id * fs->clustersize;
         uint64_t read_bytes = 0;
         ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, cl_off, read_bytes);
+        ffsp_debug_update(*fs, FFSP_DEBUG_READ_RAW, read_bytes);
 
         dest_cl_id = dest_eb_id * fs->erasesize / fs->clustersize + dest_moved;
         cl_off = dest_cl_id * fs->clustersize;
         uint64_t written_bytes = 0;
         ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, cl_off, written_bytes);
-        ffsp_debug_update(FFSP_DEBUG_GC_WRITE, fs->clustersize);
+        ffsp_debug_update(*fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
+        ffsp_debug_update(*fs, FFSP_DEBUG_GC_WRITE, fs->clustersize);
 
         swap_cluster_id(fs, ino_no, src_cl_id, dest_cl_id);
         ffsp_add_summary_ref(dest_eb_summary, ino_no, dest_moved);
@@ -422,7 +426,7 @@ static void collect_clin(ffsp* fs, int eb_type)
     if (moved_cl_cnt)
     {
         ffsp_write_summary(*fs, free_eb_id, eb_summary);
-        ffsp_debug_update(FFSP_DEBUG_GC_WRITE, fs->clustersize);
+        ffsp_debug_update(*fs, FFSP_DEBUG_GC_WRITE, fs->clustersize);
 
         /* tell gcinfo that we wrote an eb of a specific type */
         write_time = ffsp_gcinfo_update_writetime(fs, eb_type);

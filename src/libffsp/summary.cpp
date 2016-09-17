@@ -19,6 +19,7 @@
  */
 
 #include "summary.hpp"
+#include "debug.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
 
@@ -104,7 +105,7 @@ bool ffsp_has_summary(int eb_type)
     return false;
 }
 
-bool ffsp_read_summary(const ffsp& fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_read_summary(ffsp& fs, uint32_t eb_id, be32_t* summary)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + fs.erasesize - fs.clustersize;
@@ -115,10 +116,11 @@ bool ffsp_read_summary(const ffsp& fs, uint32_t eb_id, be32_t* summary)
         ffsp_log().error("failed to read erase block summary");
         return false;
     }
+    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
     return true;
 }
 
-bool ffsp_write_summary(const ffsp& fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_write_summary(ffsp& fs, uint32_t eb_id, be32_t* summary)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
@@ -129,6 +131,7 @@ bool ffsp_write_summary(const ffsp& fs, uint32_t eb_id, be32_t* summary)
         ffsp_log().error("failed to write erase block summary");
         return false;
     }
+    ffsp_debug_update(fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
     return true;
 }
 

@@ -129,7 +129,7 @@ int getattr(ffsp& fs, const char* path, struct stat* stbuf)
     if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
     {
 #ifndef _WIN32
-        ffsp_debug_fuse_stat(stbuf);
+        ffsp_debug_fuse_stat(fs, stbuf);
 #endif
         return 0;
     }
@@ -268,7 +268,7 @@ int read(ffsp& fs, const char* path, char* buf, size_t count,
         return -EINVAL;
 
     if (strncmp(path, FFSP_DEBUG_FILE, FFSP_NAME_MAX) == 0)
-        return ffsp_debug_get_info(buf, count);
+        return snprintf(buf, count, "%s", ffsp_debug_get_info(fs).c_str());
 
     if (fi)
     {
@@ -281,7 +281,7 @@ int read(ffsp& fs, const char* path, char* buf, size_t count,
             return rc;
     }
 
-    ffsp_debug_update(FFSP_DEBUG_FUSE_READ, count);
+    ffsp_debug_update(fs, FFSP_DEBUG_FUSE_READ, count);
     return ffsp_read(&fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
@@ -308,7 +308,7 @@ int write(ffsp& fs, const char* path, const char* buf, size_t count,
             return rc;
     }
 
-    ffsp_debug_update(FFSP_DEBUG_FUSE_WRITE, count);
+    ffsp_debug_update(fs, FFSP_DEBUG_FUSE_WRITE, count);
     return ffsp_write(&fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 

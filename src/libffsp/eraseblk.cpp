@@ -19,6 +19,7 @@
  */
 
 #include "eraseblk.hpp"
+#include "debug.hpp"
 #include "gc.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
@@ -321,7 +322,7 @@ void ffsp_close_eraseblks(ffsp* fs)
     }
 }
 
-int ffsp_write_meta_data(const ffsp* fs)
+int ffsp_write_meta_data(ffsp* fs)
 {
     int eb_usage_size;
     int ino_map_size;
@@ -349,5 +350,6 @@ int ffsp_write_meta_data(const ffsp* fs)
         ffsp_log().error("writing meta data to first erase block failed");
         return -errno;
     }
+    ffsp_debug_update(*fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
     return written_bytes;
 }

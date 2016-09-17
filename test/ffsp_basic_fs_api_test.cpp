@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include "libffsp/debug.hpp"
+#include "libffsp/log.hpp"
 #include "libffsp/io_raw.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
@@ -13,6 +15,8 @@ class BasicFileSystemOperationsApiTest : public testing::Test
 protected:
     void SetUp() override
     {
+        ffsp_log_init("ffsp_test", spdlog::level::debug);
+
         ASSERT_TRUE(ffsp_testing::default_create_file());
         ASSERT_TRUE(ffsp_testing::default_make_fs());
         ASSERT_TRUE(ffsp_testing::default_mount_fs(fs_));
@@ -22,6 +26,8 @@ protected:
     {
         ASSERT_TRUE(ffsp_testing::default_unmount_fs(fs_));
         ASSERT_TRUE(ffsp_testing::default_remove_file());
+
+        ffsp_log_deinit();
     }
 
     ffsp fs_;
@@ -74,4 +80,6 @@ TEST_F(BasicFileSystemOperationsApiTest, SmallFiles)
 //        ASSERT_EQ(4096, fuse_ffsp::read(fs_, testFile.c_str(), read_buf.data(), read_buf.size(), read_offset, &fi));
 //        ASSERT_EQ(0, fuse_ffsp::release(fs_, testFile.c_str(), &fi));
 //    }
+
+    ffsp_log().info(ffsp_debug_get_info(fs_));
 }

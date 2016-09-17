@@ -19,7 +19,6 @@
  */
 
 #include "io_raw.hpp"
-#include "debug.hpp"
 #include "log.hpp"
 
 #include <cerrno>
@@ -105,8 +104,6 @@ bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t&
         return false;
     }
 
-    ffsp_debug_update(FFSP_DEBUG_READ_RAW, count);
-
     // TODO: Handle EINTR.
     // TODO: Find out if interrupts can occur when the file system was
     //        not started with the "-o intr" flag.
@@ -137,8 +134,6 @@ bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, ui
         ffsp_log().error("ffsp_write_raw(): pwrite() failed with errno={}", errno);
         return false;
     }
-
-    ffsp_debug_update(FFSP_DEBUG_WRITE_RAW, count);
 
     // TODO: Handle EINTR.
     // TODO: Find out if interrupts can occur when the file system was

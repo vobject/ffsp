@@ -19,6 +19,7 @@
  */
 
 #include "io.hpp"
+#include "debug.hpp"
 #include "eraseblk.hpp"
 #include "ffsp.hpp"
 #include "gc.hpp"
@@ -137,6 +138,7 @@ static int write_ind(ffsp* fs, write_context* ctx,
     uint64_t written_bytes = 0;
     if (!ffsp_write_raw(fs->fd, buf, ctx->new_ind_size, cl_off, written_bytes))
         return -errno;
+    ffsp_debug_update(*fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
 
     // This operation may internally finalize erase blocks by
     //  writing their erase block summary.
@@ -145,7 +147,7 @@ static int write_ind(ffsp* fs, write_context* ctx,
     return written_bytes;
 }
 
-static int read_emb(const ffsp* fs, ffsp_inode* ino,
+static int read_emb(ffsp* fs, ffsp_inode* ino,
                     char* buf, size_t size, uint64_t offset)
 {
     (void)fs;
@@ -159,7 +161,7 @@ static int read_emb(const ffsp* fs, ffsp_inode* ino,
     return size;
 }
 
-static int read_ind(const ffsp* fs, ffsp_inode* ino, char* buf,
+static int read_ind(ffsp* fs, ffsp_inode* ino, char* buf,
                     size_t count, uint64_t offset, uint32_t ind_size)
 {
     int ind_index;   /* current cluster id from the embedded data */
@@ -192,7 +194,8 @@ static int read_ind(const ffsp* fs, ffsp_inode* ino, char* buf,
             cl_off = get_be32(ind_ptr[ind_index]) * ind_size + ind_offset;
 
             uint64_t read_bytes = 0;
-            ffsp_read_raw(fs->fd, buf, ind_left, cl_off, read_bytes);
+            if (ffsp_read_raw(fs->fd, buf, ind_left, cl_off, read_bytes))
+                ffsp_debug_update(*fs, FFSP_DEBUG_READ_RAW, read_bytes);
         }
 
         buf += ind_left;
@@ -203,8 +206,7 @@ static int read_ind(const ffsp* fs, ffsp_inode* ino, char* buf,
     return count - bytes_left;
 }
 
-static int trunc_emb2ind(ffsp* fs, write_context* ctx,
-                         const char* ind_buf)
+static int trunc_emb2ind(ffsp* fs, write_context* ctx, const char* ind_buf)
 {
     int rc;
     int ind_last; // The indirect chunk index where the writing starts
@@ -486,6 +488,7 @@ static int write_clin(ffsp* fs, write_context* ctx)
             uint64_t read_bytes = 0;
             if (!ffsp_read_raw(fs->fd, fs->buf, ctx->new_ind_size, cl_off, read_bytes))
                 return -errno;
+            ffsp_debug_update(*fs, FFSP_DEBUG_READ_RAW, read_bytes);
             overwrite = true;
         }
         else
@@ -569,6 +572,7 @@ static int write_ebin(ffsp* fs, write_context* ctx)
                     uint64_t read_bytes = 0;
                     if (!ffsp_read_raw(fs->fd, fs->buf, fs->clustersize, offset, read_bytes))
                         return -errno;
+                    ffsp_debug_update(*fs, FFSP_DEBUG_READ_RAW, read_bytes);
                 }
                 else
                 {
@@ -579,6 +583,7 @@ static int write_ebin(ffsp* fs, write_context* ctx)
                 uint64_t written_bytes = 0;
                 if (!ffsp_write_raw(fs->fd, fs->buf, fs->clustersize, offset, written_bytes))
                     return -errno;
+                ffsp_debug_update(*fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
 
                 ctx->buf += cl_left;
                 cl_count -= cl_left;
@@ -609,7 +614,7 @@ static int write_ebin(ffsp* fs, write_context* ctx)
     return count - ctx->bytes_left;
 }
 
-int ffsp_read(const ffsp* fs, ffsp_inode* ino, void* buf,
+int ffsp_read(ffsp* fs, ffsp_inode* ino, void* buf,
               size_t count, uint64_t offset)
 {
     int rc;

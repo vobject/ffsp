@@ -36,6 +36,6 @@ int ffsp_find_writable_cluster(ffsp* fs, int eb_type,
 void ffsp_commit_write_operation(ffsp* fs, int eb_type,
                                  uint32_t eb_id, be32_t ino_no);
 void ffsp_close_eraseblks(ffsp* fs);
-int ffsp_write_meta_data(const ffsp* fs);
+int ffsp_write_meta_data(ffsp* fs);
 
 #endif /* ERASEBLK_H */

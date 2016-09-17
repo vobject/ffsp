@@ -37,8 +37,7 @@ bool ffsp_is_inode_valid(const ffsp* fs, unsigned int cl_id,
                          const ffsp_inode* ino);
 
 int ffsp_lookup_no(ffsp* fs, ffsp_inode** ino, uint32_t ino_no);
-int ffsp_lookup(ffsp* fs, ffsp_inode** ino,
-                const char* path);
+int ffsp_lookup(ffsp* fs, ffsp_inode** ino, const char* path);
 int ffsp_flush_inodes(ffsp* fs, bool force);
 int ffsp_release_inodes(ffsp* fs);
 
@@ -55,7 +54,7 @@ int ffsp_rename(ffsp* fs, const char* oldpath, const char* newpath);
 void ffsp_mark_dirty(ffsp* fs, ffsp_inode* ino);
 void ffsp_reset_dirty(ffsp* fs, ffsp_inode* ino);
 
-int ffsp_cache_dir(const ffsp* fs, ffsp_inode* ino,
+int ffsp_cache_dir(ffsp* fs, ffsp_inode* ino,
                    ffsp_dentry** dent_buf, int* dentry_cnt);
 
 void ffsp_invalidate_ind_ptr(ffsp* fs, const be32_t* ind_ptr,

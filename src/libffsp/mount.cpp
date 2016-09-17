@@ -20,6 +20,7 @@
 
 #include "mount.hpp"
 #include "eraseblk.hpp"
+#include "debug.hpp"
 #include "ffsp.hpp"
 #include "inode.hpp"
 #include "inode_cache.hpp"
@@ -42,12 +43,13 @@
 static void read_super(ffsp& fs)
 {
     ffsp_super sb;
-    uint64_t read_bytes;
+    uint64_t read_bytes = 0;
     if (!ffsp_read_raw(fs.fd, &sb, sizeof(ffsp_super), 0, read_bytes))
     {
         ffsp_log().critical("reading super block failed");
         abort();
     }
+    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 
     // The super block is only read once and its content is saved
     //  inside the ffsp structure.
@@ -84,6 +86,7 @@ static void read_eb_usage(ffsp& fs)
         free(fs.eb_usage);
         abort();
     }
+    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 }
 
 static void read_ino_map(ffsp& fs)
@@ -106,6 +109,7 @@ static void read_ino_map(ffsp& fs)
         free(fs.ino_map);
         abort();
     }
+    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 }
 
 static void read_cl_occupancy(ffsp& fs)

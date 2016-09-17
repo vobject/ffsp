@@ -20,6 +20,8 @@
 
 #include "debug.hpp"
 
+#include <string>
+#include <sstream>
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
@@ -36,10 +38,8 @@ static struct ffsp_debug_info
     int errors;
 } debug_info = {};
 
-void ffsp_debug_fuse_stat(struct stat* stbuf)
+void ffsp_debug_fuse_stat(ffsp& fs, struct stat* stbuf)
 {
-    char tmp[4096];
-
     memset(stbuf, 0, sizeof(*stbuf));
     stbuf->st_dev = 0;
     stbuf->st_ino = 0;
@@ -52,33 +52,68 @@ void ffsp_debug_fuse_stat(struct stat* stbuf)
     stbuf->st_uid = 0;
     stbuf->st_gid = 0;
     stbuf->st_rdev = 0;
-    stbuf->st_size = ffsp_debug_get_info(tmp, sizeof(tmp) - 1);
+    stbuf->st_size = static_cast<off_t>(ffsp_debug_get_info(fs).size());
     stbuf->st_atime = 0;
     stbuf->st_mtime = 0;
     stbuf->st_ctime = 0;
 }
 
-int ffsp_debug_get_info(char* buf, size_t count)
+std::string ffsp_debug_get_info(ffsp& fs)
 {
-    return snprintf(buf, count, "ffsp_debug_info:\n"
-                                "\tLOG_ERROR=%d\n"
-                                "\tREAD_RAW=%" PRIu64 "\n"
-                                "\tWRITE_RAW=%" PRIu64 "\n"
-                                "\tFUSE_READ=%" PRIu64 "\n"
-                                "\tFUSE_WRITE=%" PRIu64 "\n"
-                                "\tGC_READ=%" PRIu64 "\n"
-                                "\tGC_WRITE=%" PRIu64 "\n",
-                    debug_info.errors,
-                    debug_info.read_raw,
-                    debug_info.write_raw,
-                    debug_info.fuse_read,
-                    debug_info.fuse_write,
-                    debug_info.gc_read,
-                    debug_info.gc_write);
+    std::ostringstream os;
+
+    os << "{\n";
+
+    os << "  \"fd\": " << fs.fd << ",\n";
+    os << "  \"flags\": " << fs.flags << ",\n";
+    os << "  \"neraseblocks\": " << fs.neraseblocks << ",\n";
+    os << "  \"nino\": " << fs.nino << ",\n";
+    os << "  \"blocksize\": " << fs.blocksize << ",\n";
+    os << "  \"clustersize\": " << fs.clustersize << ",\n";
+    os << "  \"erasesize\": " << fs.erasesize << ",\n";
+    os << "  \"ninoopen\": " << fs.ninoopen << ",\n";
+    os << "  \"neraseopen\": " << fs.neraseopen << ",\n";
+    os << "  \"nerasereserve\": " << fs.nerasereserve << ",\n";
+    os << "  \"nerasewrites\": " << fs.nerasewrites << ",\n";
+
+    os << "  \"eb_usage\": [\n";
+    for (uint32_t i = 0; i < fs.neraseblocks; i++)
+    {
+        const ffsp_eraseblk& eb = fs.eb_usage[i];
+
+        os << "    {\n";
+        os << "      \"type\": " << std::to_string(eb.e_type) << ",\n";
+        os << "      \"lastwrite\": " << std::to_string(get_be16(eb.e_lastwrite)) << ",\n";
+        os << "      \"cvalid\": " << std::to_string(get_be16(eb.e_cvalid)) << ",\n";
+        os << "      \"writeops\": " << std::to_string(get_be16(eb.e_writeops)) << "\n";
+
+        if (i != (fs.neraseblocks - 1))
+            os << "    },\n";
+        else
+            os << "    }\n";
+    }
+    os << "  ],\n";
+
+    // TODO: inode ids
+
+    os << "  \"debug_info\": {\n";
+    os << "    \"read_raw\": " << debug_info.read_raw << ",\n";
+    os << "    \"write_raw\": " << debug_info.write_raw << ",\n";
+    os << "    \"fuse_read\": " << debug_info.fuse_read << ",\n";
+    os << "    \"fuse_write\": " << debug_info.fuse_write << ",\n";
+    os << "    \"gc_read\": " << debug_info.gc_read << ",\n";
+    os << "    \"gc_write\": " << debug_info.gc_write << ",\n";
+    os << "    \"errors\": " << debug_info.errors << "\n";
+    os << "  }\n";
+
+    os << "}\n";
+    return os.str();
 }
 
-void ffsp_debug_update(int type, unsigned long val)
+void ffsp_debug_update(ffsp& fs, int type, unsigned long val)
 {
+    (void)fs;
+
     switch (type)
     {
         case FFSP_DEBUG_READ_RAW:
