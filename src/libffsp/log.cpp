@@ -22,12 +22,13 @@
 
 #include "spdlog/sinks/null_sink.h"
 
-static std::string logname{ "ffsp_api" };
-static auto loglevel{ spdlog::level::debug };
+static std::string s_logname;
 
-void ffsp_log_init()
+void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level)
 {
-    auto logger = spdlog::get(logname);
+    s_logname = logname;
+
+    auto logger = spdlog::get(s_logname);
     if (logger)
     {
         logger->warn("logger already initialized");
@@ -36,22 +37,22 @@ void ffsp_log_init()
     {
         const std::vector<spdlog::sink_ptr> sinks{
             std::make_shared<spdlog::sinks::stdout_sink_mt>(),
-            std::make_shared<spdlog::sinks::simple_file_sink_mt>(logname + ".log", true)
+            std::make_shared<spdlog::sinks::simple_file_sink_mt>(s_logname + ".log", true)
         };
-        logger = std::make_shared<spdlog::logger>(logname, std::begin(sinks), std::end(sinks));
-        logger->set_level(loglevel);
+        logger = std::make_shared<spdlog::logger>(s_logname, std::begin(sinks), std::end(sinks));
+        logger->set_level(level);
         spdlog::register_logger(logger);
     }
 }
 
 void ffsp_log_deinit()
 {
-    spdlog::drop(logname);
+    spdlog::drop(s_logname);
 }
 
 spdlog::logger& ffsp_log()
 {
-    auto logger = spdlog::get(logname);
+    auto logger = spdlog::get(s_logname);
     if (logger)
     {
         return *logger;

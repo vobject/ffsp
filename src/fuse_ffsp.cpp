@@ -73,7 +73,7 @@ void set_params(const std::string& device)
 
 void* init(fuse_conn_info* conn)
 {
-    ffsp_log_init();
+    ffsp_log_init("ffsp_api", spdlog::level::debug);
 
     auto* fs = new ffsp;
 

@@ -23,7 +23,9 @@
 
 #include "spdlog/spdlog.h"
 
-void ffsp_log_init();
+#include <string>
+
+void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level);
 void ffsp_log_deinit();
 spdlog::logger& ffsp_log();
 

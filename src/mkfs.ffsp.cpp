@@ -20,7 +20,9 @@
 
 #include "libffsp/mkfs.hpp"
 #include "libffsp/ffsp.hpp"
+#include "libffsp/log.hpp"
 
+#include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
 
 #include <string>
@@ -32,13 +34,26 @@
 struct mkfs_arguments
 {
     const char* device;
-    unsigned int clustersize;
-    unsigned int erasesize;
-    unsigned int ninoopen;
-    unsigned int neraseopen;
-    unsigned int nerasereserve;
-    unsigned int nerasewrites;
+    uint32_t clustersize;
+    uint32_t erasesize;
+    uint32_t ninoopen;
+    uint32_t neraseopen;
+    uint32_t nerasereserve;
+    uint32_t nerasewrites;
 };
+
+std::ostream& operator<<(std::ostream& os, const mkfs_arguments& args)
+{
+    return os << "{"
+              << "device=" << args.device
+              << ", clustersize=" << args.clustersize
+              << ", erasesize=" << args.erasesize
+              << ", ninoopen=" << args.ninoopen
+              << ", neraseopen=" << args.neraseopen
+              << ", nerasereserve=" << args.nerasereserve
+              << ", nerasewrites=" << args.nerasewrites
+              << "}";
+}
 
 static void show_usage(const char* progname)
 {
@@ -88,22 +103,22 @@ static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
         switch (c)
         {
             case 'c':
-                args.clustersize = std::stoul(optarg);
+                args.clustersize = static_cast<uint32_t>(std::stoul(optarg));
                 break;
             case 'e':
-                args.erasesize = std::stoul(optarg);
+                args.erasesize = static_cast<uint32_t>(std::stoul(optarg));
                 break;
             case 'i':
-                args.ninoopen = std::stoul(optarg);
+                args.ninoopen = static_cast<uint32_t>(std::stoul(optarg));
                 break;
             case 'o':
-                args.neraseopen = std::stoul(optarg);
+                args.neraseopen = static_cast<uint32_t>(std::stoul(optarg));
                 break;
             case 'r':
-                args.nerasereserve = std::stoul(optarg);
+                args.nerasereserve = static_cast<uint32_t>(std::stoul(optarg));
                 break;
             case 'w':
-                args.nerasewrites = std::stoul(optarg);
+                args.nerasewrites = static_cast<uint32_t>(std::stoul(optarg));
                 break;
             case '?':
                 show_usage(argv[0]);
@@ -124,22 +139,18 @@ static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
 
 int main(int argc, char* argv[])
 {
+    ffsp_log_init("ffsp_mkfs", spdlog::level::debug);
+
     mkfs_arguments args = {};
     if (!parse_arguments(argc, argv, args))
     {
+        fprintf(stderr, "%s: failed to parse command line arguments", argv[0]);
         return EXIT_FAILURE;
     }
 
-    auto console = spdlog::stdout_logger_mt("console");
-    console->info("Setup file system:");
-    console->info("\tdevice={}", args.device);
-    console->info("\tclustersize={}", args.clustersize);
-    console->info("\terasesize={}", args.erasesize);
-    console->info("\tninoopen={}", args.ninoopen);
-    console->info("\tneraseopen={}", args.neraseopen);
-    console->info("\tnerasereserve={}", args.nerasereserve);
-    console->info("\tnerasewrites={}", args.nerasewrites);
+    ffsp_log().info("Setup file system: {})", args);
 
+    int ret = EXIT_SUCCESS;
     if (!ffsp_mkfs(args.device, {args.clustersize,
                                  args.erasesize,
                                  args.ninoopen,
@@ -148,7 +159,8 @@ int main(int argc, char* argv[])
                                  args.nerasewrites}))
     {
         fprintf(stderr, "%s: failed to setup file system", argv[0]);
-        return EXIT_FAILURE;
+        ret = EXIT_FAILURE;
     }
-    return EXIT_SUCCESS;
+    ffsp_log_deinit();
+    return ret;
 }
