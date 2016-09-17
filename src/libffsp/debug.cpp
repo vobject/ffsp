@@ -62,51 +62,51 @@ std::string ffsp_debug_get_info(ffsp& fs)
 {
     std::ostringstream os;
 
-    os << "{\n";
+    os << "{";
 
-    os << "  \"fd\": " << fs.fd << ",\n";
-    os << "  \"flags\": " << fs.flags << ",\n";
-    os << "  \"neraseblocks\": " << fs.neraseblocks << ",\n";
-    os << "  \"nino\": " << fs.nino << ",\n";
-    os << "  \"blocksize\": " << fs.blocksize << ",\n";
-    os << "  \"clustersize\": " << fs.clustersize << ",\n";
-    os << "  \"erasesize\": " << fs.erasesize << ",\n";
-    os << "  \"ninoopen\": " << fs.ninoopen << ",\n";
-    os << "  \"neraseopen\": " << fs.neraseopen << ",\n";
-    os << "  \"nerasereserve\": " << fs.nerasereserve << ",\n";
-    os << "  \"nerasewrites\": " << fs.nerasewrites << ",\n";
+    os << "\"fd\": " << fs.fd << ",";
+    os << "\"fsid\": " << fs.fsid << ",";
+    os << "\"flags\": " << fs.flags << ",";
+    os << "\"neraseblocks\": " << fs.neraseblocks << ",";
+    os << "\"nino\": " << fs.nino << ",";
+    os << "\"blocksize\": " << fs.blocksize << ",";
+    os << "\"clustersize\": " << fs.clustersize << ",";
+    os << "\"erasesize\": " << fs.erasesize << ",";
+    os << "\"ninoopen\": " << fs.ninoopen << ",";
+    os << "\"neraseopen\": " << fs.neraseopen << ",";
+    os << "\"nerasereserve\": " << fs.nerasereserve << ",";
+    os << "\"nerasewrites\": " << fs.nerasewrites << ",";
 
-    os << "  \"eb_usage\": [\n";
+    os << "\"eb_usage\": [";
     for (uint32_t i = 0; i < fs.neraseblocks; i++)
     {
         const ffsp_eraseblk& eb = fs.eb_usage[i];
 
-        os << "    {\n";
-        os << "      \"type\": " << std::to_string(eb.e_type) << ",\n";
-        os << "      \"lastwrite\": " << std::to_string(get_be16(eb.e_lastwrite)) << ",\n";
-        os << "      \"cvalid\": " << std::to_string(get_be16(eb.e_cvalid)) << ",\n";
-        os << "      \"writeops\": " << std::to_string(get_be16(eb.e_writeops)) << "\n";
+        os << "{";
+        os << "\"type\": " << std::to_string(eb.e_type) << ",";
+        os << "\"lastwrite\": " << std::to_string(get_be16(eb.e_lastwrite)) << ",";
+        os << "\"cvalid\": " << std::to_string(get_be16(eb.e_cvalid)) << ",";
+        os << "\"writeops\": " << std::to_string(get_be16(eb.e_writeops));
+        os << "}";
 
         if (i != (fs.neraseblocks - 1))
-            os << "    },\n";
-        else
-            os << "    }\n";
+            os << ",";
     }
-    os << "  ],\n";
+    os << "],";
 
     // TODO: inode ids
 
-    os << "  \"debug_info\": {\n";
-    os << "    \"read_raw\": " << debug_info.read_raw << ",\n";
-    os << "    \"write_raw\": " << debug_info.write_raw << ",\n";
-    os << "    \"fuse_read\": " << debug_info.fuse_read << ",\n";
-    os << "    \"fuse_write\": " << debug_info.fuse_write << ",\n";
-    os << "    \"gc_read\": " << debug_info.gc_read << ",\n";
-    os << "    \"gc_write\": " << debug_info.gc_write << ",\n";
-    os << "    \"errors\": " << debug_info.errors << "\n";
-    os << "  }\n";
+    os << "\"debug_info\": {";
+    os << "\"read_raw\": " << debug_info.read_raw << ",";
+    os << "\"write_raw\": " << debug_info.write_raw << ",";
+    os << "\"fuse_read\": " << debug_info.fuse_read << ",";
+    os << "\"fuse_write\": " << debug_info.fuse_write << ",";
+    os << "\"gc_read\": " << debug_info.gc_read << ",";
+    os << "\"gc_write\": " << debug_info.gc_write << ",";
+    os << "\"errors\": " << debug_info.errors;
+    os << "}";
 
-    os << "}\n";
+    os << "}";
     return os.str();
 }
 
