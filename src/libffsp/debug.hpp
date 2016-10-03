@@ -24,10 +24,9 @@
 #include "ffsp.hpp"
 
 #include <string>
+#include <vector>
 
 struct stat;
-
-#define FFSP_DEBUG_FILE "/.FFSP"
 
 #define FFSP_DEBUG_READ_RAW 1
 #define FFSP_DEBUG_WRITE_RAW 2
@@ -35,16 +34,14 @@ struct stat;
 #define FFSP_DEBUG_FUSE_WRITE 4
 #define FFSP_DEBUG_GC_READ 5
 #define FFSP_DEBUG_GC_WRITE 6
-#define FFSP_DEBUG_LOG_ERROR 7
 
-void ffsp_debug_fuse_stat(ffsp& fs, struct stat* stbuf);
-std::string ffsp_debug_get_info(ffsp& fs);
 void ffsp_debug_update(ffsp& fs, int type, unsigned long val);
 
-/* TODO: Introduce some kind of 'debuginfo context':
- * 	ffsp_debug_set_context(FFSP_DEBUG_CTX_GC);
- * 	ffsp_write(); <--- will log to write_raw AND gc_write.
- * 	ffsp_debug_unset_context(FFSP_DEBUG_CTX_GC);
- */
+bool ffsp_debug_is_debug_path(ffsp& fs, const char* path);
+bool ffsp_debug_getattr(ffsp& fs, const char* path, struct stat& stbuf);
+bool ffsp_debug_readdir(ffsp& fs, const char* path, std::vector<std::string>& dirs);
+bool ffsp_debug_open(ffsp& fs, const char* path);
+bool ffsp_debug_release(ffsp& fs, const char* path);
+bool ffsp_debug_read(ffsp& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
 
 #endif /* DEBUG_H */

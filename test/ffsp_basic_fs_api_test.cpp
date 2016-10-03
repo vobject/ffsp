@@ -81,5 +81,5 @@ TEST_F(BasicFileSystemOperationsApiTest, SmallFiles)
 //        ASSERT_EQ(0, fuse_ffsp::release(fs_, testFile.c_str(), &fi));
 //    }
 
-    ffsp_log().info(ffsp_debug_get_info(fs_));
+//    ffsp_log().info(ffsp_debug_get_info(fs_));
 }
