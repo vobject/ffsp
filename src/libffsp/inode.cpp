@@ -178,7 +178,7 @@ static int add_dentry(ffsp* fs, const char* path,
     free(name);
 
     // Append the new dentry at the inode's data.
-    rc = ffsp_write(fs, parent_ino, &dent, sizeof(dent), get_be64(parent_ino->i_size));
+    rc = ffsp_write(fs, parent_ino, (char*)(&dent), sizeof(dent), get_be64(parent_ino->i_size));
     if (rc < 0)
         return rc;
 
@@ -230,7 +230,7 @@ static int remove_dentry(ffsp* fs, const char* path,
             dent_buf[i].len = 0;
 
             // TODO: write only affected cluster.
-            ffsp_write(fs, ino, dent_buf, dent_cnt * sizeof(ffsp_dentry), 0);
+            ffsp_write(fs, ino, (char*)dent_buf, dent_cnt * sizeof(ffsp_dentry), 0);
             break;
         }
     }
@@ -904,7 +904,7 @@ int ffsp_cache_dir(ffsp* fs, ffsp_inode* ino,
         return -1;
     }
 
-    rc = ffsp_read(fs, ino, *dent_buf, data_size, 0);
+    rc = ffsp_read(fs, ino, (char*)(*dent_buf), data_size, 0);
     if (rc < 0)
     {
         free(*dent_buf);

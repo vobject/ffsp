@@ -614,7 +614,7 @@ static int write_ebin(ffsp* fs, write_context* ctx)
     return count - ctx->bytes_left;
 }
 
-int ffsp_read(ffsp* fs, ffsp_inode* ino, void* buf,
+int ffsp_read(ffsp* fs, ffsp_inode* ino, char* buf,
               size_t count, uint64_t offset)
 {
     int rc;
@@ -631,11 +631,11 @@ int ffsp_read(ffsp* fs, ffsp_inode* ino, void* buf,
     i_flags = get_be32(ino->i_flags);
 
     if (i_flags & FFSP_DATA_EMB)
-        rc = read_emb(fs, ino, (char*)buf, count, offset);
+        rc = read_emb(fs, ino, buf, count, offset);
     else if (i_flags & FFSP_DATA_CLIN)
-        rc = read_ind(fs, ino, (char*)buf, count, offset, fs->clustersize);
+        rc = read_ind(fs, ino, buf, count, offset, fs->clustersize);
     else if (i_flags & FFSP_DATA_EBIN)
-        rc = read_ind(fs, ino, (char*)buf, count, offset, fs->erasesize);
+        rc = read_ind(fs, ino, buf, count, offset, fs->erasesize);
     else
     {
         ffsp_log().error("ffsp_read(): unknown inode type");
@@ -714,7 +714,7 @@ int ffsp_truncate(ffsp* fs, ffsp_inode* ino, uint64_t length)
 }
 
 int ffsp_write(ffsp* fs, ffsp_inode* ino,
-               const void* buf, size_t count, uint64_t offset)
+               const char* buf, size_t count, uint64_t offset)
 {
     int rc;
     uint32_t i_flags;
@@ -724,7 +724,7 @@ int ffsp_write(ffsp* fs, ffsp_inode* ino,
         return 0;
 
     memset(&ctx, 0, sizeof(ctx));
-    ctx.buf = (char*)buf;
+    ctx.buf = buf;
     ctx.bytes_left = count;
     ctx.offset = offset;
     ctx.ino = ino;

@@ -25,11 +25,8 @@
 
 #include <cstddef>
 
-int ffsp_truncate(ffsp* fs, ffsp_inode* ino,
-                  uint64_t length);
-int ffsp_read(ffsp* fs, ffsp_inode* ino, void* buf,
-              size_t count, uint64_t offset);
-int ffsp_write(ffsp* fs, ffsp_inode* ino,
-               const void* buf, size_t count, uint64_t offset);
+int ffsp_truncate(ffsp* fs, ffsp_inode* ino, uint64_t length);
+int ffsp_read(ffsp* fs, ffsp_inode* ino, char* buf, size_t count, uint64_t offset);
+int ffsp_write(ffsp* fs, ffsp_inode* ino, const char* buf, size_t count, uint64_t offset);
 
 #endif /* IO_H */
