@@ -58,12 +58,12 @@ bool make_fs(const char* file_path, const ffsp_mkfs_options& opts)
     return ffsp_mkfs(file_path, opts);
 }
 
-bool mount_fs(ffsp& fs, const char* file_path)
+bool mount_fs(ffsp_fs& fs, const char* file_path)
 {
     return ffsp_mount(fs, file_path);
 }
 
-bool unmount_fs(ffsp& fs)
+bool unmount_fs(ffsp_fs& fs)
 {
     ffsp_unmount(fs);
     return true;
@@ -115,12 +115,12 @@ bool default_make_fs()
     return make_fs(default_fs_path, default_mkfs_options);
 }
 
-bool default_mount_fs(ffsp& fs)
+bool default_mount_fs(ffsp_fs& fs)
 {
     return mount_fs(fs, default_fs_path);
 }
 
-bool default_unmount_fs(ffsp& fs)
+bool default_unmount_fs(ffsp_fs& fs)
 {
     return unmount_fs(fs);
 }

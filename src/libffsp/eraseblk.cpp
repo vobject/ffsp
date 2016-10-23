@@ -36,22 +36,22 @@
 #endif
 #endif
 
-int ffsp_eb_get_cvalid(const ffsp* fs, unsigned int eb_id)
+int ffsp_eb_get_cvalid(const ffsp_fs* fs, unsigned int eb_id)
 {
     return get_be16(fs->eb_usage[eb_id].e_cvalid);
 }
 
-void ffsp_eb_inc_cvalid(ffsp* fs, unsigned int eb_id)
+void ffsp_eb_inc_cvalid(ffsp_fs* fs, unsigned int eb_id)
 {
     inc_be16(&fs->eb_usage[eb_id].e_cvalid);
 }
 
-void ffsp_eb_dec_cvalid(ffsp* fs, unsigned int eb_id)
+void ffsp_eb_dec_cvalid(ffsp_fs* fs, unsigned int eb_id)
 {
     dec_be16(&fs->eb_usage[eb_id].e_cvalid);
 }
 
-unsigned int ffsp_emtpy_eraseblk_count(const ffsp* fs)
+unsigned int ffsp_emtpy_eraseblk_count(const ffsp_fs* fs)
 {
     unsigned int cnt = 0;
 
@@ -62,7 +62,7 @@ unsigned int ffsp_emtpy_eraseblk_count(const ffsp* fs)
     return cnt;
 }
 
-static uint32_t find_empty_eraseblk(const ffsp* fs)
+static uint32_t find_empty_eraseblk(const ffsp_fs* fs)
 {
     if (ffsp_emtpy_eraseblk_count(fs) <= fs->nerasereserve)
         return FFSP_INVALID_EB_ID;
@@ -81,7 +81,7 @@ static uint32_t find_empty_eraseblk(const ffsp* fs)
     return FFSP_INVALID_EB_ID;
 }
 
-int ffsp_get_eraseblk_type(const ffsp* fs, int data_type, uint32_t mode)
+int ffsp_get_eraseblk_type(const ffsp_fs* fs, int data_type, uint32_t mode)
 {
     // TODO: Check if it is ok to put all other types (blk, pipe, etc)
     //  apart from dentry into the same "file" erase blocks.
@@ -137,7 +137,7 @@ int ffsp_get_eraseblk_type(const ffsp* fs, int data_type, uint32_t mode)
     return FFSP_EB_EBIN;
 }
 
-int ffsp_find_writable_cluster(ffsp* fs, int eb_type,
+int ffsp_find_writable_cluster(ffsp_fs* fs, int eb_type,
                                uint32_t* eb_id, uint32_t* cl_id)
 {
     unsigned int cur_writeops;
@@ -185,7 +185,7 @@ int ffsp_find_writable_cluster(ffsp* fs, int eb_type,
     return 0;
 }
 
-void ffsp_commit_write_operation(ffsp* fs, int eb_type,
+void ffsp_commit_write_operation(ffsp_fs* fs, int eb_type,
                                  uint32_t eb_id, be32_t ino_no)
 {
     /* TODO: Error handling missing! */
@@ -279,7 +279,7 @@ void ffsp_commit_write_operation(ffsp* fs, int eb_type,
     }
 }
 
-void ffsp_close_eraseblks(ffsp* fs)
+void ffsp_close_eraseblks(ffsp_fs* fs)
 {
     /* TODO: Error handling missing! */
 
@@ -322,7 +322,7 @@ void ffsp_close_eraseblks(ffsp* fs)
     }
 }
 
-int ffsp_write_meta_data(ffsp* fs)
+int ffsp_write_meta_data(ffsp_fs* fs)
 {
     int eb_usage_size;
     int ino_map_size;

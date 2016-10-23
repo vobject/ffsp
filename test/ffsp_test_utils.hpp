@@ -23,7 +23,7 @@
 
 #include "libffsp/mkfs.hpp"
 
-struct ffsp;
+struct ffsp_fs;
 
 namespace ffsp_testing
 {
@@ -33,8 +33,8 @@ bool remove_file(const char* file_path);
 
 bool make_fs(const char* file_path, const ffsp_mkfs_options& opts);
 
-bool mount_fs(ffsp& fs, const char* file_path);
-bool unmount_fs(ffsp& fs);
+bool mount_fs(ffsp_fs& fs, const char* file_path);
+bool unmount_fs(ffsp_fs& fs);
 
 bool mkfs_ffsp(const char* program,
                uint32_t clustersize, uint32_t erasesize, uint32_t ninoopen,
@@ -79,8 +79,8 @@ bool default_remove_file();
 
 bool default_make_fs();
 
-bool default_mount_fs(ffsp& fs);
-bool default_unmount_fs(ffsp& fs);
+bool default_mount_fs(ffsp_fs& fs);
+bool default_unmount_fs(ffsp_fs& fs);
 
 bool default_mkfs_ffsp();
 bool default_mount_ffsp();

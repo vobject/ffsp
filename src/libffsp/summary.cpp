@@ -26,7 +26,7 @@
 #include <cstdlib>
 #include <cstring>
 
-be32_t* ffsp_alloc_summary(const ffsp& fs)
+be32_t* ffsp_alloc_summary(const ffsp_fs& fs)
 {
     be32_t* summary = (be32_t*)malloc(fs.clustersize);
     if (!summary)
@@ -105,7 +105,7 @@ bool ffsp_has_summary(int eb_type)
     return false;
 }
 
-bool ffsp_read_summary(ffsp& fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_read_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + fs.erasesize - fs.clustersize;
@@ -120,7 +120,7 @@ bool ffsp_read_summary(ffsp& fs, uint32_t eb_id, be32_t* summary)
     return true;
 }
 
-bool ffsp_write_summary(ffsp& fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_write_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);

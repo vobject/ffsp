@@ -28,7 +28,7 @@
 
 struct ffsp_inode_cache;
 
-ffsp_inode_cache* ffsp_inode_cache_init(const ffsp& fs);
+ffsp_inode_cache* ffsp_inode_cache_init(const ffsp_fs& fs);
 void ffsp_inode_cache_uninit(ffsp_inode_cache* cache);
 
 void ffsp_inode_cache_insert(ffsp_inode_cache& cache, ffsp_inode* ino);

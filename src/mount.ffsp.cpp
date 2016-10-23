@@ -422,9 +422,9 @@ struct fuse_ffsp_operations
         spdlog::drop("ffsp_api");
     }
 
-    static ffsp* get_fs(fuse_context* ctx)
+    static ffsp_fs* get_fs(fuse_context* ctx)
     {
-        return static_cast<ffsp*>(ctx->private_data);
+        return static_cast<ffsp_fs*>(ctx->private_data);
     }
 
     template <typename T>

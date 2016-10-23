@@ -38,7 +38,7 @@ struct ffsp_gcinfo
     unsigned int write_cnt;
 };
 
-ffsp_gcinfo *ffsp_gcinfo_init(const ffsp& fs)
+ffsp_gcinfo *ffsp_gcinfo_init(const ffsp_fs& fs)
 {
     auto* info = new ffsp_gcinfo[fs.neraseopen - 1];
 
@@ -113,7 +113,7 @@ static bool is_eb_type_collectable(int type)
     return false;
 }
 
-static bool is_eb_collectable(const ffsp* fs, unsigned int eb_id)
+static bool is_eb_collectable(const ffsp_fs* fs, unsigned int eb_id)
 {
     int type;
     int cvalid;
@@ -147,7 +147,7 @@ static bool is_eb_collectable(const ffsp* fs, unsigned int eb_id)
  * Checks if a given inode (specified by its inode number) still contains
  * an indirect cluster pointer to the given cluster id.
  */
-static bool is_clin_valid(ffsp* fs, unsigned int cl_id,
+static bool is_clin_valid(ffsp_fs* fs, unsigned int cl_id,
                           unsigned int ino_no)
 {
     int rc;
@@ -179,7 +179,7 @@ static bool is_clin_valid(ffsp* fs, unsigned int cl_id,
     return false;
 }
 
-static void swap_cluster_id(ffsp* fs, unsigned int ino_no,
+static void swap_cluster_id(ffsp_fs* fs, unsigned int ino_no,
                             unsigned int old_cl_id, unsigned int new_cl_id)
 {
     ffsp_inode* ino;
@@ -206,7 +206,7 @@ static void swap_cluster_id(ffsp* fs, unsigned int ino_no,
  * Searches inside the erase block usage map for erase blocks that contain
  * no valid data clusters and sets them to "free".
  */
-static void collect_empty_eraseblks(ffsp* fs)
+static void collect_empty_eraseblks(ffsp_fs* fs)
 {
     /* erase block id "0" is always reserved */
     for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++)
@@ -227,7 +227,7 @@ static void collect_empty_eraseblks(ffsp* fs)
     }
 }
 
-static unsigned int find_empty_eraseblk(const ffsp* fs)
+static unsigned int find_empty_eraseblk(const ffsp_fs* fs)
 {
     /* erase block id "0" is always reserved */
     for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++)
@@ -237,7 +237,7 @@ static unsigned int find_empty_eraseblk(const ffsp* fs)
 }
 
 /* get a pointer to the gcinfo structure of a specific erase block type */
-static ffsp_gcinfo* get_gcinfo(const ffsp* fs, int eb_type)
+static ffsp_gcinfo* get_gcinfo(const ffsp_fs* fs, int eb_type)
 {
     for (unsigned int i = 0; i < (fs->neraseopen - 1); i++)
         if (fs->gcinfo[i].eb_type == eb_type)
@@ -253,7 +253,7 @@ static ffsp_gcinfo* get_gcinfo(const ffsp* fs, int eb_type)
  * TODO: Introduce some sort of garbage collection policies to also take
  * other criteria into account (like last write time).
  */
-static int find_collectable_eb_type(const ffsp* fs /*, GC_POLICY*/)
+static int find_collectable_eb_type(const ffsp_fs* fs /*, GC_POLICY*/)
 {
     for (unsigned int i = 0; i < (fs->neraseopen - 1); i++)
         if (fs->gcinfo[i].write_cnt >= fs->nerasewrites)
@@ -265,7 +265,7 @@ static int find_collectable_eb_type(const ffsp* fs /*, GC_POLICY*/)
  * Finds the erase block of a given type that contains the least amount
  * of valid clusters.
  */
-static unsigned int find_collectable_eraseblk(ffsp* fs, int eb_type)
+static unsigned int find_collectable_eraseblk(ffsp_fs* fs, int eb_type)
 {
     int least_cvalid;
     unsigned int least_cvalid_id;
@@ -304,7 +304,7 @@ static unsigned int find_collectable_eraseblk(ffsp* fs, int eb_type)
  * Returns the number of valid inode clusters inside the destination
  * erase block.
  */
-static int move_inodes(ffsp* fs, unsigned int src_eb_id,
+static int move_inodes(ffsp_fs* fs, unsigned int src_eb_id,
                        unsigned int dest_eb_id, int dest_moved)
 {
     /* TODO: Error handling missing! */
@@ -369,7 +369,7 @@ static int move_inodes(ffsp* fs, unsigned int src_eb_id,
 /*
  * Collects one inode erase block.
  */
-static void collect_inodes(ffsp* fs, int eb_type)
+static void collect_inodes(ffsp_fs* fs, int eb_type)
 {
     /* TODO: Error handling missing! */
 
@@ -407,7 +407,7 @@ static void collect_inodes(ffsp* fs, int eb_type)
     }
 }
 
-static int move_clin(ffsp* fs, unsigned int src_eb_id,
+static int move_clin(ffsp_fs* fs, unsigned int src_eb_id,
                      unsigned int dest_eb_id, int dest_moved, be32_t* dest_eb_summary)
 {
     /* TODO: Error handling missing! */
@@ -459,7 +459,7 @@ static int move_clin(ffsp* fs, unsigned int src_eb_id,
     return dest_moved;
 }
 
-static void collect_clin(ffsp* fs, int eb_type)
+static void collect_clin(ffsp_fs* fs, int eb_type)
 {
     /* TODO: Error handling missing! */
 
@@ -504,19 +504,19 @@ static void collect_clin(ffsp* fs, int eb_type)
     ffsp_delete_summary(eb_summary);
 }
 
-unsigned int ffsp_gcinfo_update_writetime(ffsp* fs, int eb_type)
+unsigned int ffsp_gcinfo_update_writetime(ffsp_fs* fs, int eb_type)
 {
     ffsp_gcinfo* info = get_gcinfo(fs, eb_type);
     return ++info->write_time;
 }
 
-unsigned int ffsp_gcinfo_inc_writecnt(ffsp* fs, int eb_type)
+unsigned int ffsp_gcinfo_inc_writecnt(ffsp_fs* fs, int eb_type)
 {
     ffsp_gcinfo* info = get_gcinfo(fs, eb_type);
     return ++info->write_cnt;
 }
 
-void ffsp_gc(ffsp* fs)
+void ffsp_gc(ffsp_fs* fs)
 {
     int eb_type;
     ffsp_gcinfo* info;

@@ -143,7 +143,7 @@ struct ffsp_summary_list_node
     ffsp_summary_list_node* next;
 };
 
-struct ffsp
+struct ffsp_fs
 {
     int fd;
 

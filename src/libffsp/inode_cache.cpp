@@ -31,7 +31,7 @@ struct ffsp_inode_cache
     std::vector<ffsp_inode*> buf;
 };
 
-ffsp_inode_cache* ffsp_inode_cache_init(const ffsp& fs)
+ffsp_inode_cache* ffsp_inode_cache_init(const ffsp_fs& fs)
 {
     return new ffsp_inode_cache(fs.nino);
 }

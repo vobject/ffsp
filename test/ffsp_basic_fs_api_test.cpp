@@ -30,7 +30,7 @@ protected:
         ffsp_log_deinit();
     }
 
-    ffsp fs_;
+    ffsp_fs fs_;
 };
 
 //TEST_F(BasicFileSystemOperationsTest, SmallFile)

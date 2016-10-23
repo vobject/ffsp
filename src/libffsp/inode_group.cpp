@@ -31,7 +31,7 @@
 #include <cstring>
 
 /* copy grouped elements into the cluster buffer. */
-static void group_inodes(const ffsp* fs, ffsp_inode** group,
+static void group_inodes(const ffsp_fs* fs, ffsp_inode** group,
                          int group_elem_cnt, void* cl_buf)
 {
     unsigned int ino_size;
@@ -48,7 +48,7 @@ static void group_inodes(const ffsp* fs, ffsp_inode** group,
 }
 
 /* Read all valid inodes from the specified cluster. */
-int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
+int ffsp_read_inode_group(ffsp_fs* fs, unsigned int cl_id,
                           ffsp_inode** inodes)
 {
     uint64_t cl_offset;
@@ -89,7 +89,7 @@ int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
  * those in 'group'. The grouped pointer are invalidated in 'inodes'.
  * Return the number of inodes grouped together.
  */
-int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
+int ffsp_get_inode_group(const ffsp_fs* fs, ffsp_inode** inodes,
                          unsigned int ino_cnt, ffsp_inode** group)
 {
     unsigned int free_bytes;
@@ -126,7 +126,7 @@ int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
  * Group as many inodes as possible into one cluster, write the cluster
  * to disk and update all meta data.
  */
-int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, unsigned int ino_cnt)
+int ffsp_write_inodes(ffsp_fs* fs, ffsp_inode** inodes, unsigned int ino_cnt)
 {
     int rc;
     uint32_t mode;

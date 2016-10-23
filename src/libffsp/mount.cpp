@@ -41,7 +41,7 @@
 #include <unistd.h>
 #endif
 
-static void read_super(ffsp& fs)
+static void read_super(ffsp_fs& fs)
 {
     ffsp_super sb;
     uint64_t read_bytes = 0;
@@ -67,7 +67,7 @@ static void read_super(ffsp& fs)
     fs.nerasewrites = get_be32(sb.s_nerasewrites);
 }
 
-static void read_eb_usage(ffsp& fs)
+static void read_eb_usage(ffsp_fs& fs)
 {
     // Size of the array that holds the erase block meta information
     uint64_t size = fs.neraseblocks * sizeof(ffsp_eraseblk);
@@ -90,7 +90,7 @@ static void read_eb_usage(ffsp& fs)
     ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 }
 
-static void read_ino_map(ffsp& fs)
+static void read_ino_map(ffsp_fs& fs)
 {
     // Size of the array in bytes holding the cluster ids.
     uint64_t size = fs.nino * sizeof(uint32_t);
@@ -113,7 +113,7 @@ static void read_ino_map(ffsp& fs)
     ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 }
 
-static void read_cl_occupancy(ffsp& fs)
+static void read_cl_occupancy(ffsp_fs& fs)
 {
     off_t size;
     int cl_occ_size;
@@ -145,7 +145,7 @@ static void read_cl_occupancy(ffsp& fs)
     }
 }
 
-bool ffsp_mount(ffsp& fs, const char* path)
+bool ffsp_mount(ffsp_fs& fs, const char* path)
 {
     /*
      * O_DIRECT could also be used if all pwrite() calls get a
@@ -208,7 +208,7 @@ error:
     return false;
 }
 
-void ffsp_unmount(ffsp& fs)
+void ffsp_unmount(ffsp_fs& fs)
 {
     ffsp_release_inodes(&fs);
     ffsp_close_eraseblks(&fs);

@@ -41,7 +41,7 @@ static struct ffsp_debug_info
 } debug_info = {};
 
 
-void ffsp_debug_update(ffsp& fs, int type, unsigned long val)
+void ffsp_debug_update(ffsp_fs& fs, int type, unsigned long val)
 {
     (void)fs;
 
@@ -70,7 +70,7 @@ void ffsp_debug_update(ffsp& fs, int type, unsigned long val)
     }
 }
 
-static std::string get_super_info(ffsp& fs)
+static std::string get_super_info(ffsp_fs& fs)
 {
     std::ostringstream os;
 
@@ -105,7 +105,7 @@ static std::string get_super_info(ffsp& fs)
     return os.str();
 }
 
-static std::string get_metrics_info(ffsp& fs)
+static std::string get_metrics_info(ffsp_fs& fs)
 {
     (void)fs;
 
@@ -126,7 +126,7 @@ static std::string get_metrics_info(ffsp& fs)
     return os.str();
 }
 
-static std::string get_eb_info(ffsp& fs, unsigned int eb_id)
+static std::string get_eb_info(ffsp_fs& fs, unsigned int eb_id)
 {
     const ffsp_eraseblk& eb = fs.eb_usage[eb_id];
 
@@ -159,7 +159,7 @@ static std::string get_eb_info(ffsp& fs, unsigned int eb_id)
     return os.str();
 }
 
-static std::string get_cl_info(ffsp& fs, unsigned int cl_id)
+static std::string get_cl_info(ffsp_fs& fs, unsigned int cl_id)
 {
     std::ostringstream os;
 
@@ -207,7 +207,7 @@ static std::string get_cl_info(ffsp& fs, unsigned int cl_id)
     return os.str();
 }
 
-static std::string get_ino_info(ffsp& fs, uint32_t ino_no)
+static std::string get_ino_info(ffsp_fs& fs, uint32_t ino_no)
 {
     std::ostringstream os;
 
@@ -289,7 +289,7 @@ enum class DebugElementType
     InodeFile,
 };
 
-static DebugElementType get_debug_elem_type(ffsp& fs, const char* path)
+static DebugElementType get_debug_elem_type(ffsp_fs& fs, const char* path)
 {
     (void)fs;
 
@@ -371,14 +371,14 @@ static uint32_t get_path_id(const char* path, DebugElementType type)
     return static_cast<uint32_t>(id);
 }
 
-bool ffsp_debug_is_debug_path(ffsp& fs, const char* path)
+bool ffsp_debug_is_debug_path(ffsp_fs& fs, const char* path)
 {
     (void)fs;
 
     return strncmp(path, DEBUG_DIR.c_str(), DEBUG_DIR.size()) == 0;
 }
 
-bool ffsp_debug_getattr(ffsp& fs, const char* path, struct stat& stbuf)
+bool ffsp_debug_getattr(ffsp_fs& fs, const char* path, struct stat& stbuf)
 {
     const auto type = get_debug_elem_type(fs, path);
     uint64_t file_size = 0;
@@ -417,7 +417,7 @@ bool ffsp_debug_getattr(ffsp& fs, const char* path, struct stat& stbuf)
     return true;
 }
 
-bool ffsp_debug_readdir(ffsp& fs, const char* path, std::vector<std::string>& dirs)
+bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>& dirs)
 {
     dirs.clear();
     switch (get_debug_elem_type(fs, path))
@@ -479,7 +479,7 @@ bool ffsp_debug_readdir(ffsp& fs, const char* path, std::vector<std::string>& di
     return true;
 }
 
-bool ffsp_debug_open(ffsp& fs, const char* path)
+bool ffsp_debug_open(ffsp_fs& fs, const char* path)
 {
     (void)fs;
     (void)path;
@@ -487,7 +487,7 @@ bool ffsp_debug_open(ffsp& fs, const char* path)
     return true;
 }
 
-bool ffsp_debug_release(ffsp& fs, const char* path)
+bool ffsp_debug_release(ffsp_fs& fs, const char* path)
 {
     (void)fs;
     (void)path;
@@ -495,7 +495,7 @@ bool ffsp_debug_release(ffsp& fs, const char* path)
     return true;
 }
 
-bool ffsp_debug_read(ffsp& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read)
+bool ffsp_debug_read(ffsp_fs& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read)
 {
     const auto type = get_debug_elem_type(fs, path);
     std::string str;

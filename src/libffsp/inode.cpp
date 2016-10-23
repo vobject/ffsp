@@ -43,7 +43,7 @@
 extern char* strndup(const char* s, size_t n);
 #endif
 
-ffsp_inode* ffsp_allocate_inode(const ffsp* fs)
+ffsp_inode* ffsp_allocate_inode(const ffsp_fs* fs)
 {
     ffsp_inode* ino;
 
@@ -73,7 +73,7 @@ void* ffsp_inode_data(ffsp_inode* ino)
 }
 
 /* Return the size of an inode (with its data or indirect pointers) in bytes. */
-unsigned int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino)
+unsigned int ffsp_get_inode_size(const ffsp_fs* fs, const ffsp_inode* ino)
 {
     /*
      * The size of an inode is sizeof(ffsp_inode) plus
@@ -100,7 +100,7 @@ unsigned int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino)
 }
 
 /* Check if a given inode is located at the given cluster id. */
-bool ffsp_is_inode_valid(const ffsp* fs, unsigned int cl_id,
+bool ffsp_is_inode_valid(const ffsp_fs* fs, unsigned int cl_id,
                          const ffsp_inode* ino)
 {
     const unsigned int ino_no = get_be32(ino->i_no);
@@ -123,7 +123,7 @@ static void split_path(const char* path, char** parent, char** name)
     *parent = strndup(path, strlen(path) - strlen(*name) - 1);
 }
 
-static unsigned int find_free_inode_no(ffsp* fs)
+static unsigned int find_free_inode_no(ffsp_fs* fs)
 {
     for (unsigned int ino_no = 1; ino_no < fs->nino; ino_no++)
         if (get_be32(fs->ino_map[ino_no]) == FFSP_FREE_CL_ID)
@@ -151,7 +151,7 @@ static void mk_directory(ffsp_inode* ino, unsigned int parent_no)
     ino->i_nlink = put_be32(2);
 }
 
-static int add_dentry(ffsp* fs, const char* path,
+static int add_dentry(ffsp_fs* fs, const char* path,
                       unsigned int inode_no, mode_t mode,
                       unsigned int* parent_no)
 {
@@ -197,7 +197,7 @@ static int add_dentry(ffsp* fs, const char* path,
     return 0;
 }
 
-static int remove_dentry(ffsp* fs, const char* path,
+static int remove_dentry(ffsp_fs* fs, const char* path,
                          unsigned int inode_no, mode_t mode)
 {
     int rc;
@@ -250,7 +250,7 @@ static int remove_dentry(ffsp* fs, const char* path,
     return 0;
 }
 
-static int find_dentry(ffsp* fs, ffsp_inode* ino,
+static int find_dentry(ffsp_fs* fs, ffsp_inode* ino,
                        const char* name, ffsp_dentry* dent)
 {
     int rc;
@@ -279,7 +279,7 @@ static int find_dentry(ffsp* fs, ffsp_inode* ino,
     return -1;
 }
 
-static int dentry_is_empty(ffsp* fs, ffsp_inode* ino)
+static int dentry_is_empty(ffsp_fs* fs, ffsp_inode* ino)
 {
     int rc;
     ffsp_dentry* dent_buf;
@@ -308,7 +308,7 @@ static int dentry_is_empty(ffsp* fs, ffsp_inode* ino)
     return 1; // the directory is empty
 }
 
-int ffsp_lookup_no(ffsp* fs, ffsp_inode** ino, uint32_t ino_no)
+int ffsp_lookup_no(ffsp_fs* fs, ffsp_inode** ino, uint32_t ino_no)
 {
     unsigned int cl_id;
     ffsp_inode** inodes;
@@ -352,7 +352,7 @@ int ffsp_lookup_no(ffsp* fs, ffsp_inode** ino, uint32_t ino_no)
     return 0;
 }
 
-int ffsp_lookup(ffsp* fs, ffsp_inode** ino, const char* path)
+int ffsp_lookup(ffsp_fs* fs, ffsp_inode** ino, const char* path)
 {
     int rc;
     char* path_mod;
@@ -402,13 +402,13 @@ int ffsp_lookup(ffsp* fs, ffsp_inode** ino, const char* path)
     return 0;
 }
 
-static bool should_write_inodes(const ffsp* fs)
+static bool should_write_inodes(const ffsp_fs* fs)
 {
     return fs->dirty_ino_cnt >= fs->ninoopen;
 }
 
 /* Check if a cached inode is makred as being dirty. */
-static bool is_inode_dirty(const ffsp& fs, const ffsp_inode& ino)
+static bool is_inode_dirty(const ffsp_fs& fs, const ffsp_inode& ino)
 {
     return test_bit(fs.ino_status_map, get_be32(ino.i_no));
 }
@@ -417,7 +417,7 @@ static bool is_inode_dirty(const ffsp& fs, const ffsp_inode& ino)
  * Search for dirty inodes inside the inode cache and put a pointer to them
  * into the corresponding output buffer. Return the amount of inodes found.
  */
-static std::vector<ffsp_inode*> get_dirty_inodes(const ffsp& fs, bool dentries)
+static std::vector<ffsp_inode*> get_dirty_inodes(const ffsp_fs& fs, bool dentries)
 {
     return ffsp_inode_cache_get_if(*fs.ino_cache,
                                    [&](const ffsp_inode& ino){
@@ -432,7 +432,7 @@ static std::vector<ffsp_inode*> get_dirty_inodes(const ffsp& fs, bool dentries)
     });
 }
 
-int ffsp_flush_inodes(ffsp* fs, bool force)
+int ffsp_flush_inodes(ffsp_fs* fs, bool force)
 {
     int rc;
     std::vector<ffsp_inode*> inodes;
@@ -454,7 +454,7 @@ int ffsp_flush_inodes(ffsp* fs, bool force)
     return rc;
 }
 
-int ffsp_release_inodes(ffsp* fs)
+int ffsp_release_inodes(ffsp_fs* fs)
 {
     int rc;
 
@@ -475,7 +475,7 @@ int ffsp_release_inodes(ffsp* fs)
     return 0;
 }
 
-int ffsp_create(ffsp* fs, const char* path, mode_t mode,
+int ffsp_create(ffsp_fs* fs, const char* path, mode_t mode,
                 uid_t uid, gid_t gid, dev_t device)
 {
     int rc;
@@ -518,7 +518,7 @@ int ffsp_create(ffsp* fs, const char* path, mode_t mode,
     return 0;
 }
 
-int ffsp_symlink(ffsp* fs, const char* oldpath, const char* newpath,
+int ffsp_symlink(ffsp_fs* fs, const char* oldpath, const char* newpath,
                  uid_t uid, gid_t gid)
 {
     int rc;
@@ -547,7 +547,7 @@ int ffsp_symlink(ffsp* fs, const char* oldpath, const char* newpath,
     return (rc < 0) ? rc : 0;
 }
 
-int ffsp_readlink(ffsp* fs, const char* path, char* buf, size_t bufsize)
+int ffsp_readlink(ffsp_fs* fs, const char* path, char* buf, size_t bufsize)
 {
     int rc;
     ffsp_inode* ino;
@@ -564,7 +564,7 @@ int ffsp_readlink(ffsp* fs, const char* path, char* buf, size_t bufsize)
     return 0;
 }
 
-int ffsp_link(ffsp* fs, const char* oldpath, const char* newpath)
+int ffsp_link(ffsp_fs* fs, const char* oldpath, const char* newpath)
 {
     int rc;
     ffsp_inode* ino;
@@ -588,7 +588,7 @@ int ffsp_link(ffsp* fs, const char* oldpath, const char* newpath)
     return 0;
 }
 
-int ffsp_unlink(ffsp* fs, const char* path)
+int ffsp_unlink(ffsp_fs* fs, const char* path)
 {
     int rc;
     ffsp_inode* ino;
@@ -687,7 +687,7 @@ int ffsp_unlink(ffsp* fs, const char* path)
     return 0;
 }
 
-int ffsp_rmdir(ffsp* fs, const char* path)
+int ffsp_rmdir(ffsp_fs* fs, const char* path)
 {
     int rc;
     ffsp_inode* ino;
@@ -777,7 +777,7 @@ int ffsp_rmdir(ffsp* fs, const char* path)
     return 0;
 }
 
-int ffsp_rename(ffsp* fs, const char* oldpath, const char* newpath)
+int ffsp_rename(ffsp_fs* fs, const char* oldpath, const char* newpath)
 {
     (void)fs;
     (void)oldpath;
@@ -818,7 +818,7 @@ int ffsp_rename(ffsp* fs, const char* oldpath, const char* newpath)
     return -1;
 }
 
-void ffsp_mark_dirty(ffsp* fs, ffsp_inode* ino)
+void ffsp_mark_dirty(ffsp_fs* fs, ffsp_inode* ino)
 {
     unsigned int ino_no;
     unsigned int cl_id;
@@ -854,7 +854,7 @@ void ffsp_mark_dirty(ffsp* fs, ffsp_inode* ino)
     }
 }
 
-void ffsp_reset_dirty(ffsp* fs, ffsp_inode* ino)
+void ffsp_reset_dirty(ffsp_fs* fs, ffsp_inode* ino)
 {
     unsigned int ino_no;
 
@@ -868,7 +868,7 @@ void ffsp_reset_dirty(ffsp* fs, ffsp_inode* ino)
     }
 }
 
-int ffsp_cache_dir(ffsp* fs, ffsp_inode* ino,
+int ffsp_cache_dir(ffsp_fs* fs, ffsp_inode* ino,
                    ffsp_dentry** dent_buf, int* dent_cnt)
 {
     int rc;
@@ -895,7 +895,7 @@ int ffsp_cache_dir(ffsp* fs, ffsp_inode* ino,
     return 0;
 }
 
-void ffsp_invalidate_ind_ptr(ffsp* fs, const be32_t* ind_ptr,
+void ffsp_invalidate_ind_ptr(ffsp_fs* fs, const be32_t* ind_ptr,
                              int cnt, int ind_type)
 {
     uint32_t ind_id;
