@@ -26,7 +26,7 @@
 int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
                           ffsp_inode** inodes);
 int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
-                         int ino_cnt, ffsp_inode** group);
-int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, int ino_cnt);
+                         unsigned int ino_cnt, ffsp_inode** group);
+int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, unsigned int ino_cnt);
 
 #endif /* INODE_GROUP_H */

@@ -21,89 +21,56 @@
 #include "inode_cache.hpp"
 #include "log.hpp"
 
-#include <cstdlib>
-#include <cstring>
+#include <vector>
 
-void ffsp_inode_cache_init(const ffsp* fs,
-                           ffsp_inode_cache** cache)
+#include <cstddef>
+
+struct ffsp_inode_cache
 {
-    int buf_size;
-    void* buf;
+    explicit ffsp_inode_cache(size_t size) : buf{size, nullptr} {}
+    std::vector<ffsp_inode*> buf;
+};
 
-    *cache = (ffsp_inode_cache*)malloc(sizeof(ffsp_inode_cache));
-    if (!*cache)
-    {
-        ffsp_log().critical("malloc(ffsp_inode_cache) failed");
-        abort();
-    }
-
-    buf_size = fs->nino * sizeof(ffsp_inode*);
-    buf = malloc(buf_size);
-    if (!buf)
-    {
-        ffsp_log().critical("malloc(ffsp_inode_cache buffer) failed");
-        abort();
-    }
-    memset(buf, FFSP_INVALID_INO_NO, buf_size);
-
-    (*cache)->count = fs->nino;
-    (*cache)->valid = 0;
-    (*cache)->buf = (ffsp_inode**)buf;
+ffsp_inode_cache* ffsp_inode_cache_init(const ffsp& fs)
+{
+    return new ffsp_inode_cache(fs.nino);
 }
 
-void ffsp_inode_cache_uninit(ffsp_inode_cache** cache)
+void ffsp_inode_cache_uninit(ffsp_inode_cache* cache)
 {
-    free((*cache)->buf);
-    free(*cache);
-    *cache = NULL;
+    delete cache;
 }
 
-void ffsp_inode_cache_insert(ffsp_inode_cache* cache,
-                             ffsp_inode* ino)
+void ffsp_inode_cache_insert(ffsp_inode_cache& cache, ffsp_inode* ino)
 {
-    cache->buf[get_be32(ino->i_no)] = ino;
-    cache->valid++;
+    cache.buf[get_be32(ino->i_no)] = ino;
 }
 
-int ffsp_inode_cache_entry_count(ffsp_inode_cache* cache)
+void ffsp_inode_cache_remove(ffsp_inode_cache& cache, ffsp_inode* ino)
 {
-    return cache->valid;
+    cache.buf[get_be32(ino->i_no)] = nullptr;
 }
 
-void ffsp_inode_cache_remove(ffsp_inode_cache* cache,
-                             ffsp_inode* ino)
+ffsp_inode* ffsp_inode_cache_find(const ffsp_inode_cache& cache, be32_t ino_no)
 {
-    cache->buf[get_be32(ino->i_no)] = FFSP_INVALID_INO_NO;
-    cache->valid--;
+    return cache.buf[get_be32(ino_no)];
 }
 
-ffsp_inode* ffsp_inode_cache_find(ffsp_inode_cache* cache,
-                                  be32_t ino_no)
+std::vector<ffsp_inode*> ffsp_inode_cache_get(const ffsp_inode_cache& cache)
 {
-    return cache->buf[get_be32(ino_no)];
+    std::vector<ffsp_inode*> ret;
+    for (size_t i = 1; i < cache.buf.size(); i++)
+        if (cache.buf[i])
+            ret.push_back(cache.buf[i]);
+    return ret;
 }
 
-void ffsp_inode_cache_init_status(ffsp_inode_cache_status* status)
+std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
+                                                 const std::function<bool(const ffsp_inode&)>& p)
 {
-    status->last_valid_index = 0;
-}
-
-ffsp_inode* ffsp_inode_cache_next(ffsp_inode_cache* cache,
-                                  ffsp_inode_cache_status* status)
-{
-    int next_index;
-
-    next_index = status->last_valid_index;
-    if (next_index)
-        next_index++;
-
-    for (; next_index < cache->count; next_index++)
-    {
-        if (cache->buf[next_index] != FFSP_INVALID_INO_NO)
-        {
-            status->last_valid_index = next_index;
-            return cache->buf[next_index];
-        }
-    }
-    return NULL;
+    std::vector<ffsp_inode*> ret;
+    for (size_t i = 1; i < cache.buf.size(); i++)
+        if (cache.buf[i] && p(*cache.buf[i]))
+            ret.push_back(cache.buf[i]);
+    return ret;
 }

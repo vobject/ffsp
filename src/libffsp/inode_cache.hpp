@@ -23,29 +23,19 @@
 
 #include "ffsp.hpp"
 
-struct ffsp_inode_cache_status
-{
-    int last_valid_index;
-};
+#include <functional>
+#include <vector>
 
-struct ffsp_inode_cache
-{
-    int count;
-    int valid;
-    ffsp_inode** buf;
-};
+struct ffsp_inode_cache;
 
-void ffsp_inode_cache_init(const ffsp* fs, ffsp_inode_cache** cache);
-void ffsp_inode_cache_uninit(ffsp_inode_cache** cache);
+ffsp_inode_cache* ffsp_inode_cache_init(const ffsp& fs);
+void ffsp_inode_cache_uninit(ffsp_inode_cache* cache);
 
-int ffsp_inode_cache_entry_count(ffsp_inode_cache* cache);
-
-void ffsp_inode_cache_insert(ffsp_inode_cache* cache, ffsp_inode* ino);
-void ffsp_inode_cache_remove(ffsp_inode_cache* cache, ffsp_inode* ino);
-ffsp_inode* ffsp_inode_cache_find(ffsp_inode_cache* cache, be32_t ino_no);
-
-void ffsp_inode_cache_init_status(ffsp_inode_cache_status* status);
-ffsp_inode* ffsp_inode_cache_next(ffsp_inode_cache* cache,
-                                  ffsp_inode_cache_status* status);
+void ffsp_inode_cache_insert(ffsp_inode_cache& cache, ffsp_inode* ino);
+void ffsp_inode_cache_remove(ffsp_inode_cache& cache, ffsp_inode* ino);
+ffsp_inode* ffsp_inode_cache_find(const ffsp_inode_cache& cache, be32_t ino_no);
+std::vector<ffsp_inode*> ffsp_inode_cache_get(const ffsp_inode_cache& cache);
+std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
+                                                 const std::function<bool(const ffsp_inode&)>& p);
 
 #endif /* INODE_CACHE_H */

@@ -32,7 +32,7 @@
 ffsp_inode* ffsp_allocate_inode(const ffsp* fs);
 void ffsp_delete_inode(ffsp_inode* ino);
 void* ffsp_inode_data(ffsp_inode* ino);
-int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino);
+unsigned int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino);
 bool ffsp_is_inode_valid(const ffsp* fs, unsigned int cl_id,
                          const ffsp_inode* ino);
 

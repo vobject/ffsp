@@ -73,7 +73,7 @@ void* ffsp_inode_data(ffsp_inode* ino)
 }
 
 /* Return the size of an inode (with its data or indirect pointers) in bytes. */
-int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino)
+unsigned int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino)
 {
     /*
      * The size of an inode is sizeof(ffsp_inode) plus
@@ -82,9 +82,9 @@ int ffsp_get_inode_size(const ffsp* fs, const ffsp_inode* ino)
 	 * - erase block indirect: the size of valid eb indirect pointers
 	 */
 
-    int inode_size;
-    int i_flags;
-    int i_size;
+    unsigned int inode_size;
+    unsigned int i_flags;
+    unsigned int i_size;
 
     inode_size = sizeof(ffsp_inode);
     i_flags = get_be32(ino->i_flags);
@@ -314,7 +314,7 @@ int ffsp_lookup_no(ffsp* fs, ffsp_inode** ino, uint32_t ino_no)
     ffsp_inode** inodes;
     int ino_cnt;
 
-    *ino = ffsp_inode_cache_find(fs->ino_cache, put_be32(ino_no));
+    *ino = ffsp_inode_cache_find(*fs->ino_cache, put_be32(ino_no));
     if (*ino)
         return 0;
 
@@ -344,10 +344,10 @@ int ffsp_lookup_no(ffsp* fs, ffsp_inode** ino, uint32_t ino_no)
     }
 
     for (int i = 0; i < ino_cnt; i++)
-        ffsp_inode_cache_insert(fs->ino_cache, inodes[i]);
+        ffsp_inode_cache_insert(*fs->ino_cache, inodes[i]);
 
     /* the requested inode should now be present inside the inode cache */
-    *ino = ffsp_inode_cache_find(fs->ino_cache, put_be32(ino_no));
+    *ino = ffsp_inode_cache_find(*fs->ino_cache, put_be32(ino_no));
     free(inodes);
     return 0;
 }
@@ -408,74 +408,55 @@ static bool should_write_inodes(const ffsp* fs)
 }
 
 /* Check if a cached inode is makred as being dirty. */
-static bool is_inode_dirty(ffsp* fs, ffsp_inode* ino)
+static bool is_inode_dirty(const ffsp& fs, const ffsp_inode& ino)
 {
-    return test_bit(fs->ino_status_map, get_be32(ino->i_no));
+    return test_bit(fs.ino_status_map, get_be32(ino.i_no));
 }
 
 /*
  * Search for dirty inodes inside the inode cache and put a pointer to them
  * into the corresponding output buffer. Return the amount of inodes found.
  */
-static int get_dirty_inodes(ffsp* fs, ffsp_inode** inodes,
-                            bool dentry_flag)
+static std::vector<ffsp_inode*> get_dirty_inodes(const ffsp& fs, bool dentries)
 {
-    int ino_cnt;
-    ffsp_inode_cache_status status;
-    ffsp_inode* ino;
-
-    ino_cnt = 0;
-    ffsp_inode_cache_init_status(&status);
-
-    while ((ino = ffsp_inode_cache_next(fs->ino_cache, &status)))
-    {
+    return ffsp_inode_cache_get_if(*fs.ino_cache,
+                                   [&](const ffsp_inode& ino){
         if (is_inode_dirty(fs, ino))
         {
-            if (dentry_flag && S_ISDIR(get_be32(ino->i_mode)))
-                inodes[ino_cnt++] = ino;
-            else if (!dentry_flag && !S_ISDIR(get_be32(ino->i_mode)))
-                inodes[ino_cnt++] = ino;
+            if (dentries && S_ISDIR(get_be32(ino.i_mode)))
+                return true;
+            else if (!dentries && !S_ISDIR(get_be32(ino.i_mode)))
+                return true;
         }
-    }
-    return ino_cnt;
+        return false;
+    });
 }
 
 int ffsp_flush_inodes(ffsp* fs, bool force)
 {
     int rc;
-    ffsp_inode** inodes;
-    int ino_cnt;
+    std::vector<ffsp_inode*> inodes;
 
     if (!force && !should_write_inodes(fs))
         return 0;
 
-    inodes = (ffsp_inode**)malloc(fs->dirty_ino_cnt * sizeof(ffsp_inode*));
-    if (!inodes)
-    {
-        ffsp_log().critical("malloc(dirty inodes cache) failed");
-        abort();
-    }
-
     /* process dirty dentry inodes */
-    ino_cnt = get_dirty_inodes(fs, inodes, true);
-    rc = ffsp_write_inodes(fs, inodes, ino_cnt);
+    inodes = get_dirty_inodes(*fs, true);
+    rc = ffsp_write_inodes(fs, &inodes[0], inodes.size());
 
     if (rc == 0)
     {
         /* process dirty file inodes */
-        ino_cnt = get_dirty_inodes(fs, inodes, false);
-        rc = ffsp_write_inodes(fs, inodes, ino_cnt);
+        inodes = get_dirty_inodes(*fs, false);
+        rc = ffsp_write_inodes(fs, &inodes[0], inodes.size());
     }
 
-    free(inodes);
     return rc;
 }
 
 int ffsp_release_inodes(ffsp* fs)
 {
     int rc;
-    ffsp_inode_cache_status status;
-    ffsp_inode* ino;
 
     /* write all dirty inodes to disk */
     rc = ffsp_flush_inodes(fs, true);
@@ -483,10 +464,9 @@ int ffsp_release_inodes(ffsp* fs)
         return rc;
 
     /* remove all cached inodes from memory */
-    ffsp_inode_cache_init_status(&status);
-    while ((ino = ffsp_inode_cache_next(fs->ino_cache, &status)))
+    for (const auto& ino : ffsp_inode_cache_get(*fs->ino_cache))
     {
-        ffsp_inode_cache_remove(fs->ino_cache, ino);
+        ffsp_inode_cache_remove(*fs->ino_cache, ino);
         ffsp_delete_inode(ino);
     }
 
@@ -532,7 +512,7 @@ int ffsp_create(ffsp* fs, const char* path, mode_t mode,
     //  Its content will be updated when the inode is actually written.
     fs->ino_map[inode_no] = put_be32(FFSP_RESERVED_CL_ID);
 
-    ffsp_inode_cache_insert(fs->ino_cache, ino);
+    ffsp_inode_cache_insert(*fs->ino_cache, ino);
     ffsp_mark_dirty(fs, ino);
     ffsp_flush_inodes(fs, false);
     return 0;
@@ -694,7 +674,7 @@ int ffsp_unlink(ffsp* fs, const char* path)
             ind_ptr = (be32_t*)ffsp_inode_data(ino);
             ffsp_invalidate_ind_ptr(fs, ind_ptr, ind_cnt, ind_type);
         }
-        ffsp_inode_cache_remove(fs->ino_cache, ino);
+        ffsp_inode_cache_remove(*fs->ino_cache, ino);
         ffsp_reset_dirty(fs, ino);
         ffsp_delete_inode(ino);
     }
@@ -790,7 +770,7 @@ int ffsp_rmdir(ffsp* fs, const char* path)
         ind_ptr = (be32_t*)ffsp_inode_data(ino);
         ffsp_invalidate_ind_ptr(fs, ind_ptr, ind_cnt, ind_type);
     }
-    ffsp_inode_cache_remove(fs->ino_cache, ino);
+    ffsp_inode_cache_remove(*fs->ino_cache, ino);
     ffsp_reset_dirty(fs, ino);
     ffsp_delete_inode(ino);
     ffsp_flush_inodes(fs, false);
@@ -844,7 +824,7 @@ void ffsp_mark_dirty(ffsp* fs, ffsp_inode* ino)
     unsigned int cl_id;
     unsigned int eb_id;
 
-    if (is_inode_dirty(fs, ino))
+    if (is_inode_dirty(*fs, *ino))
         /* the inode is already dirty */
         return;
 
@@ -878,7 +858,7 @@ void ffsp_reset_dirty(ffsp* fs, ffsp_inode* ino)
 {
     unsigned int ino_no;
 
-    if (is_inode_dirty(fs, ino))
+    if (is_inode_dirty(*fs, *ino))
     {
         ino_no = get_be32(ino->i_no);
         clear_bit(fs->ino_status_map, ino_no);

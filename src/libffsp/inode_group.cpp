@@ -90,7 +90,7 @@ int ffsp_read_inode_group(ffsp* fs, unsigned int cl_id,
  * Return the number of inodes grouped together.
  */
 int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
-                         int ino_cnt, ffsp_inode** group)
+                         unsigned int ino_cnt, ffsp_inode** group)
 {
     unsigned int free_bytes;
     unsigned int inode_size;
@@ -100,7 +100,7 @@ int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
     group_size = 0;
     group_elem_cnt = 0;
 
-    for (int i = 0; i < ino_cnt; i++)
+    for (unsigned int i = 0; i < ino_cnt; i++)
     {
         if (!inodes[i])
             continue;
@@ -126,7 +126,7 @@ int ffsp_get_inode_group(const ffsp* fs, ffsp_inode** inodes,
  * Group as many inodes as possible into one cluster, write the cluster
  * to disk and update all meta data.
  */
-int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, int ino_cnt)
+int ffsp_write_inodes(ffsp* fs, ffsp_inode** inodes, unsigned int ino_cnt)
 {
     int rc;
     uint32_t mode;

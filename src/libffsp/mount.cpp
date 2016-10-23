@@ -223,7 +223,7 @@ bool ffsp_mount(ffsp& fs, const char* path)
     fs.summary_head.summary = NULL;
     fs.summary_head.next = NULL;
 
-    ffsp_inode_cache_init(&fs, &fs.ino_cache);
+    fs.ino_cache = ffsp_inode_cache_init(fs);
 
     ino_bitmask_size = fs.nino / sizeof(uint32_t) + 1;
     fs.ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
@@ -276,7 +276,7 @@ void ffsp_unmount(ffsp& fs)
     if ((fs.fd != -1) && (close(fs.fd) == -1))
         ffsp_log().error("ffsp_unmount(): close(fd) failed");
 
-    ffsp_inode_cache_uninit(&fs.ino_cache);
+    ffsp_inode_cache_uninit(fs.ino_cache);
     free(fs.eb_usage);
     free(fs.ino_map);
     free(fs.ino_status_map);
