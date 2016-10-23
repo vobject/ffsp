@@ -81,7 +81,7 @@ static uint32_t find_empty_eraseblk(const ffsp_fs* fs)
     return FFSP_INVALID_EB_ID;
 }
 
-int ffsp_get_eraseblk_type(const ffsp_fs* fs, int data_type, uint32_t mode)
+ffsp_eraseblk_type ffsp_get_eraseblk_type(const ffsp_fs* fs, int data_type, uint32_t mode)
 {
     // TODO: Check if it is ok to put all other types (blk, pipe, etc)
     //  apart from dentry into the same "file" erase blocks.
@@ -137,7 +137,7 @@ int ffsp_get_eraseblk_type(const ffsp_fs* fs, int data_type, uint32_t mode)
     return FFSP_EB_EBIN;
 }
 
-int ffsp_find_writable_cluster(ffsp_fs* fs, int eb_type,
+int ffsp_find_writable_cluster(ffsp_fs* fs, ffsp_eraseblk_type eb_type,
                                uint32_t* eb_id, uint32_t* cl_id)
 {
     unsigned int cur_writeops;
@@ -185,7 +185,7 @@ int ffsp_find_writable_cluster(ffsp_fs* fs, int eb_type,
     return 0;
 }
 
-void ffsp_commit_write_operation(ffsp_fs* fs, int eb_type,
+void ffsp_commit_write_operation(ffsp_fs* fs, ffsp_eraseblk_type eb_type,
                                  uint32_t eb_id, be32_t ino_no)
 {
     /* TODO: Error handling missing! */
@@ -283,7 +283,7 @@ void ffsp_close_eraseblks(ffsp_fs* fs)
 {
     /* TODO: Error handling missing! */
 
-    int eb_type;
+    ffsp_eraseblk_type eb_type;
     unsigned int writeops;
     unsigned int max_writeops;
     be32_t* eb_summary;

@@ -28,12 +28,12 @@ void ffsp_eb_inc_cvalid(ffsp_fs* fs, unsigned int eb_id);
 void ffsp_eb_dec_cvalid(ffsp_fs* fs, unsigned int eb_id);
 
 unsigned int ffsp_emtpy_eraseblk_count(const ffsp_fs* fs);
-int ffsp_get_eraseblk_type(const ffsp_fs* fs, int data_type,
+ffsp_eraseblk_type ffsp_get_eraseblk_type(const ffsp_fs* fs, int data_type,
                            uint32_t mode);
 
-int ffsp_find_writable_cluster(ffsp_fs* fs, int eb_type,
+int ffsp_find_writable_cluster(ffsp_fs* fs, ffsp_eraseblk_type eb_type,
                                uint32_t* eb_id, uint32_t* cl_id);
-void ffsp_commit_write_operation(ffsp_fs* fs, int eb_type,
+void ffsp_commit_write_operation(ffsp_fs* fs, ffsp_eraseblk_type eb_type,
                                  uint32_t eb_id, be32_t ino_no);
 void ffsp_close_eraseblks(ffsp_fs* fs);
 int ffsp_write_meta_data(ffsp_fs* fs);

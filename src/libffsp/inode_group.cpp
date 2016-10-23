@@ -130,7 +130,7 @@ int ffsp_write_inodes(ffsp_fs* fs, ffsp_inode** inodes, unsigned int ino_cnt)
 {
     int rc;
     uint32_t mode;
-    int eb_type;
+    ffsp_eraseblk_type eb_type;
     ffsp_inode** group;
     int group_elem_cnt;
     unsigned int eb_id;

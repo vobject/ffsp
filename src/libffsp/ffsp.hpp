@@ -104,17 +104,22 @@ static_assert(sizeof(ffsp_inode) == 128, "ffsp_inode: unexpected size");
 // TODO: Find out if these types are REALLY written to the file system!
 //  Or if they are only necessary at runtime to determine in which erase block
 //  to put data (before it has ever been garbage collected).
-#define FFSP_EB_SUPER 0x00
-#define FFSP_EB_DENTRY_INODE 0x01
-#define FFSP_EB_DENTRY_CLIN 0x02
-#define FFSP_EB_FILE_INODE 0x04
-#define FFSP_EB_FILE_CLIN 0x08
-#define FFSP_EB_EBIN 0x10
-#define FFSP_EB_EMPTY 0x20
+enum ffsp_eraseblk_type : uint8_t
+{
+    FFSP_EB_SUPER = 0x00,
+    FFSP_EB_DENTRY_INODE = 0x01,
+    FFSP_EB_DENTRY_CLIN = 0x02,
+    FFSP_EB_FILE_INODE = 0x04,
+    FFSP_EB_FILE_CLIN = 0x08,
+    FFSP_EB_EBIN = 0x10,
+    FFSP_EB_EMPTY = 0x20,
+    FFSP_EB_INVALID = 0xFF,
+};
+static_assert(sizeof(ffsp_eraseblk_type) == 1, "ffsp_eraseblk_type: unexpected size");
 
 struct ffsp_eraseblk
 {
-    uint8_t e_type;
+    ffsp_eraseblk_type e_type;
     uint8_t reserved;
     be16_t e_lastwrite;
     be16_t e_cvalid;   // valid clusters inside the erase block
@@ -138,7 +143,7 @@ struct ffsp_gcinfo;
 
 struct ffsp_summary_list_node
 {
-    int eb_type;
+    ffsp_eraseblk_type eb_type;
     be32_t* summary;
     ffsp_summary_list_node* next;
 };

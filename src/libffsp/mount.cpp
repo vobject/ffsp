@@ -167,7 +167,7 @@ bool ffsp_mount(ffsp_fs& fs, const char* path)
     read_ino_map(fs);
 
     // Initialize erase block summary list.
-    fs.summary_head.eb_type = 0;
+    fs.summary_head.eb_type = FFSP_EB_INVALID;
     fs.summary_head.summary = NULL;
     fs.summary_head.next = NULL;
 

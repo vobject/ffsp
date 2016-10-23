@@ -111,7 +111,7 @@ static int write_ind(ffsp_fs* fs, write_context* ctx,
 {
     int rc;
     uint32_t mode;
-    int eb_type;
+    ffsp_eraseblk_type eb_type;
     unsigned int eb_id;
     unsigned int cl_id;
     uint64_t cl_off;

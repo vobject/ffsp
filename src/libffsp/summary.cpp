@@ -43,7 +43,7 @@ void ffsp_delete_summary(be32_t* summary)
     free(summary);
 }
 
-void ffsp_summary_list_add(ffsp_summary_list_node& head, be32_t* summary, int eb_type)
+void ffsp_summary_list_add(ffsp_summary_list_node& head, be32_t* summary, ffsp_eraseblk_type eb_type)
 {
     ffsp_summary_list_node* node;
 
@@ -59,7 +59,7 @@ void ffsp_summary_list_add(ffsp_summary_list_node& head, be32_t* summary, int eb
     head.next = node;
 }
 
-void ffsp_summary_list_del(ffsp_summary_list_node& head, int eb_type)
+void ffsp_summary_list_del(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
 {
     ffsp_summary_list_node* tmp;
     ffsp_summary_list_node* node = &head;
@@ -75,7 +75,7 @@ void ffsp_summary_list_del(ffsp_summary_list_node& head, int eb_type)
     }
 }
 
-be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, int eb_type)
+be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
 {
     ffsp_summary_list_node* node = &head;
 
@@ -85,7 +85,7 @@ be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, int eb_type)
     return node->next ? node->next->summary : nullptr;
 }
 
-bool ffsp_has_summary(int eb_type)
+bool ffsp_has_summary(ffsp_eraseblk_type eb_type)
 {
     /*
      * Erase blocks containing cluster indirect data always
@@ -100,9 +100,10 @@ bool ffsp_has_summary(int eb_type)
         case FFSP_EB_DENTRY_CLIN:
         case FFSP_EB_FILE_CLIN:
             return true;
+        default:
+            ffsp_log().error("ffsp_has_summary(): Invalid erase block type {}", eb_type);
+            return false;
     }
-    ffsp_log().error("ffsp_has_summary(): Invalid erase block type.");
-    return false;
 }
 
 bool ffsp_read_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary)
