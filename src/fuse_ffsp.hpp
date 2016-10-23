@@ -31,7 +31,10 @@
 
 struct ffsp_fs;
 
-namespace fuse_ffsp
+namespace ffsp
+{
+
+namespace fuse
 {
 
 void set_params(const std::string& device);
@@ -90,6 +93,8 @@ int flush(ffsp_fs& fs, const char* path, fuse_file_info* fi);
 
 int fsync(ffsp_fs& fs, const char* path, int datasync, fuse_file_info* fi);
 
-} // namespace fuse_ffsp
+} // namespace fuse
+
+} // namespace ffsp
 
 #endif // FUSE_FFSP_H

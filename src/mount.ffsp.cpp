@@ -172,7 +172,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} getattr(path={}, stbuf={})", id, deref(path), static_cast<void*>(stbuf));
-            int rc = fuse_ffsp::getattr(*fs, path, stbuf);
+            int rc = ffsp::fuse::getattr(*fs, path, stbuf);
             logger_->info("< {} getattr(rc={}, stbuf={})", id, rc, deref(stbuf));
             return rc;
         };
@@ -181,7 +181,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} readlink(path={}, buf={}, bufsize={})", id, deref(path), static_cast<void*>(buf), bufsize);
-            int rc = fuse_ffsp::readlink(*fs, path, buf, bufsize);
+            int rc = ffsp::fuse::readlink(*fs, path, buf, bufsize);
             logger_->info("< {} readlink(rc={}, buf={})", id, rc, deref(buf));
             return rc;
         };
@@ -190,7 +190,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} mknod(path={}, mode={:#o}, device={})", id, deref(path), mode, device);
-            int rc = fuse_ffsp::mknod(*fs, path, mode, device);
+            int rc = ffsp::fuse::mknod(*fs, path, mode, device);
             logger_->info("< {} mknod(rc={})", id, rc);
             return rc;
         };
@@ -199,7 +199,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} mkdir(path={}, mode={:#o})", id, deref(path), mode);
-            int rc = fuse_ffsp::mkdir(*fs, path, mode);
+            int rc = ffsp::fuse::mkdir(*fs, path, mode);
             logger_->info("< {} mkdir(rc={})", id, rc);
             return rc;
         };
@@ -208,7 +208,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} unlink(path={})", id, deref(path));
-            int rc = fuse_ffsp::unlink(*fs, path);
+            int rc = ffsp::fuse::unlink(*fs, path);
             logger_->info("< {} unlink(rc={})", id, rc);
             return rc;
         };
@@ -217,7 +217,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} rmdir(path={})", id, deref(path));
-            int rc = fuse_ffsp::rmdir(*fs, path);
+            int rc = ffsp::fuse::rmdir(*fs, path);
             logger_->info("< {} rmdir(rc={})", id, rc);
             return rc;
         };
@@ -226,7 +226,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} symlink(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
-            int rc = fuse_ffsp::symlink(*fs, oldpath, newpath);
+            int rc = ffsp::fuse::symlink(*fs, oldpath, newpath);
             logger_->info("< {} symlink(rc={})", id, rc);
             return rc;
         };
@@ -235,7 +235,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} rename(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
-            int rc = fuse_ffsp::rename(*fs, oldpath, newpath);
+            int rc = ffsp::fuse::rename(*fs, oldpath, newpath);
             logger_->info("< {} rename(rc={})", id, rc);
             return rc;
         };
@@ -244,7 +244,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} link(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
-            int rc = fuse_ffsp::link(*fs, oldpath, newpath);
+            int rc = ffsp::fuse::link(*fs, oldpath, newpath);
             logger_->info("< {} link(rc={})", id, rc);
             return rc;
         };
@@ -253,7 +253,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} chmod(path={}, mode={:#o})", id, deref(path), mode);
-            int rc = fuse_ffsp::chmod(*fs, path, mode);
+            int rc = ffsp::fuse::chmod(*fs, path, mode);
             logger_->info("< {} chmod(rc={})", id, rc);
             return rc;
         };
@@ -262,7 +262,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} chown(path={}, uid={}, gid={})", id, deref(path), uid, gid);
-            int rc = fuse_ffsp::chown(*fs, path, uid, gid);
+            int rc = ffsp::fuse::chown(*fs, path, uid, gid);
             logger_->info("< {} chown(rc={})", id, rc);
             return rc;
         };
@@ -271,7 +271,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} truncate(path={}, length={})", id, deref(path), length);
-            int rc = fuse_ffsp::truncate(*fs, path, length);
+            int rc = ffsp::fuse::truncate(*fs, path, length);
             logger_->info("< {} truncate(rc={})", id, rc);
             return rc;
         };
@@ -280,7 +280,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} open(path={}, fi={})", id, deref(path), deref(fi));
-            int rc = fuse_ffsp::open(*fs, path, fi);
+            int rc = ffsp::fuse::open(*fs, path, fi);
             logger_->info("< {} open(rc={})", id, rc);
             return rc;
         };
@@ -290,7 +290,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} read(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), count, offset, deref(fi));
-            int rc = fuse_ffsp::read(*fs, path, buf, count, offset, fi);
+            int rc = ffsp::fuse::read(*fs, path, buf, count, offset, fi);
             logger_->info("< {} read(rc={})", id, rc);
             return rc;
         };
@@ -300,7 +300,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} write(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), count, offset, deref(fi));
-            int rc = fuse_ffsp::write(*fs, path, buf, count, offset, fi);
+            int rc = ffsp::fuse::write(*fs, path, buf, count, offset, fi);
             logger_->info("< {} write(rc={})", id, rc);
             return rc;
         };
@@ -309,7 +309,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} statfs(path={}, sfs={})", id, deref(path), static_cast<void*>(sfs));
-            int rc = fuse_ffsp::statfs(*fs, path, sfs);
+            int rc = ffsp::fuse::statfs(*fs, path, sfs);
             logger_->info("< {} statfs(rc={}, sfs={})", id, rc, deref(sfs));
             return rc;
         };
@@ -318,7 +318,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} flush(path={}, fi={})", id, deref(path), deref(fi));
-            int rc = fuse_ffsp::flush(*fs, path, fi);
+            int rc = ffsp::fuse::flush(*fs, path, fi);
             logger_->info("< {} flush(rc={})", id, rc);
             return rc;
         };
@@ -327,7 +327,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} release(path={}, fi={})", id, deref(path), deref(fi));
-            int rc = fuse_ffsp::release(*fs, path, fi);
+            int rc = ffsp::fuse::release(*fs, path, fi);
             logger_->info("< {} release(rc={})", id, rc);
             return rc;
         };
@@ -336,7 +336,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} fsync(path={}, datasync={}, fi={})", id, deref(path), datasync, deref(fi));
-            int rc = fuse_ffsp::fsync(*fs, path, datasync, fi);
+            int rc = ffsp::fuse::fsync(*fs, path, datasync, fi);
             logger_->info("< {} fsync(rc={})", id, rc);
             return rc;
         };
@@ -347,7 +347,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, deref(path), buf, (filler != nullptr), offset, deref(fi));
-            int rc = fuse_ffsp::readdir(*fs, path, buf, filler, offset, fi);
+            int rc = ffsp::fuse::readdir(*fs, path, buf, filler, offset, fi);
             logger_->info("< {} readdir(rc={})", id, rc);
             return rc;
         };
@@ -355,7 +355,7 @@ struct fuse_ffsp_operations
         ops_.init = [](fuse_conn_info* conn) {
             auto id = ++op_id_;
             logger_->info("> {} init(conn={})", id, deref(conn));
-            void* private_data = fuse_ffsp::init(conn);
+            void* private_data = ffsp::fuse::init(conn);
             logger_->info("< {} init(private_data={}, conn={})", id, private_data, deref(conn));
             return private_data;
         };
@@ -363,7 +363,7 @@ struct fuse_ffsp_operations
         ops_.destroy = [](void* user) {
             auto id = ++op_id_;
             logger_->info("> {} destroy(user={})", id, user);
-            fuse_ffsp::destroy(user);
+            ffsp::fuse::destroy(user);
             logger_->info("< {} destroy()", id);
         };
 
@@ -371,7 +371,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} utimens(path={}, access={}, mod={})", id, path, tv[0], tv[1]);
-            int rc = fuse_ffsp::utimens(*fs, path, tv);
+            int rc = ffsp::fuse::utimens(*fs, path, tv);
             logger_->info("< {} utimens(rc={})", id, rc);
             return rc;
         };
@@ -536,7 +536,7 @@ int main(int argc, char* argv[])
         printf("device argument missing\n");
         return EXIT_FAILURE;
     }
-    fuse_ffsp::set_params(ffsp_params.device);
+    ffsp::fuse::set_params(ffsp_params.device);
 
     if (fuse_opt_add_arg(&args, "-odefault_permissions") == -1)
     {

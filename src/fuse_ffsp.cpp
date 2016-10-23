@@ -48,7 +48,10 @@
 #include <unistd.h>
 #endif
 
-namespace fuse_ffsp
+namespace ffsp
+{
+
+namespace fuse
 {
 
 static struct params
@@ -506,4 +509,6 @@ int fsync(ffsp_fs& fs, const char* path, int datasync, fuse_file_info* fi)
     return 0;
 }
 
-} // namespace fuse_ffsp
+} // namespace fuse
+
+} // namespace ffsp
