@@ -134,19 +134,13 @@ static_assert(sizeof(ffsp_dentry) == 256, "ffsp_dentry: unexpected size");
 // In-Memory-only structures
 
 struct ffsp_inode_cache;
+struct ffsp_gcinfo;
 
 struct ffsp_summary_list_node
 {
     int eb_type;
     be32_t* summary;
     ffsp_summary_list_node* next;
-};
-
-struct ffsp_gcinfo
-{
-    int eb_type;
-    unsigned int write_time;
-    unsigned int write_cnt;
 };
 
 struct ffsp

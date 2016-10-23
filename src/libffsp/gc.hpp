@@ -23,6 +23,9 @@
 
 #include "ffsp.hpp"
 
+ffsp_gcinfo* ffsp_gcinfo_init(const ffsp& fs);
+void ffsp_gcinfo_uninit(ffsp_gcinfo* info);
+
 unsigned int ffsp_gcinfo_update_writetime(ffsp* fs, int eb_type);
 unsigned int ffsp_gcinfo_inc_writecnt(ffsp* fs, int eb_type);
 

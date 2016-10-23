@@ -31,6 +31,72 @@
 #include <cstdlib>
 #include <cstring>
 
+struct ffsp_gcinfo
+{
+    int eb_type;
+    unsigned int write_time;
+    unsigned int write_cnt;
+};
+
+ffsp_gcinfo *ffsp_gcinfo_init(const ffsp& fs)
+{
+    auto* info = new ffsp_gcinfo[fs.neraseopen - 1];
+
+    // FIXME: Too much hard coded crap in here!
+
+    // TODO: Set write_time correctly!
+
+    if (fs.neraseopen == 3)
+    {
+        info[0].eb_type = FFSP_EB_DENTRY_INODE;
+        info[0].write_time = 0;
+        info[0].write_cnt = 0;
+
+        info[1].eb_type = FFSP_EB_DENTRY_CLIN;
+        info[1].write_time = 0;
+        info[1].write_cnt = 0;
+    }
+    else if (fs.neraseopen == 4)
+    {
+        info[0].eb_type = FFSP_EB_DENTRY_INODE;
+        info[0].write_time = 0;
+        info[0].write_cnt = 0;
+
+        info[1].eb_type = FFSP_EB_FILE_INODE;
+        info[1].write_time = 0;
+        info[1].write_cnt = 0;
+
+        info[2].eb_type = FFSP_EB_DENTRY_CLIN;
+        info[2].write_time = 0;
+        info[2].write_cnt = 0;
+    }
+    else if (fs.neraseopen >= 5)
+    {
+        info[0].eb_type = FFSP_EB_DENTRY_INODE;
+        info[0].write_time = 0;
+        info[0].write_cnt = 0;
+
+        info[1].eb_type = FFSP_EB_FILE_INODE;
+        info[1].write_time = 0;
+        info[1].write_cnt = 0;
+
+        info[2].eb_type = FFSP_EB_DENTRY_CLIN;
+        info[2].write_time = 0;
+        info[2].write_cnt = 0;
+
+        info[3].eb_type = FFSP_EB_FILE_CLIN;
+        info[3].write_time = 0;
+        info[3].write_cnt = 0;
+    }
+
+    return info;
+}
+
+void ffsp_gcinfo_uninit(ffsp_gcinfo* info)
+{
+    delete [] info;
+}
+
 /*
  * Checks if garbage collection can be performed on the given erase block type.
  */
@@ -440,20 +506,20 @@ static void collect_clin(ffsp* fs, int eb_type)
 
 unsigned int ffsp_gcinfo_update_writetime(ffsp* fs, int eb_type)
 {
-    ffsp_gcinfo* gcinfo = get_gcinfo(fs, eb_type);
-    return ++gcinfo->write_time;
+    ffsp_gcinfo* info = get_gcinfo(fs, eb_type);
+    return ++info->write_time;
 }
 
 unsigned int ffsp_gcinfo_inc_writecnt(ffsp* fs, int eb_type)
 {
-    ffsp_gcinfo* gcinfo = get_gcinfo(fs, eb_type);
-    return ++gcinfo->write_cnt;
+    ffsp_gcinfo* info = get_gcinfo(fs, eb_type);
+    return ++info->write_cnt;
 }
 
 void ffsp_gc(ffsp* fs)
 {
     int eb_type;
-    ffsp_gcinfo* gcinfo;
+    ffsp_gcinfo* info;
 
     ffsp_log().debug("ffsp_gc()");
 
@@ -482,8 +548,8 @@ void ffsp_gc(ffsp* fs)
             collect_inodes(fs, eb_type);
 
         /* TODO: How to handle this correctly? */
-        gcinfo = get_gcinfo(fs, eb_type);
-        gcinfo->write_cnt = 0;
+        info = get_gcinfo(fs, eb_type);
+        info->write_cnt = 0;
     }
     collect_empty_eraseblks(fs);
 }

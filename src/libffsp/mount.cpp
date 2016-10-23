@@ -22,6 +22,7 @@
 #include "eraseblk.hpp"
 #include "debug.hpp"
 #include "ffsp.hpp"
+#include "gc.hpp"
 #include "inode.hpp"
 #include "inode_cache.hpp"
 #include "io_raw.hpp"
@@ -144,61 +145,8 @@ static void read_cl_occupancy(ffsp& fs)
     }
 }
 
-void init_gcinfo(ffsp& fs)
-{
-    // FIXME: Too much hard coded crap in here!
-
-    // TODO: Set write_time correctly!
-
-    if (fs.neraseopen == 3)
-    {
-        fs.gcinfo[0].eb_type = FFSP_EB_DENTRY_INODE;
-        fs.gcinfo[0].write_time = 0;
-        fs.gcinfo[0].write_cnt = 0;
-
-        fs.gcinfo[1].eb_type = FFSP_EB_DENTRY_CLIN;
-        fs.gcinfo[1].write_time = 0;
-        fs.gcinfo[1].write_cnt = 0;
-    }
-    else if (fs.neraseopen == 4)
-    {
-        fs.gcinfo[0].eb_type = FFSP_EB_DENTRY_INODE;
-        fs.gcinfo[0].write_time = 0;
-        fs.gcinfo[0].write_cnt = 0;
-
-        fs.gcinfo[1].eb_type = FFSP_EB_FILE_INODE;
-        fs.gcinfo[1].write_time = 0;
-        fs.gcinfo[1].write_cnt = 0;
-
-        fs.gcinfo[2].eb_type = FFSP_EB_DENTRY_CLIN;
-        fs.gcinfo[2].write_time = 0;
-        fs.gcinfo[2].write_cnt = 0;
-    }
-    else if (fs.neraseopen >= 5)
-    {
-        fs.gcinfo[0].eb_type = FFSP_EB_DENTRY_INODE;
-        fs.gcinfo[0].write_time = 0;
-        fs.gcinfo[0].write_cnt = 0;
-
-        fs.gcinfo[1].eb_type = FFSP_EB_FILE_INODE;
-        fs.gcinfo[1].write_time = 0;
-        fs.gcinfo[1].write_cnt = 0;
-
-        fs.gcinfo[2].eb_type = FFSP_EB_DENTRY_CLIN;
-        fs.gcinfo[2].write_time = 0;
-        fs.gcinfo[2].write_cnt = 0;
-
-        fs.gcinfo[3].eb_type = FFSP_EB_FILE_CLIN;
-        fs.gcinfo[3].write_time = 0;
-        fs.gcinfo[3].write_cnt = 0;
-    }
-}
-
 bool ffsp_mount(ffsp& fs, const char* path)
 {
-    size_t ino_bitmask_size;
-    size_t gcinfo_size;
-
     /*
      * O_DIRECT could also be used if all pwrite() calls get a
      * page-aligned write pointer. But to get that calls to malloc had
@@ -225,7 +173,7 @@ bool ffsp_mount(ffsp& fs, const char* path)
 
     fs.ino_cache = ffsp_inode_cache_init(fs);
 
-    ino_bitmask_size = fs.nino / sizeof(uint32_t) + 1;
+    size_t ino_bitmask_size = fs.nino / sizeof(uint32_t) + 1;
     fs.ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
     if (!fs.ino_status_map)
     {
@@ -238,14 +186,7 @@ bool ffsp_mount(ffsp& fs, const char* path)
 
     fs.dirty_ino_cnt = 0;
 
-    gcinfo_size = (fs.neraseopen - 1) * sizeof(ffsp_gcinfo);
-    fs.gcinfo = (ffsp_gcinfo*)malloc(gcinfo_size);
-    if (!fs.gcinfo)
-    {
-        ffsp_log().critical("malloc(gcinfo) failed");
-        goto error;
-    }
-    init_gcinfo(fs);
+    fs.gcinfo = ffsp_gcinfo_init(fs);
 
     fs.buf = (char*)malloc(fs.erasesize);
     if (!fs.buf)
@@ -277,10 +218,10 @@ void ffsp_unmount(ffsp& fs)
         ffsp_log().error("ffsp_unmount(): close(fd) failed");
 
     ffsp_inode_cache_uninit(fs.ino_cache);
+    ffsp_gcinfo_uninit(fs.gcinfo);
     free(fs.eb_usage);
     free(fs.ino_map);
     free(fs.ino_status_map);
     free(fs.cl_occupancy);
-    free(fs.gcinfo);
     free(fs.buf);
 }
