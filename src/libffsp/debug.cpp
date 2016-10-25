@@ -41,7 +41,7 @@ static struct ffsp_debug_info
 } debug_info = {};
 
 
-void ffsp_debug_update(ffsp_fs& fs, int type, unsigned long val)
+void ffsp_debug_update(const ffsp_fs& fs, int type, unsigned long val)
 {
     (void)fs;
 

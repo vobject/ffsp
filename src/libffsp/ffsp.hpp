@@ -139,6 +139,7 @@ static_assert(sizeof(ffsp_dentry) == 256, "ffsp_dentry: unexpected size");
 // In-Memory-only structures
 
 struct ffsp_inode_cache;
+struct ffsp_summary_cache;
 struct ffsp_gcinfo;
 
 struct ffsp_summary_list_node
@@ -179,7 +180,10 @@ struct ffsp_fs
     //  cluster indirect erase block is full its summary is written as
     //  its last cluster. The erase block summary contains a list of all
     //  inode ids that contain indirect clusters inside the erase block.
-    ffsp_summary_list_node summary_head;
+    // There can be only one erase block summary per erase block type at once.
+    // This is because there can be only one open erase block per erase block type at once.
+    // Therefore each erase block type can exist only once in the summary list at any point in time.
+    ffsp_summary_cache* summary_cache;
 
     // A data structure that caches all inodes that have been
     //  looked up from the file system. "ino_status_map" (see below) is

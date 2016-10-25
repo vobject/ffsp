@@ -116,20 +116,18 @@ static bool is_eb_type_collectable(ffsp_eraseblk_type type)
 
 static bool is_eb_collectable(const ffsp_fs* fs, unsigned int eb_id)
 {
-    ffsp_eraseblk_type type;
     int cvalid;
     int writeops;
     int max_cvalid;
     int max_writeops;
 
-    type = fs->eb_usage[eb_id].e_type;
     cvalid = ffsp_eb_get_cvalid(fs, eb_id);
     writeops = get_be16(fs->eb_usage[eb_id].e_writeops);
 
     max_writeops = fs->erasesize / fs->clustersize;
     max_cvalid = max_writeops;
 
-    if (ffsp_has_summary(type))
+    if (ffsp_summary_required(*fs, eb_id))
         /* erase block summary does not count as a valid cluster */
         max_cvalid--;
 
@@ -538,9 +536,15 @@ void ffsp_gc(ffsp_fs* fs)
 
     while ((eb_type = find_collectable_eb_type(fs)) != FFSP_EB_INVALID)
     {
-        ffsp_log().debug("ffsp_gc(): collecting eb_type {}", eb_type);
+        if (eb_type == FFSP_EB_DENTRY_INODE ||
+            eb_type == FFSP_EB_FILE_INODE )
+        {
+            ffsp_log().debug("ffsp_gc(): collecting eb_type {}", eb_type);
+            collect_inodes(fs, eb_type);
+        }
 
-        if (ffsp_has_summary(eb_type))
+#if 0
+        else if (ffsp_summary_required0(eb_type))
         {
             /* FIXME: Enable GC of cluster indirect data!
              *  The amount of valid clusters for cluster indirect
@@ -548,14 +552,9 @@ void ffsp_gc(ffsp_fs* fs)
              *  lead to a deadlock inside collect_clin(). This
              *  function will be disabled until the bug is fixed.
              */
-#if 0
             collect_clin(fs, eb_type);
+        }
 #endif
-        }
-        else
-        {
-            collect_inodes(fs, eb_type);
-        }
 
         /* TODO: How to handle this correctly? */
         info = get_gcinfo(fs, eb_type);

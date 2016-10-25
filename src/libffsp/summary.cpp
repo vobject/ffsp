@@ -23,120 +23,177 @@
 #include "io_raw.hpp"
 #include "log.hpp"
 
+#include <algorithm>
+
 #include <cstdlib>
 #include <cstring>
 
-be32_t* ffsp_alloc_summary(const ffsp_fs& fs)
+//be32_t* ffsp_summary_list_add(const ffsp_fs& fs, ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
+//{
+//    ffsp_summary_list_node* node = new ffsp_summary_list_node;
+//    node->eb_type = eb_type;
+//    node->summary = new be32_t[fs.clustersize];
+//    memset(node->summary, 0, fs.clustersize);
+//    node->next = head.next;
+//    head.next = node;
+//    return node->summary;
+//}
+
+//void ffsp_summary_list_del(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
+//{
+//    ffsp_summary_list_node* node = &head;
+
+//    while (node->next && (node->next->eb_type != eb_type))
+//        node = node->next;
+
+//    if (node->next)
+//    {
+//        ffsp_summary_list_node* tmp = node->next;
+//        node->next = node->next->next;
+
+//        delete [] tmp->summary; // delete the summary
+//        delete tmp; // delete the node
+//    }
+//}
+
+//be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
+//{
+//    ffsp_summary_list_node* node = &head;
+
+//    while (node->next && (node->next->eb_type != eb_type))
+//        node = node->next;
+
+//    return node->next ? node->next->summary : nullptr;
+//}
+
+//bool ffsp_summary_required0(ffsp_eraseblk_type eb_type)
+//{
+//    /*
+//     * Erase blocks containing cluster indirect data always
+//     * have an erase block summary section that cannot be used for
+//     * data at the end. Its size is always one cluster.
+//     */
+//    switch (eb_type)
+//    {
+//        case FFSP_EB_DENTRY_INODE:
+//        case FFSP_EB_FILE_INODE:
+//            return false;
+//        case FFSP_EB_DENTRY_CLIN:
+//        case FFSP_EB_FILE_CLIN:
+//            return true;
+//    }
+//    ffsp_log().error("ffsp_has_summary(): Invalid erase block type {}", eb_type);
+//    return false;
+//}
+
+//bool ffsp_summary_write0(ffsp_fs& fs, uint32_t eb_id, be32_t* summary)
+//{
+//    uint64_t eb_off = eb_id * fs.erasesize;
+//    uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
+
+//    uint64_t written_bytes = 0;
+//    if (!ffsp_write_raw(fs.fd, summary, fs.clustersize, summary_off, written_bytes))
+//    {
+//        ffsp_log().error("failed to write erase block summary");
+//        return false;
+//    }
+//    ffsp_debug_update(fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
+//    return true;
+//}
+
+//void ffsp_summary_add_ref0(be32_t* summary, unsigned int ino_no, int writeops)
+//{
+//    summary[writeops] = put_be32(ino_no);
+//}
+
+
+struct ffsp_summary
 {
-    be32_t* summary = (be32_t*)malloc(fs.clustersize);
-    if (!summary)
-    {
-        ffsp_log().critical("malloc(summary) failed");
-        abort();
-    }
-    memset(summary, 0, fs.clustersize);
-    return summary;
+    explicit ffsp_summary(size_t size) : buf_{size, put_be32(0)} {}
+    ffsp_summary* open() { if (open_) { return nullptr; } open_ = true; return this; }
+    ffsp_summary* get() { if (!open_) { return nullptr; } return this; }
+    void close() { std::fill(buf_.begin(), buf_.end(), put_be32(0)); open_ = false; }
+    const void* data() const { return buf_.data(); }
+    std::vector<be32_t> buf_;
+    bool open_ = false;
+};
+
+struct ffsp_summary_cache
+{
+    explicit ffsp_summary_cache(size_t size) : dentry_clin{size}, inode_clin{size} {}
+
+    /* no other erase block types require a summary */
+    ffsp_summary dentry_clin;
+    ffsp_summary inode_clin;
+};
+
+ffsp_summary_cache* ffsp_summary_cache_init(const ffsp_fs& fs)
+{
+    return new ffsp_summary_cache{fs.clustersize};
 }
 
-void ffsp_delete_summary(be32_t* summary)
+void ffsp_summary_cache_uninit(ffsp_summary_cache* cache)
 {
-    free(summary);
+    delete cache;
 }
 
-void ffsp_summary_list_add(ffsp_summary_list_node& head, be32_t* summary, ffsp_eraseblk_type eb_type)
+ffsp_summary* ffsp_summary_open(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_type)
 {
-    ffsp_summary_list_node* node;
-
-    node = (ffsp_summary_list_node*)malloc(sizeof(ffsp_summary_list_node));
-    if (!node)
-    {
-        ffsp_log().critical("malloc(summary list node) failed");
-        abort();
-    }
-    node->eb_type = eb_type;
-    node->summary = summary;
-    node->next = head.next;
-    head.next = node;
+    if (eb_type == FFSP_EB_DENTRY_CLIN)
+        return cache.dentry_clin.open();
+    else if (eb_type == FFSP_EB_FILE_CLIN)
+        return cache.inode_clin.open();
+    else
+        return nullptr;
 }
 
-void ffsp_summary_list_del(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
+ffsp_summary* ffsp_summary_get(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_type)
 {
-    ffsp_summary_list_node* tmp;
-    ffsp_summary_list_node* node = &head;
-
-    while (node->next && (node->next->eb_type != eb_type))
-        node = node->next;
-
-    if (node->next)
-    {
-        tmp = node->next;
-        node->next = node->next->next;
-        free(tmp);
-    }
+    if (eb_type == FFSP_EB_DENTRY_CLIN)
+        return cache.dentry_clin.get();
+    else if (eb_type == FFSP_EB_FILE_CLIN)
+        return cache.inode_clin.get();
+    else
+        return nullptr;
 }
 
-be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
+void ffsp_summary_close(ffsp_summary_cache& cache, ffsp_summary* summary)
 {
-    ffsp_summary_list_node* node = &head;
-
-    while (node->next && (node->next->eb_type != eb_type))
-        node = node->next;
-
-    return node->next ? node->next->summary : nullptr;
+    if (summary == &cache.dentry_clin)
+        cache.dentry_clin.close();
+    else if (summary == &cache.inode_clin)
+        cache.inode_clin.close();
 }
 
-bool ffsp_has_summary(ffsp_eraseblk_type eb_type)
+bool ffsp_summary_required(const ffsp_fs& fs, uint32_t eb_id)
 {
     /*
      * Erase blocks containing cluster indirect data always
      * have an erase block summary section that cannot be used for
      * data at the end. Its size is always one cluster.
      */
-    switch (eb_type)
-    {
-        case FFSP_EB_DENTRY_INODE:
-        case FFSP_EB_FILE_INODE:
-            return false;
-        case FFSP_EB_DENTRY_CLIN:
-        case FFSP_EB_FILE_CLIN:
-            return true;
-        default:
-            ffsp_log().error("ffsp_has_summary(): Invalid erase block type {}", eb_type);
-            return false;
-    }
+    const ffsp_eraseblk_type eb_type = fs.eb_usage[eb_id].e_type;
+    return (eb_type == FFSP_EB_DENTRY_CLIN) ||
+           (eb_type == FFSP_EB_FILE_CLIN);
 }
 
-bool ffsp_read_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary)
-{
-    uint64_t eb_off = eb_id * fs.erasesize;
-    uint64_t summary_off = eb_off + fs.erasesize - fs.clustersize;
-
-    uint64_t read_bytes = 0;
-    if (!ffsp_read_raw(fs.fd, summary, fs.clustersize, summary_off, read_bytes))
-    {
-        ffsp_log().error("failed to read erase block summary");
-        return false;
-    }
-    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
-    return true;
-}
-
-bool ffsp_write_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary)
+bool ffsp_summary_write(const ffsp_fs& fs, ffsp_summary* summary, uint32_t eb_id)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
 
     uint64_t written_bytes = 0;
-    if (!ffsp_write_raw(fs.fd, summary, fs.clustersize, summary_off, written_bytes))
+    if (!ffsp_write_raw(fs.fd, summary->data(), fs.clustersize, summary_off, written_bytes))
     {
-        ffsp_log().error("failed to write erase block summary");
+        ffsp_log().error("ffsp_summary_write(): failed to write erase block summary");
         return false;
     }
     ffsp_debug_update(fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
     return true;
+
 }
 
-void ffsp_add_summary_ref(be32_t* summary, unsigned int ino_no, int writeops)
+void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_no)
 {
-    summary[writeops] = put_be32(ino_no);
+    summary->buf_[cl_idx] = put_be32(ino_no);
 }

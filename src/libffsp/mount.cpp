@@ -27,6 +27,7 @@
 #include "inode_cache.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
+#include "summary.hpp"
 #include "utils.hpp"
 
 #include <cstdlib>
@@ -166,10 +167,7 @@ bool ffsp_mount(ffsp_fs& fs, const char* path)
     read_eb_usage(fs);
     read_ino_map(fs);
 
-    // Initialize erase block summary list.
-    fs.summary_head.eb_type = FFSP_EB_INVALID;
-    fs.summary_head.summary = NULL;
-    fs.summary_head.next = NULL;
+    fs.summary_cache = ffsp_summary_cache_init(fs);
 
     fs.ino_cache = ffsp_inode_cache_init(fs);
 
@@ -218,6 +216,7 @@ void ffsp_unmount(ffsp_fs& fs)
         ffsp_log().error("ffsp_unmount(): close(fd) failed");
 
     ffsp_inode_cache_uninit(fs.ino_cache);
+    ffsp_summary_cache_uninit(fs.summary_cache);
     ffsp_gcinfo_uninit(fs.gcinfo);
     free(fs.eb_usage);
     free(fs.ino_map);

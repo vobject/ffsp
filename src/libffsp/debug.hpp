@@ -35,7 +35,7 @@ struct stat;
 #define FFSP_DEBUG_GC_READ 5
 #define FFSP_DEBUG_GC_WRITE 6
 
-void ffsp_debug_update(ffsp_fs& fs, int type, unsigned long val);
+void ffsp_debug_update(const ffsp_fs& fs, int type, unsigned long val);
 
 bool ffsp_debug_is_debug_path(ffsp_fs& fs, const char* path);
 bool ffsp_debug_getattr(ffsp_fs& fs, const char* path, struct stat& stbuf);

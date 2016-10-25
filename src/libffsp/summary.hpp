@@ -23,16 +23,26 @@
 
 #include "ffsp.hpp"
 
-be32_t* ffsp_alloc_summary(const ffsp_fs& fs);
-void ffsp_delete_summary(be32_t* summary);
+struct ffsp_summary;
 
-void ffsp_summary_list_add(ffsp_summary_list_node& head, be32_t* summary, ffsp_eraseblk_type eb_type);
-void ffsp_summary_list_del(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
-be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
+ffsp_summary_cache* ffsp_summary_cache_init(const ffsp_fs& fs);
+void ffsp_summary_cache_uninit(ffsp_summary_cache* cache);
 
-bool ffsp_has_summary(ffsp_eraseblk_type eb_type);
-bool ffsp_read_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary);
-bool ffsp_write_summary(ffsp_fs& fs, uint32_t eb_id, be32_t* summary);
-void ffsp_add_summary_ref(be32_t* summary, unsigned int ino_no, int writeops);
+ffsp_summary* ffsp_summary_open(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_type);
+ffsp_summary* ffsp_summary_get(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_type);
+void ffsp_summary_close(ffsp_summary_cache& cache, ffsp_summary* summary);
+
+bool ffsp_summary_required(const ffsp_fs& fs, uint32_t eb_id);
+bool ffsp_summary_write(const ffsp_fs& fs, ffsp_summary* summary, uint32_t eb_id);
+void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_no);
+
+
+//be32_t* ffsp_summary_list_add(const ffsp_fs& fs, ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
+//void ffsp_summary_list_del(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
+//be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
+
+//bool ffsp_summary_required0(ffsp_eraseblk_type eb_type);
+//bool ffsp_summary_write0(ffsp_fs& fs, uint32_t eb_id, be32_t* summary);
+//void ffsp_summary_add_ref0(be32_t* summary, unsigned int ino_no, int writeops);
 
 #endif /* SUMMARY_H */
