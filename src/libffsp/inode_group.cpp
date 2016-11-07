@@ -154,10 +154,10 @@ int ffsp_write_inodes(ffsp_fs* fs, ffsp_inode** inodes, unsigned int ino_cnt)
 
     while ((group_elem_cnt = ffsp_get_inode_group(fs, inodes, ino_cnt, group)))
     {
-        eb_type = ffsp_get_eraseblk_type(fs, FFSP_DATA_EMB, mode);
+        eb_type = ffsp_get_eraseblk_type(*fs, FFSP_DATA_EMB, mode);
 
         /* search for a cluster id to write the inode(s) to */
-        rc = ffsp_find_writable_cluster(fs, eb_type, &eb_id, &cl_id);
+        rc = ffsp_find_writable_cluster(*fs, eb_type, eb_id, cl_id);
         if (rc < 0)
         {
             ffsp_log().debug("Failed to find writable cluster or erase block");
@@ -178,7 +178,7 @@ int ffsp_write_inodes(ffsp_fs* fs, ffsp_inode** inodes, unsigned int ino_cnt)
         /* ignore the last parameter - it is only needed if we wrote
 		 * into an erase block with a summary block at its end. but
 		 * inode erase blocks do not have a summary block. */
-        ffsp_commit_write_operation(fs, eb_type, eb_id, put_be32(0));
+        ffsp_commit_write_operation(*fs, eb_type, eb_id, put_be32(0));
 
         /* assign the new cluster id to all inode map entries, update
 		 * information about how many inodes reside inside the written

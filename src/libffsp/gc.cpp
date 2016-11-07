@@ -121,7 +121,7 @@ static bool is_eb_collectable(const ffsp_fs* fs, unsigned int eb_id)
     int max_cvalid;
     int max_writeops;
 
-    cvalid = ffsp_eb_get_cvalid(fs, eb_id);
+    cvalid = ffsp_eb_get_cvalid(*fs, eb_id);
     writeops = get_be16(fs->eb_usage[eb_id].e_writeops);
 
     max_writeops = fs->erasesize / fs->clustersize;
@@ -219,7 +219,7 @@ static void collect_empty_eraseblks(ffsp_fs* fs)
 		 * The erase block contains inodes or indirect pointers.
 		 * Set it to "free" if it does not contain any valid clusters.
 		 */
-        if (!ffsp_eb_get_cvalid(fs, eb_id))
+        if (!ffsp_eb_get_cvalid(*fs, eb_id))
         {
             fs->eb_usage[eb_id].e_type = FFSP_EB_EMPTY;
             fs->eb_usage[eb_id].e_lastwrite = put_be16(0);
@@ -280,7 +280,7 @@ static unsigned int find_collectable_eraseblk(ffsp_fs* fs, ffsp_eraseblk_type eb
     for (unsigned int eb_id = 1; eb_id < fs->neraseblocks; eb_id++)
     {
         cur_type = fs->eb_usage[eb_id].e_type;
-        cur_valid = ffsp_eb_get_cvalid(fs, eb_id);
+        cur_valid = ffsp_eb_get_cvalid(*fs, eb_id);
 
         /*
 		 * Consider the current erase block for cleaning if it:
@@ -356,8 +356,8 @@ static int move_inodes(ffsp_fs* fs, unsigned int src_eb_id,
             ffsp_delete_inode(inodes[j]);
         }
 
-        ffsp_eb_inc_cvalid(fs, dest_eb_id);
-        ffsp_eb_dec_cvalid(fs, src_eb_id);
+        ffsp_eb_inc_cvalid(*fs, dest_eb_id);
+        ffsp_eb_dec_cvalid(*fs, src_eb_id);
 
         /* check if the "new" erase block is full already */
         if (++dest_moved == max_cvalid)
@@ -526,7 +526,7 @@ void ffsp_gc(ffsp_fs* fs)
 
     ffsp_log().debug("ffsp_gc()");
 
-    if (ffsp_emtpy_eraseblk_count(fs) < fs->nerasereserve)
+    if (ffsp_emtpy_eraseblk_count(*fs) < fs->nerasereserve)
     {
         ffsp_log().debug("ffsp_gc(): too few free erase blocks present.");
         return;

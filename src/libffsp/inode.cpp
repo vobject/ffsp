@@ -641,7 +641,7 @@ int ffsp_unlink(ffsp_fs* fs, const char* path)
             if (!fs->cl_occupancy[cl_id])
             {
                 eb_id = cl_id * fs->clustersize / fs->erasesize;
-                ffsp_eb_dec_cvalid(fs, eb_id);
+                ffsp_eb_dec_cvalid(*fs, eb_id);
                 //	dec_be16(&fs->eb_usage[eb_id].e_cvalid);
             }
         }
@@ -737,7 +737,7 @@ int ffsp_rmdir(ffsp_fs* fs, const char* path)
         if (!fs->cl_occupancy[cl_id])
         {
             eb_id = cl_id * fs->clustersize / fs->erasesize;
-            ffsp_eb_dec_cvalid(fs, eb_id);
+            ffsp_eb_dec_cvalid(*fs, eb_id);
             //	dec_be16(&fs->eb_usage[eb_id].e_cvalid);
         }
     }
@@ -848,7 +848,7 @@ void ffsp_mark_dirty(ffsp_fs* fs, ffsp_inode* ino)
         if (!fs->cl_occupancy[cl_id])
         {
             eb_id = cl_id * fs->clustersize / fs->erasesize;
-            ffsp_eb_dec_cvalid(fs, eb_id);
+            ffsp_eb_dec_cvalid(*fs, eb_id);
             //	dec_be16(&fs->eb_usage[eb_id].e_cvalid);
         }
     }
@@ -914,7 +914,7 @@ void ffsp_invalidate_ind_ptr(ffsp_fs* fs, const be32_t* ind_ptr,
             //  now one additional cluster invalid in the specified
             //  erase block.
             eb_id = ind_id * fs->clustersize / fs->erasesize;
-            ffsp_eb_dec_cvalid(fs, eb_id);
+            ffsp_eb_dec_cvalid(*fs, eb_id);
             //	dec_be16(&fs->eb_usage[eb_id].e_cvalid);
         }
         else if (ind_type == FFSP_DATA_EBIN)

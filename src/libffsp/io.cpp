@@ -124,10 +124,10 @@ static int write_ind(ffsp_fs* fs, write_context* ctx,
         return 0;
     }
     mode = get_be32(ctx->ino->i_mode);
-    eb_type = ffsp_get_eraseblk_type(fs, ctx->new_type, mode);
+    eb_type = ffsp_get_eraseblk_type(*fs, ctx->new_type, mode);
 
     // Search for a cluster id or an erase block id to write to.
-    rc = ffsp_find_writable_cluster(fs, eb_type, &eb_id, &cl_id);
+    rc = ffsp_find_writable_cluster(*fs, eb_type, eb_id, cl_id);
     if (rc < 0)
     {
         ffsp_log().debug("Failed to find writable cluster or erase block");
@@ -142,7 +142,7 @@ static int write_ind(ffsp_fs* fs, write_context* ctx,
 
     // This operation may internally finalize erase blocks by
     //  writing their erase block summary.
-    ffsp_commit_write_operation(fs, eb_type, eb_id, ctx->ino->i_no);
+    ffsp_commit_write_operation(*fs, eb_type, eb_id, ctx->ino->i_no);
     *ind_id = put_be32(cl_id);
     return written_bytes;
 }
@@ -506,7 +506,7 @@ static int write_clin(ffsp_fs* fs, write_context* ctx)
         {
             // The last write operation replaced an existing
             //  cluster. Invalidate the overwritten cluster.
-            ffsp_eb_dec_cvalid(fs, cl_off / fs->erasesize);
+            ffsp_eb_dec_cvalid(*fs, cl_off / fs->erasesize);
         }
         ++ind_index;
         ctx->buf += ind_left;
