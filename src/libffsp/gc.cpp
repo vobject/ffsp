@@ -334,7 +334,7 @@ static int move_inodes(ffsp_fs* fs, unsigned int src_eb_id,
         cl_off = eb_off + (i * fs->clustersize);
         cl_id = cl_off / fs->clustersize;
 
-        ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
+        ino_cnt = ffsp_read_inode_group(*fs, cl_id, inodes);
         if (!ino_cnt)
             continue;
 

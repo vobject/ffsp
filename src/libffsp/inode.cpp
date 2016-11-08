@@ -331,7 +331,7 @@ int ffsp_lookup_no(ffsp_fs* fs, ffsp_inode** ino, uint32_t ino_no)
     }
 
     cl_id = get_be32(fs->ino_map[ino_no]);
-    ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
+    ino_cnt = ffsp_read_inode_group(*fs, cl_id, inodes);
     if (ino_cnt < 0)
     {
         free(inodes);
@@ -442,13 +442,13 @@ int ffsp_flush_inodes(ffsp_fs* fs, bool force)
 
     /* process dirty dentry inodes */
     inodes = get_dirty_inodes(*fs, true);
-    rc = ffsp_write_inodes(fs, &inodes[0], inodes.size());
+    rc = ffsp_write_inodes(*fs, &inodes[0], inodes.size());
 
     if (rc == 0)
     {
         /* process dirty file inodes */
         inodes = get_dirty_inodes(*fs, false);
-        rc = ffsp_write_inodes(fs, &inodes[0], inodes.size());
+        rc = ffsp_write_inodes(*fs, &inodes[0], inodes.size());
     }
 
     return rc;

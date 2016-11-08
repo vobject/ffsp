@@ -23,10 +23,7 @@
 
 #include "ffsp.hpp"
 
-int ffsp_read_inode_group(ffsp_fs* fs, unsigned int cl_id,
-                          ffsp_inode** inodes);
-int ffsp_get_inode_group(const ffsp_fs* fs, ffsp_inode** inodes,
-                         unsigned int ino_cnt, ffsp_inode** group);
-int ffsp_write_inodes(ffsp_fs* fs, ffsp_inode** inodes, unsigned int ino_cnt);
+int ffsp_read_inode_group(ffsp_fs& fs, unsigned int cl_id, ffsp_inode** inodes);
+int ffsp_write_inodes(ffsp_fs& fs, ffsp_inode** inodes, unsigned int ino_cnt);
 
 #endif /* INODE_GROUP_HPP */

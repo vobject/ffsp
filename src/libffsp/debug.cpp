@@ -185,7 +185,7 @@ static std::string get_cl_info(ffsp_fs& fs, unsigned int cl_id)
         os << "\"inodes\":[";
         ffsp_inode** inodes = (ffsp_inode**)malloc((fs.clustersize / sizeof(ffsp_inode)) *
                                       sizeof(ffsp_inode*));
-        int ino_cnt = ffsp_read_inode_group(&fs, cl_id, inodes);
+        int ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
         if (ino_cnt)
         {
             for (int i = 0; i < ino_cnt; i++)
@@ -235,7 +235,7 @@ static std::string get_ino_info(ffsp_fs& fs, uint32_t ino_no)
     os << "\"inode\":{";
     ffsp_inode** inodes = (ffsp_inode**)malloc((fs.clustersize / sizeof(ffsp_inode)) *
                                   sizeof(ffsp_inode*));
-    int ino_cnt = ffsp_read_inode_group(&fs, cl_id, inodes);
+    int ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
     if (ino_cnt)
     {
         for (int i = 0; i < ino_cnt; i++)
@@ -460,7 +460,7 @@ bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>&
                     {
                         const unsigned int cl_id = eb_id * fs.erasesize / fs.clustersize + cl_idx;
 
-                        int ino_cnt = ffsp_read_inode_group(&fs, cl_id, inodes);
+                        int ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
                         if (ino_cnt)
                         {
                             for (int ino_idx = 0; ino_idx < ino_cnt; ino_idx++)
