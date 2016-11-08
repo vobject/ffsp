@@ -238,7 +238,7 @@ int open(ffsp_fs& fs, const char* path, fuse_file_info* fi)
     // TODO: Comment on why we explicitly made open & trunc atomic
     if (fi->flags & O_TRUNC)
     {
-        rc = ffsp_truncate(&fs, ino, 0);
+        rc = ffsp_truncate(fs, ino, 0);
         if (rc < 0)
             return rc;
     }
@@ -270,7 +270,7 @@ int truncate(ffsp_fs& fs, const char* path, FUSE_OFF_T length)
     if (rc < 0)
         return rc;
 
-    ffsp_truncate(&fs, ino, static_cast<uint64_t>(length));
+    ffsp_truncate(fs, ino, static_cast<uint64_t>(length));
     return 0;
 }
 
@@ -304,7 +304,7 @@ int read(ffsp_fs& fs, const char* path, char* buf, size_t count,
     }
 
     ffsp_debug_update(fs, FFSP_DEBUG_FUSE_READ, count);
-    return ffsp_read(&fs, ino, buf, count, static_cast<uint64_t>(offset));
+    return ffsp_read(fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
 int write(ffsp_fs& fs, const char* path, const char* buf, size_t count,
@@ -331,7 +331,7 @@ int write(ffsp_fs& fs, const char* path, const char* buf, size_t count,
     }
 
     ffsp_debug_update(fs, FFSP_DEBUG_FUSE_WRITE, count);
-    return ffsp_write(&fs, ino, buf, count, static_cast<uint64_t>(offset));
+    return ffsp_write(fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
 int mknod(ffsp_fs& fs, const char* path, mode_t mode, dev_t device)

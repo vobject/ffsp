@@ -178,7 +178,7 @@ static int add_dentry(ffsp_fs* fs, const char* path,
     free(name);
 
     // Append the new dentry at the inode's data.
-    rc = ffsp_write(fs, parent_ino, (char*)(&dent), sizeof(dent), get_be64(parent_ino->i_size));
+    rc = ffsp_write(*fs, parent_ino, (char*)(&dent), sizeof(dent), get_be64(parent_ino->i_size));
     if (rc < 0)
         return rc;
 
@@ -230,7 +230,7 @@ static int remove_dentry(ffsp_fs* fs, const char* path,
             dent_buf[i].len = 0;
 
             // TODO: write only affected cluster.
-            ffsp_write(fs, ino, (char*)dent_buf, dent_cnt * sizeof(ffsp_dentry), 0);
+            ffsp_write(*fs, ino, (char*)dent_buf, dent_cnt * sizeof(ffsp_dentry), 0);
             break;
         }
     }
@@ -539,7 +539,7 @@ int ffsp_symlink(ffsp_fs* fs, const char* oldpath, const char* newpath,
     if (rc < 0)
         return rc;
 
-    rc = ffsp_write(fs, ino, oldpath, strlen(oldpath), 0);
+    rc = ffsp_write(*fs, ino, oldpath, strlen(oldpath), 0);
     if (rc < 0)
         ffsp_unlink(fs, newpath); // Remove empty file
 
@@ -556,7 +556,7 @@ int ffsp_readlink(ffsp_fs* fs, const char* path, char* buf, size_t bufsize)
     if (rc < 0)
         return rc;
 
-    rc = ffsp_read(fs, ino, buf, bufsize - 1, 0);
+    rc = ffsp_read(*fs, ino, buf, bufsize - 1, 0);
     if (rc < 0)
         return rc;
 
@@ -884,7 +884,7 @@ int ffsp_cache_dir(ffsp_fs* fs, ffsp_inode* ino,
         return -1;
     }
 
-    rc = ffsp_read(fs, ino, (char*)(*dent_buf), data_size, 0);
+    rc = ffsp_read(*fs, ino, (char*)(*dent_buf), data_size, 0);
     if (rc < 0)
     {
         free(*dent_buf);
