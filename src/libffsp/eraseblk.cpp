@@ -43,12 +43,12 @@ int ffsp_eb_get_cvalid(const ffsp_fs& fs, unsigned int eb_id)
 
 void ffsp_eb_inc_cvalid(ffsp_fs& fs, unsigned int eb_id)
 {
-    inc_be16(&fs.eb_usage[eb_id].e_cvalid);
+    inc_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
 void ffsp_eb_dec_cvalid(ffsp_fs& fs, unsigned int eb_id)
 {
-    dec_be16(&fs.eb_usage[eb_id].e_cvalid);
+    dec_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
 unsigned int ffsp_emtpy_eraseblk_count(const ffsp_fs& fs)
@@ -214,7 +214,7 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
     fs.eb_usage[eb_id].e_type = eb_type;
     fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
     ffsp_eb_inc_cvalid(fs, eb_id);
-    inc_be16(&fs.eb_usage[eb_id].e_writeops);
+    inc_be16(fs.eb_usage[eb_id].e_writeops);
 
     int max_writeops = fs.erasesize / fs.clustersize;
     uint16_t writeops = get_be16(fs.eb_usage[eb_id].e_writeops);
@@ -262,7 +262,7 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
         write_time = ffsp_gcinfo_update_writetime(&fs, eb_type);
 
         fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
-        inc_be16(&fs.eb_usage[eb_id].e_writeops);
+        inc_be16(fs.eb_usage[eb_id].e_writeops);
         ffsp_gcinfo_inc_writecnt(&fs, eb_type);
     }
 }

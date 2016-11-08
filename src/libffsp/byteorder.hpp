@@ -138,34 +138,34 @@ static inline be64_t put_be64(uint64_t v)
     return cpu_to_be64(v);
 }
 
-static inline void inc_be16(be16_t* b)
+static inline void inc_be16(be16_t& b)
 {
-    *b = put_be16(get_be16(*b) + 1);
+    b = put_be16(get_be16(b) + 1);
 }
 
-static inline void inc_be32(be32_t* b)
+static inline void inc_be32(be32_t& b)
 {
-    *b = put_be32(get_be32(*b) + 1);
+    b = put_be32(get_be32(b) + 1);
 }
 
-static inline void inc_be64(be64_t* b)
+static inline void inc_be64(be64_t& b)
 {
-    *b = put_be64(get_be64(*b) + 1);
+    b = put_be64(get_be64(b) + 1);
 }
 
-static inline void dec_be16(be16_t* b)
+static inline void dec_be16(be16_t& b)
 {
-    *b = put_be16(get_be16(*b) - 1);
+    b = put_be16(get_be16(b) - 1);
 }
 
-static inline void dec_be32(be32_t* b)
+static inline void dec_be32(be32_t& b)
 {
-    *b = put_be32(get_be32(*b) - 1);
+    b = put_be32(get_be32(b) - 1);
 }
 
-static inline void dec_be64(be64_t* b)
+static inline void dec_be64(be64_t& b)
 {
-    *b = put_be64(get_be64(*b) - 1);
+    b = put_be64(get_be64(b) - 1);
 }
 
 #endif /* BYTE_ORDER_H */

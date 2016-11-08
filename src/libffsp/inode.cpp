@@ -186,7 +186,7 @@ static int add_dentry(ffsp_fs* fs, const char* path,
     //  in case the path points to a directory instead of a file.
     if (S_ISDIR(mode))
     {
-        inc_be32(&parent_ino->i_nlink);
+        inc_be32(parent_ino->i_nlink);
         ffsp_mark_dirty(fs, parent_ino);
     }
     if (parent_no)
@@ -244,7 +244,7 @@ static int remove_dentry(ffsp_fs* fs, const char* path,
     //  in case the path points to a directory instead of a file.
     if (S_ISDIR(mode))
     {
-        dec_be32(&ino->i_nlink);
+        dec_be32(ino->i_nlink);
         ffsp_mark_dirty(fs, ino);
     }
     return 0;
@@ -583,7 +583,7 @@ int ffsp_link(ffsp_fs* fs, const char* oldpath, const char* newpath)
     if (rc < 0)
         return rc;
 
-    inc_be32(&ino->i_nlink);
+    inc_be32(ino->i_nlink);
     ffsp_flush_inodes(fs, false);
     return 0;
 }
@@ -620,7 +620,7 @@ int ffsp_unlink(ffsp_fs* fs, const char* path)
     {
         // The inode is referenced by more than one dentry.
         // Do not delete/invalidate it but only reduce its link count.
-        dec_be32(&ino->i_nlink);
+        dec_be32(ino->i_nlink);
         ffsp_mark_dirty(fs, ino);
     }
     else if (get_be32(ino->i_nlink) == 1)
