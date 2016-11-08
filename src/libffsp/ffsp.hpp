@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef FFSP_H
-#define FFSP_H
+#ifndef FFSP_HPP
+#define FFSP_HPP
 
 #include "byteorder.hpp"
 
@@ -217,4 +217,4 @@ struct ffsp_fs
     char* buf;
 };
 
-#endif // FFSP_H
+#endif // FFSP_HPP

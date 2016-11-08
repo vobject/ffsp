@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef DEBUG_HPP
+#define DEBUG_HPP
 
 #include "ffsp.hpp"
 
@@ -44,4 +44,4 @@ bool ffsp_debug_open(ffsp_fs& fs, const char* path);
 bool ffsp_debug_release(ffsp_fs& fs, const char* path);
 bool ffsp_debug_read(ffsp_fs& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
 
-#endif /* DEBUG_H */
+#endif /* DEBUG_HPP */

@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MKFS_H
-#define MKFS_H
+#ifndef MKFS_HPP
+#define MKFS_HPP
 
 #include "ffsp.hpp"
 
@@ -37,4 +37,4 @@ bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options);
 
 bool ffsp_fmkfs(int fd, const ffsp_mkfs_options& options);
 
-#endif /* MKFS_H */
+#endif /* MKFS_HPP */

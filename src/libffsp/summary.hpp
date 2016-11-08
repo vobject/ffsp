@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef SUMMARY_H
-#define SUMMARY_H
+#ifndef SUMMARY_HPP
+#define SUMMARY_HPP
 
 #include "ffsp.hpp"
 
@@ -45,4 +45,4 @@ void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_n
 //bool ffsp_summary_write0(ffsp_fs& fs, uint32_t eb_id, be32_t* summary);
 //void ffsp_summary_add_ref0(be32_t* summary, unsigned int ino_no, int writeops);
 
-#endif /* SUMMARY_H */
+#endif /* SUMMARY_HPP */

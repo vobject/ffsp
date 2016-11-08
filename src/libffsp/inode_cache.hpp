@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef INODE_CACHE_H
-#define INODE_CACHE_H
+#ifndef INODE_CACHE_HPP
+#define INODE_CACHE_HPP
 
 #include "ffsp.hpp"
 
@@ -38,4 +38,4 @@ std::vector<ffsp_inode*> ffsp_inode_cache_get(const ffsp_inode_cache& cache);
 std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
                                                  const std::function<bool(const ffsp_inode&)>& p);
 
-#endif /* INODE_CACHE_H */
+#endif /* INODE_CACHE_HPP */

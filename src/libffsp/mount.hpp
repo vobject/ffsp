@@ -18,12 +18,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MOUNT_H
-#define MOUNT_H
+#ifndef MOUNT_HPP
+#define MOUNT_HPP
 
 #include "ffsp.hpp"
 
 bool ffsp_mount(ffsp_fs& fs, const char* path);
 void ffsp_unmount(ffsp_fs& fs);
 
-#endif /* MOUNT_H */
+#endif /* MOUNT_HPP */

@@ -18,12 +18,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef IO_RAW_H
-#define IO_RAW_H
+#ifndef IO_RAW_HPP
+#define IO_RAW_HPP
 
 #include <cstdint>
 
 bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read);
 bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written);
 
-#endif /* IO_RAW_H */
+#endif /* IO_RAW_HPP */

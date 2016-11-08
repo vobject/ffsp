@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef LOG_HPP
+#define LOG_HPP
 
 #include "spdlog/spdlog.h"
 
@@ -29,4 +29,4 @@ void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level);
 void ffsp_log_deinit();
 spdlog::logger& ffsp_log();
 
-#endif /* LOG_H */
+#endif /* LOG_HPP */

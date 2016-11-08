@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef IO_H
-#define IO_H
+#ifndef IO_HPP
+#define IO_HPP
 
 #include "ffsp.hpp"
 
@@ -29,4 +29,4 @@ int ffsp_truncate(ffsp_fs* fs, ffsp_inode* ino, uint64_t length);
 int ffsp_read(ffsp_fs* fs, ffsp_inode* ino, char* buf, size_t count, uint64_t offset);
 int ffsp_write(ffsp_fs* fs, ffsp_inode* ino, const char* buf, size_t count, uint64_t offset);
 
-#endif /* IO_H */
+#endif /* IO_HPP */

@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef BYTE_ORDER_H
-#define BYTE_ORDER_H
+#ifndef BYTE_ORDER_HPP
+#define BYTE_ORDER_HPP
 
 #include <cstdint>
 
@@ -168,4 +168,4 @@ static inline void dec_be64(be64_t& b)
     b = put_be64(get_be64(b) - 1);
 }
 
-#endif /* BYTE_ORDER_H */
+#endif /* BYTE_ORDER_HPP */

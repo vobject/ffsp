@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef GC_H
-#define GC_H
+#ifndef GC_HPP
+#define GC_HPP
 
 #include "ffsp.hpp"
 
@@ -31,4 +31,4 @@ unsigned int ffsp_gcinfo_inc_writecnt(ffsp_fs* fs, ffsp_eraseblk_type eb_type);
 
 void ffsp_gc(ffsp_fs* fs);
 
-#endif /* GC_H */
+#endif /* GC_HPP */

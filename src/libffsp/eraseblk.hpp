@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef ERASEBLK_H
-#define ERASEBLK_H
+#ifndef ERASEBLK_HPP
+#define ERASEBLK_HPP
 
 #include "ffsp.hpp"
 
@@ -37,4 +37,4 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
 void ffsp_close_eraseblks(ffsp_fs& fs);
 int ffsp_write_meta_data(ffsp_fs& fs);
 
-#endif /* ERASEBLK_H */
+#endif /* ERASEBLK_HPP */

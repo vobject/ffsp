@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef FUSE_FFSP_H
-#define FUSE_FFSP_H
+#ifndef FUSE_FFSP_HPP
+#define FUSE_FFSP_HPP
 
 #include "fuse.h"
 
@@ -97,4 +97,4 @@ int fsync(ffsp_fs& fs, const char* path, int datasync, fuse_file_info* fi);
 
 } // namespace ffsp
 
-#endif // FUSE_FFSP_H
+#endif // FUSE_FFSP_HPP

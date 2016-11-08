@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include "ffsp.hpp"
 
@@ -37,4 +37,4 @@ void ffsp_stat(ffsp_fs& fs, const ffsp_inode& ino, struct stat& stbuf);
 void ffsp_statfs(ffsp_fs& fs, struct statvfs& sfs);
 void ffsp_utimens(ffsp_fs& fs, ffsp_inode& ino, const struct timespec tvi[2]);
 
-#endif /* UTILS_H */
+#endif /* UTILS_HPP */

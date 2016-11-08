@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef BITOPS_H
-#define BITOPS_H
+#ifndef BITOPS_HPP
+#define BITOPS_HPP
 
 #include <cstdint>
 
@@ -39,4 +39,4 @@ static inline void clear_bit(uint32_t* data, uint32_t n)
     data[n / sizeof(uint32_t)] &= ~(1 << (n % sizeof(uint32_t)));
 }
 
-#endif /* BITOPS_H */
+#endif /* BITOPS_HPP */

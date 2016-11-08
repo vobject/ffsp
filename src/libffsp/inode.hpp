@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef INODE_H
-#define INODE_H
+#ifndef INODE_HPP
+#define INODE_HPP
 
 #include "ffsp.hpp"
 
@@ -60,4 +60,4 @@ int ffsp_cache_dir(ffsp_fs* fs, ffsp_inode* ino,
 void ffsp_invalidate_ind_ptr(ffsp_fs* fs, const be32_t* ind_ptr,
                              int cnt, int ind_type);
 
-#endif /* INODE_H */
+#endif /* INODE_HPP */

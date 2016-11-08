@@ -18,8 +18,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef INODE_GROUP_H
-#define INODE_GROUP_H
+#ifndef INODE_GROUP_HPP
+#define INODE_GROUP_HPP
 
 #include "ffsp.hpp"
 
@@ -29,4 +29,4 @@ int ffsp_get_inode_group(const ffsp_fs* fs, ffsp_inode** inodes,
                          unsigned int ino_cnt, ffsp_inode** group);
 int ffsp_write_inodes(ffsp_fs* fs, ffsp_inode** inodes, unsigned int ino_cnt);
 
-#endif /* INODE_GROUP_H */
+#endif /* INODE_GROUP_HPP */
