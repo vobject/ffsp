@@ -208,7 +208,7 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
     }
 
     /* tell gcinfo that we wrote an erase block of a specific type */
-    unsigned int write_time = ffsp_gcinfo_update_writetime(&fs, eb_type);
+    unsigned int write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
 
     // Update the meta data of the erase block that was written to.
     fs.eb_usage[eb_id].e_type = eb_type;
@@ -226,7 +226,7 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
             // An erase block without summary is implicitly
             //  finalized when its maximum write operations count
             //  is reached.
-            ffsp_gcinfo_inc_writecnt(&fs, eb_type);
+            ffsp_gcinfo_inc_writecnt(fs, eb_type);
         }
         return;
     }
@@ -259,11 +259,11 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
 
         /* we just performed another write operation;
          * tell gcinfo and update the erase block's usage data */
-        write_time = ffsp_gcinfo_update_writetime(&fs, eb_type);
+        write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
 
         fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
         inc_be16(fs.eb_usage[eb_id].e_writeops);
-        ffsp_gcinfo_inc_writecnt(&fs, eb_type);
+        ffsp_gcinfo_inc_writecnt(fs, eb_type);
     }
 }
 
@@ -296,7 +296,7 @@ void ffsp_close_eraseblks(ffsp_fs& fs)
         ffsp_summary_close(*fs.summary_cache, eb_summary);
 
         /* tell gcinfo an erase block of a specific type was written */
-        unsigned int write_time = ffsp_gcinfo_update_writetime(&fs, eb_type);
+        unsigned int write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
         fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
     }
 }

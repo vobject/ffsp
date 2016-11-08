@@ -709,7 +709,7 @@ int ffsp_truncate(ffsp_fs* fs, ffsp_inode* ino, uint64_t length)
     // The recent call to mark the current inode dirty might have
     //  triggered flushing all dirty inodes to disk. Therefore we should
     //  check if inode erase blocks need cleaning.
-    ffsp_gc(fs);
+    ffsp_gc(*fs);
     return rc;
 }
 
@@ -796,6 +796,6 @@ int ffsp_write(ffsp_fs* fs, ffsp_inode* ino,
     // The recent call to mark the current inode dirty might have
     //  triggered flushing all dirty inodes to disk. Therefore we should
     //  check if inode erase blocks need cleaning.
-    ffsp_gc(fs);
+    ffsp_gc(*fs);
     return rc;
 }

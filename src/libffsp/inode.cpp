@@ -471,7 +471,7 @@ int ffsp_release_inodes(ffsp_fs* fs)
     }
 
     /* GC cannot hurt at this point */
-    ffsp_gc(fs);
+    ffsp_gc(*fs);
     return 0;
 }
 
