@@ -208,7 +208,7 @@ error:
 
 void ffsp_unmount(ffsp_fs& fs)
 {
-    ffsp_release_inodes(&fs);
+    ffsp_release_inodes(fs);
     ffsp_close_eraseblks(fs);
     ffsp_write_meta_data(fs);
 

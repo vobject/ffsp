@@ -232,7 +232,7 @@ static int trunc_ind2emb(ffsp_fs& fs, write_context& ctx)
     // The appearance of the inode id does not have to be
     //  removed from the erase blocks summary because the caller
     //  would know that it is invalid when he tries to look it up.
-    ffsp_invalidate_ind_ptr(&fs, ctx.ind_ptr, ind_last + 1, ctx.old_type);
+    ffsp_invalidate_ind_ptr(fs, ctx.ind_ptr, ind_last + 1, ctx.old_type);
 
     // Move the previously indirect data into the inode.
     memcpy(ctx.ind_ptr, fs.buf, ctx.new_size);
@@ -273,7 +273,7 @@ static int trunc_clin2ebin(ffsp_fs& fs, write_context& ctx)
         {
             // Reset newly allocated erase block to empty
             int ind_ptr_cnt = ind_from_offset(written - 1, fs.erasesize) + 1;
-            ffsp_invalidate_ind_ptr(&fs, ctx.ind_ptr, ind_ptr_cnt, ctx.new_type);
+            ffsp_invalidate_ind_ptr(fs, ctx.ind_ptr, ind_ptr_cnt, ctx.new_type);
             // Reset the inode's old indirect cluster pointers
             memcpy(ctx.ind_ptr, old_ptr, max_emb_size(fs));
 
@@ -283,7 +283,7 @@ static int trunc_clin2ebin(ffsp_fs& fs, write_context& ctx)
 
         written += rc;
     }
-    ffsp_invalidate_ind_ptr(&fs, old_ptr, old_ptr_cnt, ctx.old_type);
+    ffsp_invalidate_ind_ptr(fs, old_ptr, old_ptr_cnt, ctx.old_type);
 
     int ind_first = ind_from_offset(written - 1, fs.erasesize);
     int ind_last = ind_from_offset(ctx.new_size - 1, fs.erasesize);
@@ -307,7 +307,7 @@ static int trunc_ind(ffsp_fs& fs, write_context& ctx)
         int ind_last = ind_from_offset(ctx.old_size - 1, ctx.new_ind_size);
         int ind_cnt = ind_last - ind_first;
 
-        ffsp_invalidate_ind_ptr(&fs, ctx.ind_ptr + ind_first + 1, ind_cnt, ctx.old_type);
+        ffsp_invalidate_ind_ptr(fs, ctx.ind_ptr + ind_first + 1, ind_cnt, ctx.old_type);
     }
     else
     {
@@ -611,8 +611,8 @@ int ffsp_truncate(ffsp_fs& fs, ffsp_inode* ino, uint64_t length)
     ino->i_size = put_be64(length);
     ffsp_update_time(ino->i_ctime);
     ffsp_update_time(ino->i_mtime);
-    ffsp_mark_dirty(&fs, ino);
-    ffsp_flush_inodes(&fs, false);
+    ffsp_mark_dirty(fs, ino);
+    ffsp_flush_inodes(fs, false);
 
     // The recent call to mark the current inode dirty might have
     //  triggered flushing all dirty inodes to disk. Therefore we should
@@ -728,8 +728,8 @@ int ffsp_write(ffsp_fs& fs, ffsp_inode* ino, const char* buf, size_t count, uint
 
     ino->i_size = put_be64(ctx.new_size);
     ffsp_update_time(ino->i_mtime);
-    ffsp_mark_dirty(&fs, ino);
-    ffsp_flush_inodes(&fs, false);
+    ffsp_mark_dirty(fs, ino);
+    ffsp_flush_inodes(fs, false);
 
     // The recent call to mark the current inode dirty might have
     //  triggered flushing all dirty inodes to disk. Therefore we should

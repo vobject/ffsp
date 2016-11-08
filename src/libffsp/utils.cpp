@@ -116,6 +116,6 @@ void ffsp_utimens(ffsp_fs& fs, ffsp_inode& ino, const struct timespec tv[2])
     ino.i_atime.nsec = put_be32(tv[0].tv_nsec);
     ino.i_mtime.sec = put_be64(tv[1].tv_sec);
     ino.i_mtime.nsec = put_be32(tv[1].tv_nsec);
-    ffsp_mark_dirty(&fs, &ino);
-    ffsp_flush_inodes(&fs, false);
+    ffsp_mark_dirty(fs, &ino);
+    ffsp_flush_inodes(fs, false);
 }

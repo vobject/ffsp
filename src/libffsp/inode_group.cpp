@@ -37,7 +37,7 @@ static void group_inodes(const ffsp_fs& fs, ffsp_inode** group,
     unsigned int cl_filling = 0;
     for (int i = 0; i < group_elem_cnt; i++)
     {
-        unsigned int ino_size = ffsp_get_inode_size(&fs, group[i]);
+        unsigned int ino_size = ffsp_get_inode_size(fs, group[i]);
         memcpy(cl_buf + cl_filling, group[i], ino_size);
         cl_filling += ino_size;
     }
@@ -61,7 +61,7 @@ static int get_inode_group(const ffsp_fs& fs, ffsp_inode** inodes,
             continue;
 
         unsigned int free_bytes = fs.clustersize - group_size;
-        unsigned int inode_size = ffsp_get_inode_size(&fs, inodes[i]);
+        unsigned int inode_size = ffsp_get_inode_size(fs, inodes[i]);
 
         if (inode_size > free_bytes)
         {
@@ -93,11 +93,11 @@ int ffsp_read_inode_group(ffsp_fs& fs, unsigned int cl_id, ffsp_inode** inodes)
     while ((ino_buf - fs.buf) < (ptrdiff_t)fs.clustersize)
     {
         ffsp_inode* ino = (ffsp_inode*)ino_buf;
-        unsigned int ino_size = ffsp_get_inode_size(&fs, ino);
+        unsigned int ino_size = ffsp_get_inode_size(fs, ino);
 
-        if (ffsp_is_inode_valid(&fs, cl_id, ino))
+        if (ffsp_is_inode_valid(fs, cl_id, ino))
         {
-            ino = ffsp_allocate_inode(&fs);
+            ino = ffsp_allocate_inode(fs);
             memcpy(ino, ino_buf, ino_size);
             inodes[ino_cnt] = ino;
             ino_cnt++;
@@ -166,7 +166,7 @@ int ffsp_write_inodes(ffsp_fs& fs, ffsp_inode** inodes, unsigned int ino_cnt)
         {
             fs.ino_map[get_be32(group[i]->i_no)] = put_be32(cl_id);
             fs.cl_occupancy[cl_id]++;
-            ffsp_reset_dirty(&fs, group[i]);
+            ffsp_reset_dirty(fs, group[i]);
         }
     }
     free(group);

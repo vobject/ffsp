@@ -133,13 +133,13 @@ int getattr(ffsp_fs& fs, const char* path, struct stat* stbuf)
     if (ffsp_debug_is_debug_path(fs, path))
         return ffsp_debug_getattr(fs, path, *stbuf) ? 0 : -EIO;
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
 #ifdef _WIN32
     struct stat stbuf_tmp;
-    ffsp_stat(&fs, ino, &stbuf_tmp);
+    ffsp_stat(fs, ino, &stbuf_tmp);
 
     memset(stbuf, 0, sizeof(*stbuf));
     stbuf->st_dev = stbuf_tmp.st_dev;     /* dev_t <- _dev_t */
@@ -198,7 +198,7 @@ int readdir(ffsp_fs& fs, const char* path, void* buf,
         return 0;
     }
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
@@ -207,7 +207,7 @@ int readdir(ffsp_fs& fs, const char* path, void* buf,
 
     // Number of potential ffsp_dentry elements. The exact number is not
     //  tracked. Return value of < 0 indicates an error.
-    rc = ffsp_cache_dir(&fs, ino, &dent_buf, &dent_cnt);
+    rc = ffsp_cache_dir(fs, ino, &dent_buf, &dent_cnt);
     if (rc < 0)
         return rc;
 
@@ -231,7 +231,7 @@ int open(ffsp_fs& fs, const char* path, fuse_file_info* fi)
     if (ffsp_debug_is_debug_path(fs, path))
         return ffsp_debug_open(fs, path) ? 0 : -EIO;
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
@@ -266,7 +266,7 @@ int truncate(ffsp_fs& fs, const char* path, FUSE_OFF_T length)
     if (length < 0)
         return -EINVAL;
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
@@ -298,7 +298,7 @@ int read(ffsp_fs& fs, const char* path, char* buf, size_t count,
     }
     else
     {
-        rc = ffsp_lookup(&fs, &ino, path);
+        rc = ffsp_lookup(fs, &ino, path);
         if (rc < 0)
             return rc;
     }
@@ -325,7 +325,7 @@ int write(ffsp_fs& fs, const char* path, const char* buf, size_t count,
     }
     else
     {
-        rc = ffsp_lookup(&fs, &ino, path);
+        rc = ffsp_lookup(fs, &ino, path);
         if (rc < 0)
             return rc;
     }
@@ -347,7 +347,7 @@ int mknod(ffsp_fs& fs, const char* path, mode_t mode, dev_t device)
 
     // TODO: Make sure one and only one of the mode-flags is set.
 
-    return ffsp_create(&fs, path, mode, uid, gid, device);
+    return ffsp_create(fs, path, mode, uid, gid, device);
 }
 
 int link(ffsp_fs& fs, const char* oldpath, const char* newpath)
@@ -355,7 +355,7 @@ int link(ffsp_fs& fs, const char* oldpath, const char* newpath)
     if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
         return -EPERM;
 
-    return ffsp_link(&fs, oldpath, newpath);
+    return ffsp_link(fs, oldpath, newpath);
 }
 
 int symlink(ffsp_fs& fs, const char* oldpath, const char* newpath)
@@ -369,7 +369,7 @@ int symlink(ffsp_fs& fs, const char* oldpath, const char* newpath)
     uid = fuse_get_context()->uid;
     gid = fuse_get_context()->gid;
 
-    return ffsp_symlink(&fs, oldpath, newpath, uid, gid);
+    return ffsp_symlink(fs, oldpath, newpath, uid, gid);
 }
 
 int readlink(ffsp_fs& fs, const char* path, char* buf, size_t bufsize)
@@ -377,7 +377,7 @@ int readlink(ffsp_fs& fs, const char* path, char* buf, size_t bufsize)
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
 
-    return ffsp_readlink(&fs, path, buf, bufsize);
+    return ffsp_readlink(fs, path, buf, bufsize);
 }
 
 int mkdir(ffsp_fs& fs, const char* path, mode_t mode)
@@ -391,7 +391,7 @@ int mkdir(ffsp_fs& fs, const char* path, mode_t mode)
     uid = fuse_get_context()->uid;
     gid = fuse_get_context()->gid;
 
-    return ffsp_create(&fs, path, mode | S_IFDIR, uid, gid, 0);
+    return ffsp_create(fs, path, mode | S_IFDIR, uid, gid, 0);
 }
 
 int rmdir(ffsp_fs& fs, const char* path)
@@ -399,7 +399,7 @@ int rmdir(ffsp_fs& fs, const char* path)
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
 
-    return ffsp_rmdir(&fs, path);
+    return ffsp_rmdir(fs, path);
 }
 
 int unlink(ffsp_fs& fs, const char* path)
@@ -407,7 +407,7 @@ int unlink(ffsp_fs& fs, const char* path)
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
 
-    return ffsp_unlink(&fs, path);
+    return ffsp_unlink(fs, path);
 }
 
 int rename(ffsp_fs& fs, const char* oldpath, const char* newpath)
@@ -415,7 +415,7 @@ int rename(ffsp_fs& fs, const char* oldpath, const char* newpath)
     if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
         return -EPERM;
 
-    return ffsp_rename(&fs, oldpath, newpath);
+    return ffsp_rename(fs, oldpath, newpath);
 }
 
 int utimens(ffsp_fs& fs, const char* path, const struct timespec tv[2])
@@ -426,7 +426,7 @@ int utimens(ffsp_fs& fs, const char* path, const struct timespec tv[2])
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
@@ -442,13 +442,13 @@ int chmod(ffsp_fs& fs, const char* path, mode_t mode)
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
     ino->i_mode = put_be32(mode);
-    ffsp_mark_dirty(&fs, ino);
-    ffsp_flush_inodes(&fs, false);
+    ffsp_mark_dirty(fs, ino);
+    ffsp_flush_inodes(fs, false);
     return 0;
 }
 
@@ -460,14 +460,14 @@ int chown(ffsp_fs& fs, const char* path, uid_t uid, gid_t gid)
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
 
-    rc = ffsp_lookup(&fs, &ino, path);
+    rc = ffsp_lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
     ino->i_uid = put_be32(uid);
     ino->i_gid = put_be32(gid);
-    ffsp_mark_dirty(&fs, ino);
-    ffsp_flush_inodes(&fs, false);
+    ffsp_mark_dirty(fs, ino);
+    ffsp_flush_inodes(fs, false);
     return 0;
 }
 
