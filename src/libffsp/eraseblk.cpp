@@ -39,22 +39,22 @@
 namespace ffsp
 {
 
-int ffsp_eb_get_cvalid(const ffsp_fs& fs, unsigned int eb_id)
+int ffsp_eb_get_cvalid(const fs_context& fs, unsigned int eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void ffsp_eb_inc_cvalid(ffsp_fs& fs, unsigned int eb_id)
+void ffsp_eb_inc_cvalid(fs_context& fs, unsigned int eb_id)
 {
     inc_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void ffsp_eb_dec_cvalid(ffsp_fs& fs, unsigned int eb_id)
+void ffsp_eb_dec_cvalid(fs_context& fs, unsigned int eb_id)
 {
     dec_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-unsigned int ffsp_emtpy_eraseblk_count(const ffsp_fs& fs)
+unsigned int ffsp_emtpy_eraseblk_count(const fs_context& fs)
 {
     unsigned int cnt = 0;
 
@@ -65,7 +65,7 @@ unsigned int ffsp_emtpy_eraseblk_count(const ffsp_fs& fs)
     return cnt;
 }
 
-static uint32_t find_empty_eraseblk(const ffsp_fs& fs)
+static uint32_t find_empty_eraseblk(const fs_context& fs)
 {
     if (ffsp_emtpy_eraseblk_count(fs) <= fs.nerasereserve)
         return FFSP_INVALID_EB_ID;
@@ -84,7 +84,7 @@ static uint32_t find_empty_eraseblk(const ffsp_fs& fs)
     return FFSP_INVALID_EB_ID;
 }
 
-ffsp_eraseblk_type ffsp_get_eraseblk_type(const ffsp_fs& fs, int data_type, uint32_t mode)
+eraseblock_type ffsp_get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode)
 {
     // TODO: Check if it is ok to put all other types (blk, pipe, etc)
     //  apart from dentry into the same "file" erase blocks.
@@ -140,7 +140,7 @@ ffsp_eraseblk_type ffsp_get_eraseblk_type(const ffsp_fs& fs, int data_type, uint
     return FFSP_EB_EBIN;
 }
 
-int ffsp_find_writable_cluster(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
+int ffsp_find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
                                uint32_t& eb_id, uint32_t& cl_id)
 {
     if (eb_type == FFSP_EB_EBIN)
@@ -185,7 +185,7 @@ int ffsp_find_writable_cluster(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
     return 0;
 }
 
-void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
+void ffsp_commit_write_operation(fs_context& fs, eraseblock_type eb_type,
                                  uint32_t eb_id, be32_t ino_no)
 {
     /* TODO: Error handling missing! */
@@ -270,7 +270,7 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
     }
 }
 
-void ffsp_close_eraseblks(ffsp_fs& fs)
+void ffsp_close_eraseblks(fs_context& fs)
 {
     /* TODO: Error handling missing! */
 
@@ -281,7 +281,7 @@ void ffsp_close_eraseblks(ffsp_fs& fs)
         if (fs.eb_usage[eb_id].e_type & FFSP_EB_EMPTY)
             continue; /* can never be "open" */
 
-        ffsp_eraseblk_type eb_type = fs.eb_usage[eb_id].e_type;
+        eraseblock_type eb_type = fs.eb_usage[eb_id].e_type;
         unsigned int writeops = get_be16(fs.eb_usage[eb_id].e_writeops);
         unsigned int max_writeops = fs.erasesize / fs.clustersize;
 
@@ -304,7 +304,7 @@ void ffsp_close_eraseblks(ffsp_fs& fs)
     }
 }
 
-int ffsp_write_meta_data(ffsp_fs& fs)
+int ffsp_write_meta_data(fs_context& fs)
 {
     /*
      * Copy erase block usage info and the content of the inode map
@@ -312,7 +312,7 @@ int ffsp_write_meta_data(ffsp_fs& fs)
      * cluster-aligned write request into the first erase block.
      */
 
-    size_t eb_usage_size = fs.neraseblocks * sizeof(ffsp_eraseblk);
+    size_t eb_usage_size = fs.neraseblocks * sizeof(eraseblock);
     memcpy(fs.buf, fs.eb_usage, eb_usage_size);
 
     size_t ino_map_size = fs.nino * sizeof(uint32_t);

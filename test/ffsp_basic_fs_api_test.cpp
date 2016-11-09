@@ -17,20 +17,20 @@ protected:
     {
         ffsp::ffsp_log_init("ffsp_test", spdlog::level::debug);
 
-        ASSERT_TRUE(ffsp::ffsp_testing::default_create_file());
-        ASSERT_TRUE(ffsp::ffsp_testing::default_make_fs());
-        ASSERT_TRUE(ffsp::ffsp_testing::default_mount_fs(fs_));
+        ASSERT_TRUE(ffsp::test::default_create_file());
+        ASSERT_TRUE(ffsp::test::default_make_fs());
+        ASSERT_TRUE(ffsp::test::default_mount_fs(fs_));
     }
 
     void TearDown() override
     {
-        ASSERT_TRUE(ffsp::ffsp_testing::default_unmount_fs(fs_));
-        ASSERT_TRUE(ffsp::ffsp_testing::default_remove_file());
+        ASSERT_TRUE(ffsp::test::default_unmount_fs(fs_));
+        ASSERT_TRUE(ffsp::test::default_remove_file());
 
         ffsp::ffsp_log_deinit();
     }
 
-    ffsp::ffsp_fs fs_;
+    ffsp::fs_context fs_;
 };
 
 //TEST_F(BasicFileSystemOperationsTest, SmallFile)

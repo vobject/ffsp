@@ -121,26 +121,26 @@ struct ffsp_summary
     bool open_ = false;
 };
 
-struct ffsp_summary_cache
+struct summary_cache
 {
-    explicit ffsp_summary_cache(size_t size) : dentry_clin{size}, inode_clin{size} {}
+    explicit summary_cache(size_t size) : dentry_clin{size}, inode_clin{size} {}
 
     /* no other erase block types require a summary */
     ffsp_summary dentry_clin;
     ffsp_summary inode_clin;
 };
 
-ffsp_summary_cache* ffsp_summary_cache_init(const ffsp_fs& fs)
+summary_cache* ffsp_summary_cache_init(const fs_context& fs)
 {
-    return new ffsp_summary_cache{fs.clustersize};
+    return new summary_cache{fs.clustersize};
 }
 
-void ffsp_summary_cache_uninit(ffsp_summary_cache* cache)
+void ffsp_summary_cache_uninit(summary_cache* cache)
 {
     delete cache;
 }
 
-ffsp_summary* ffsp_summary_open(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_type)
+ffsp_summary* ffsp_summary_open(summary_cache& cache, eraseblock_type eb_type)
 {
     if (eb_type == FFSP_EB_DENTRY_CLIN)
         return cache.dentry_clin.open();
@@ -150,7 +150,7 @@ ffsp_summary* ffsp_summary_open(ffsp_summary_cache& cache, ffsp_eraseblk_type eb
         return nullptr;
 }
 
-ffsp_summary* ffsp_summary_get(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_type)
+ffsp_summary* ffsp_summary_get(summary_cache& cache, eraseblock_type eb_type)
 {
     if (eb_type == FFSP_EB_DENTRY_CLIN)
         return cache.dentry_clin.get();
@@ -160,7 +160,7 @@ ffsp_summary* ffsp_summary_get(ffsp_summary_cache& cache, ffsp_eraseblk_type eb_
         return nullptr;
 }
 
-void ffsp_summary_close(ffsp_summary_cache& cache, ffsp_summary* summary)
+void ffsp_summary_close(summary_cache& cache, ffsp_summary* summary)
 {
     if (summary == &cache.dentry_clin)
         cache.dentry_clin.close();
@@ -168,19 +168,19 @@ void ffsp_summary_close(ffsp_summary_cache& cache, ffsp_summary* summary)
         cache.inode_clin.close();
 }
 
-bool ffsp_summary_required(const ffsp_fs& fs, uint32_t eb_id)
+bool ffsp_summary_required(const fs_context& fs, uint32_t eb_id)
 {
     /*
      * Erase blocks containing cluster indirect data always
      * have an erase block summary section that cannot be used for
      * data at the end. Its size is always one cluster.
      */
-    const ffsp_eraseblk_type eb_type = fs.eb_usage[eb_id].e_type;
+    const eraseblock_type eb_type = fs.eb_usage[eb_id].e_type;
     return (eb_type == FFSP_EB_DENTRY_CLIN) ||
            (eb_type == FFSP_EB_FILE_CLIN);
 }
 
-bool ffsp_summary_write(const ffsp_fs& fs, ffsp_summary* summary, uint32_t eb_id)
+bool ffsp_summary_write(const fs_context& fs, ffsp_summary* summary, uint32_t eb_id)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);

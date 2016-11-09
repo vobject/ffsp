@@ -26,13 +26,13 @@
 namespace ffsp
 {
 
-ffsp_gcinfo* ffsp_gcinfo_init(const ffsp_fs& fs);
-void ffsp_gcinfo_uninit(ffsp_gcinfo* info);
+gcinfo* ffsp_gcinfo_init(const fs_context& fs);
+void ffsp_gcinfo_uninit(gcinfo* info);
 
-unsigned int ffsp_gcinfo_update_writetime(ffsp_fs& fs, ffsp_eraseblk_type eb_type);
-unsigned int ffsp_gcinfo_inc_writecnt(ffsp_fs& fs, ffsp_eraseblk_type eb_type);
+unsigned int ffsp_gcinfo_update_writetime(fs_context& fs, eraseblock_type eb_type);
+unsigned int ffsp_gcinfo_inc_writecnt(fs_context& fs, eraseblock_type eb_type);
 
-void ffsp_gc(ffsp_fs& fs);
+void ffsp_gc(fs_context& fs);
 
 } // namespace ffsp
 

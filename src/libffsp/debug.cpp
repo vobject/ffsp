@@ -44,7 +44,7 @@ static struct ffsp_debug_info
 } debug_info = {};
 
 
-void ffsp_debug_update(const ffsp_fs& fs, int type, unsigned long val)
+void ffsp_debug_update(const fs_context& fs, int type, unsigned long val)
 {
     (void)fs;
 
@@ -73,7 +73,7 @@ void ffsp_debug_update(const ffsp_fs& fs, int type, unsigned long val)
     }
 }
 
-static std::string get_super_info(ffsp_fs& fs)
+static std::string get_super_info(fs_context& fs)
 {
     std::ostringstream os;
 
@@ -108,7 +108,7 @@ static std::string get_super_info(ffsp_fs& fs)
     return os.str();
 }
 
-static std::string get_metrics_info(ffsp_fs& fs)
+static std::string get_metrics_info(fs_context& fs)
 {
     (void)fs;
 
@@ -129,9 +129,9 @@ static std::string get_metrics_info(ffsp_fs& fs)
     return os.str();
 }
 
-static std::string get_eb_info(ffsp_fs& fs, unsigned int eb_id)
+static std::string get_eb_info(fs_context& fs, unsigned int eb_id)
 {
-    const ffsp_eraseblk& eb = fs.eb_usage[eb_id];
+    const eraseblock& eb = fs.eb_usage[eb_id];
 
     std::ostringstream os;
 
@@ -162,14 +162,14 @@ static std::string get_eb_info(ffsp_fs& fs, unsigned int eb_id)
     return os.str();
 }
 
-static std::string get_cl_info(ffsp_fs& fs, unsigned int cl_id)
+static std::string get_cl_info(fs_context& fs, unsigned int cl_id)
 {
     std::ostringstream os;
 
     os << "{";
 
     const unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
-    const ffsp_eraseblk& eb = fs.eb_usage[eb_id];
+    const eraseblock& eb = fs.eb_usage[eb_id];
     os << "\"eraseblock\":{";
     os << "\"eb_id\":" << eb_id << ",";
     os << "\"type\":" << int(eb.e_type) << ",";
@@ -186,8 +186,8 @@ static std::string get_cl_info(ffsp_fs& fs, unsigned int cl_id)
     {
         os << ",";
         os << "\"inodes\":[";
-        ffsp_inode** inodes = (ffsp_inode**)malloc((fs.clustersize / sizeof(ffsp_inode)) *
-                                      sizeof(ffsp_inode*));
+        inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) *
+                                      sizeof(inode*));
         int ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
         if (ino_cnt)
         {
@@ -210,7 +210,7 @@ static std::string get_cl_info(ffsp_fs& fs, unsigned int cl_id)
     return os.str();
 }
 
-static std::string get_ino_info(ffsp_fs& fs, uint32_t ino_no)
+static std::string get_ino_info(fs_context& fs, uint32_t ino_no)
 {
     std::ostringstream os;
 
@@ -219,7 +219,7 @@ static std::string get_ino_info(ffsp_fs& fs, uint32_t ino_no)
     const unsigned int cl_id = get_be32(fs.ino_map[ino_no]);
     const unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
 
-    const ffsp_eraseblk& eb = fs.eb_usage[eb_id];
+    const eraseblock& eb = fs.eb_usage[eb_id];
     os << "\"eraseblock\":{";
     os << "\"eb_id\":" << eb_id << ",";
     os << "\"type\":" << int(eb.e_type) << ",";
@@ -236,8 +236,8 @@ static std::string get_ino_info(ffsp_fs& fs, uint32_t ino_no)
 
     os << ",";
     os << "\"inode\":{";
-    ffsp_inode** inodes = (ffsp_inode**)malloc((fs.clustersize / sizeof(ffsp_inode)) *
-                                  sizeof(ffsp_inode*));
+    inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) *
+                                  sizeof(inode*));
     int ino_cnt = ffsp_read_inode_group(fs, cl_id, inodes);
     if (ino_cnt)
     {
@@ -292,7 +292,7 @@ enum class DebugElementType
     InodeFile,
 };
 
-static DebugElementType get_debug_elem_type(ffsp_fs& fs, const char* path)
+static DebugElementType get_debug_elem_type(fs_context& fs, const char* path)
 {
     (void)fs;
 
@@ -374,14 +374,14 @@ static uint32_t get_path_id(const char* path, DebugElementType type)
     return static_cast<uint32_t>(id);
 }
 
-bool ffsp_debug_is_debug_path(ffsp_fs& fs, const char* path)
+bool ffsp_debug_is_debug_path(fs_context& fs, const char* path)
 {
     (void)fs;
 
     return strncmp(path, DEBUG_DIR.c_str(), DEBUG_DIR.size()) == 0;
 }
 
-bool ffsp_debug_getattr(ffsp_fs& fs, const char* path, struct stat& stbuf)
+bool ffsp_debug_getattr(fs_context& fs, const char* path, struct stat& stbuf)
 {
     const auto type = get_debug_elem_type(fs, path);
     uint64_t file_size = 0;
@@ -420,7 +420,7 @@ bool ffsp_debug_getattr(ffsp_fs& fs, const char* path, struct stat& stbuf)
     return true;
 }
 
-bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>& dirs)
+bool ffsp_debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs)
 {
     dirs.clear();
     switch (get_debug_elem_type(fs, path))
@@ -453,10 +453,10 @@ bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>&
     case DebugElementType::InodeDir:
         {
             const unsigned int cl_per_eb = fs.erasesize / fs.clustersize;
-            ffsp_inode** inodes = (ffsp_inode**)malloc((fs.clustersize / sizeof(ffsp_inode)) * sizeof(ffsp_inode*));
+            inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
             for (uint32_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
             {
-                const ffsp_eraseblk& eb = fs.eb_usage[eb_id];
+                const eraseblock& eb = fs.eb_usage[eb_id];
                 if (eb.e_type == FFSP_EB_DENTRY_INODE || eb.e_type == FFSP_EB_FILE_INODE)
                 {
                     for (unsigned int cl_idx = 0; cl_idx < cl_per_eb; cl_idx++)
@@ -482,7 +482,7 @@ bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>&
     return true;
 }
 
-bool ffsp_debug_open(ffsp_fs& fs, const char* path)
+bool ffsp_debug_open(fs_context& fs, const char* path)
 {
     (void)fs;
     (void)path;
@@ -490,7 +490,7 @@ bool ffsp_debug_open(ffsp_fs& fs, const char* path)
     return true;
 }
 
-bool ffsp_debug_release(ffsp_fs& fs, const char* path)
+bool ffsp_debug_release(fs_context& fs, const char* path)
 {
     (void)fs;
     (void)path;
@@ -498,7 +498,7 @@ bool ffsp_debug_release(ffsp_fs& fs, const char* path)
     return true;
 }
 
-bool ffsp_debug_read(ffsp_fs& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read)
+bool ffsp_debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read)
 {
     const auto type = get_debug_elem_type(fs, path);
     std::string str;

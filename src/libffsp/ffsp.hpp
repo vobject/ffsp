@@ -36,7 +36,7 @@ constexpr int FFSP_VERSION_PATCH{1};
 constexpr uint32_t FFSP_SUPER_NOATIME{0x01};
 constexpr int FFSP_NAME_MAX{248};
 
-struct ffsp_super
+struct superblock
 {
     be32_t s_fsid;          // file system ID
     be32_t s_flags;         // mount flags - TODO: What are these for? -> noatime(?)
@@ -52,9 +52,9 @@ struct ffsp_super
 
     be32_t reserved[21]; // extend to 128 Bytes
 };
-static_assert(sizeof(ffsp_super) == 128, "ffsp_super: unexpected size");
+static_assert(sizeof(superblock) == 128, "superblock: unexpected size");
 
-struct ffsp_timespec
+struct timespec
 {
 #ifdef _WIN32
 #pragma pack(push, 4)
@@ -66,7 +66,7 @@ struct ffsp_timespec
     be32_t nsec;
 #endif
 };
-static_assert(sizeof(ffsp_timespec) == 12, "ffsp_timespec: unexpected size");
+static_assert(sizeof(timespec) == 12, "timespec: unexpected size");
 
 // Invalid index inside the inode map
 constexpr uint32_t FFSP_INVALID_INO_NO{0};
@@ -85,7 +85,7 @@ constexpr uint8_t FFSP_DATA_CLIN{0x02};
 constexpr uint8_t FFSP_DATA_EBIN{0x04};
 //constexpr uint8_t FFSP_DATA_CLEAN{0x08};
 
-struct ffsp_inode
+struct inode
 {
     be64_t i_size;
     be32_t i_flags; // e.g. multiple inodes in the same cluster, inode type
@@ -96,18 +96,18 @@ struct ffsp_inode
     be32_t i_mode; // inode type and permissions
     be64_t i_rdev;
 
-    ffsp_timespec i_atime;
-    ffsp_timespec i_ctime;
-    ffsp_timespec i_mtime;
+    timespec i_atime;
+    timespec i_ctime;
+    timespec i_mtime;
 
     be32_t reserved[13]; // extend to 128 Bytes
 };
-static_assert(sizeof(ffsp_inode) == 128, "ffsp_inode: unexpected size");
+static_assert(sizeof(inode) == 128, "inode: unexpected size");
 
 // TODO: Find out if these types are REALLY written to the file system!
 //  Or if they are only necessary at runtime to determine in which erase block
 //  to put data (before it has ever been garbage collected).
-enum ffsp_eraseblk_type : uint8_t
+enum eraseblock_type : uint8_t
 {
     FFSP_EB_SUPER = 0x00,
     FFSP_EB_DENTRY_INODE = 0x01,
@@ -118,41 +118,34 @@ enum ffsp_eraseblk_type : uint8_t
     FFSP_EB_EMPTY = 0x20,
     FFSP_EB_INVALID = 0xFF,
 };
-static_assert(sizeof(ffsp_eraseblk_type) == 1, "ffsp_eraseblk_type: unexpected size");
+static_assert(sizeof(eraseblock_type) == 1, "eraseblock_type: unexpected size");
 
-struct ffsp_eraseblk
+struct eraseblock
 {
-    ffsp_eraseblk_type e_type;
+    eraseblock_type e_type;
     uint8_t reserved;
     be16_t e_lastwrite;
     be16_t e_cvalid;   // valid clusters inside the erase block
     be16_t e_writeops; // how many writes were performed on this eb
 };
-static_assert(sizeof(ffsp_eraseblk) == 8, "ffsp_eraseblk: unexpected size");
+static_assert(sizeof(eraseblock) == 8, "eraseblock: unexpected size");
 
-struct ffsp_dentry
+struct dentry
 {
     be32_t ino;
     uint8_t len;
     uint8_t reserved[3];
     char name[FFSP_NAME_MAX];
 };
-static_assert(sizeof(ffsp_dentry) == 256, "ffsp_dentry: unexpected size");
+static_assert(sizeof(dentry) == 256, "dentry: unexpected size");
 
 // In-Memory-only structures
 
-struct ffsp_inode_cache;
-struct ffsp_summary_cache;
-struct ffsp_gcinfo;
+struct inode_cache;
+struct summary_cache;
+struct gcinfo;
 
-struct ffsp_summary_list_node
-{
-    ffsp_eraseblk_type eb_type;
-    be32_t* summary;
-    ffsp_summary_list_node* next;
-};
-
-struct ffsp_fs
+struct fs_context
 {
     int fd;
 
@@ -169,7 +162,7 @@ struct ffsp_fs
     uint32_t nerasewrites;  // number of erase block to finalize before GC
 
     // Array with information about every erase block
-    ffsp_eraseblk* eb_usage;
+    eraseblock* eb_usage;
 
     // This array contains the cluster ids where the specified inode is
     //  located on disk. It is indexed using the inode number (ino->i_no).
@@ -186,12 +179,12 @@ struct ffsp_fs
     // There can be only one erase block summary per erase block type at once.
     // This is because there can be only one open erase block per erase block type at once.
     // Therefore each erase block type can exist only once in the summary list at any point in time.
-    ffsp_summary_cache* summary_cache;
+    ffsp::summary_cache* summary_cache;
 
     // A data structure that caches all inodes that have been
     //  looked up from the file system. "ino_status_map" (see below) is
     //  used to determine which of those inodes are dirty.
-    ffsp_inode_cache* ino_cache;
+    ffsp::inode_cache* inode_cache;
 
     // A buffer that represents each (possible) inode with one bit. Its
     //  status indicates whether the (cached) inode was changed (is dirty)
@@ -211,7 +204,7 @@ struct ffsp_fs
     //  this counter reaches fs.ninoopen which is set at mkfs time.
     unsigned int dirty_ino_cnt;
 
-    ffsp_gcinfo* gcinfo;
+    ffsp::gcinfo* gcinfo;
 
     // Static helper buffer, one erase block large.
     // It is used for moving around clusters or erase blocks.

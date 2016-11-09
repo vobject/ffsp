@@ -28,9 +28,9 @@
 namespace ffsp
 {
 
-int ffsp_truncate(ffsp_fs& fs, ffsp_inode* ino, uint64_t length);
-int ffsp_read(ffsp_fs& fs, ffsp_inode* ino, char* buf, size_t count, uint64_t offset);
-int ffsp_write(ffsp_fs& fs, ffsp_inode* ino, const char* buf, size_t count, uint64_t offset);
+int ffsp_truncate(fs_context& fs, inode* ino, uint64_t length);
+int ffsp_read(fs_context& fs, inode* ino, char* buf, size_t count, uint64_t offset);
+int ffsp_write(fs_context& fs, inode* ino, const char* buf, size_t count, uint64_t offset);
 
 } // namespace ffsp
 

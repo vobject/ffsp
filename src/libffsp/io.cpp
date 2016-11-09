@@ -43,7 +43,7 @@ struct write_context
     size_t bytes_left{0};
     uint64_t offset{0};
 
-    ffsp_inode* ino{nullptr};
+    inode* ino{nullptr};
     be32_t* ind_ptr{nullptr};
     uint64_t old_size{0};
     uint64_t new_size{0};
@@ -53,24 +53,24 @@ struct write_context
     int new_type{0};
 };
 
-static uint32_t max_emb_size(const ffsp_fs& fs)
+static uint32_t max_emb_size(const fs_context& fs)
 {
-    return fs.clustersize - sizeof(ffsp_inode);
+    return fs.clustersize - sizeof(inode);
 }
 
-static uint64_t max_clin_size(const ffsp_fs& fs)
+static uint64_t max_clin_size(const fs_context& fs)
 {
     // Number of possible pointers to indirect clusters times
     //  size of an indirect cluster.
-    return (fs.clustersize - sizeof(ffsp_inode)) /
+    return (fs.clustersize - sizeof(inode)) /
            sizeof(be32_t) * fs.clustersize;
 }
 
-static uint64_t max_ebin_size(const ffsp_fs& fs)
+static uint64_t max_ebin_size(const fs_context& fs)
 {
     // Number of possible pointers to indirect erase blocks times
     //  size of an indirect erase block.
-    return (fs.clustersize - sizeof(ffsp_inode)) /
+    return (fs.clustersize - sizeof(inode)) /
            sizeof(be32_t) * fs.erasesize;
 }
 
@@ -89,7 +89,7 @@ static int ind_from_offset(uint64_t offset, uint32_t ind_size)
     return offset / ind_size;
 }
 
-static int ind_size_from_size(ffsp_fs& fs, uint64_t size)
+static int ind_size_from_size(fs_context& fs, uint64_t size)
 {
     if (size > max_clin_size(fs))
         return fs.erasesize;
@@ -99,7 +99,7 @@ static int ind_size_from_size(ffsp_fs& fs, uint64_t size)
         return 0; // No indirect data for this file size
 }
 
-static int data_type_from_size(ffsp_fs& fs, uint32_t size)
+static int data_type_from_size(fs_context& fs, uint32_t size)
 {
     if (size > max_clin_size(fs))
         return FFSP_DATA_EBIN;
@@ -109,7 +109,7 @@ static int data_type_from_size(ffsp_fs& fs, uint32_t size)
         return FFSP_DATA_EMB;
 }
 
-static int write_ind(ffsp_fs& fs, write_context& ctx, const char* buf, be32_t* ind_id)
+static int write_ind(fs_context& fs, write_context& ctx, const char* buf, be32_t* ind_id)
 {
     if (is_buf_empty(buf, ctx.new_ind_size))
     {
@@ -119,7 +119,7 @@ static int write_ind(ffsp_fs& fs, write_context& ctx, const char* buf, be32_t* i
         return 0;
     }
     uint32_t mode = get_be32(ctx.ino->i_mode);
-    ffsp_eraseblk_type eb_type = ffsp_get_eraseblk_type(fs, ctx.new_type, mode);
+    eraseblock_type eb_type = ffsp_get_eraseblk_type(fs, ctx.new_type, mode);
 
     // Search for a cluster id or an erase block id to write to.
     unsigned int eb_id;
@@ -144,7 +144,7 @@ static int write_ind(ffsp_fs& fs, write_context& ctx, const char* buf, be32_t* i
     return written_bytes;
 }
 
-static int read_emb(ffsp_fs& fs, ffsp_inode* ino,
+static int read_emb(fs_context& fs, inode* ino,
                     char* buf, size_t size, uint64_t offset)
 {
     (void)fs;
@@ -158,7 +158,7 @@ static int read_emb(ffsp_fs& fs, ffsp_inode* ino,
     return size;
 }
 
-static int read_ind(ffsp_fs& fs, ffsp_inode* ino, char* buf,
+static int read_ind(fs_context& fs, inode* ino, char* buf,
                     size_t count, uint64_t offset, uint32_t ind_size)
 {
     /* indirect cluster ids containing data */
@@ -201,7 +201,7 @@ static int read_ind(ffsp_fs& fs, ffsp_inode* ino, char* buf,
     return count - bytes_left;
 }
 
-static int trunc_emb2ind(ffsp_fs& fs, write_context& ctx, const char* ind_buf)
+static int trunc_emb2ind(fs_context& fs, write_context& ctx, const char* ind_buf)
 {
     int rc = write_ind(fs, ctx, ind_buf, &ctx.ind_ptr[0]);
     if (rc < 0)
@@ -221,7 +221,7 @@ static int trunc_emb2ind(ffsp_fs& fs, write_context& ctx, const char* ind_buf)
     return 0;
 }
 
-static int trunc_ind2emb(ffsp_fs& fs, write_context& ctx)
+static int trunc_ind2emb(fs_context& fs, write_context& ctx)
 {
     int rc = read_ind(fs, ctx.ino, fs.buf, ctx.new_size, 0, ctx.old_ind_size);
     if (rc < 0)
@@ -245,7 +245,7 @@ static int trunc_ind2emb(ffsp_fs& fs, write_context& ctx)
     return 0;
 }
 
-static int trunc_clin2ebin(ffsp_fs& fs, write_context& ctx)
+static int trunc_clin2ebin(fs_context& fs, write_context& ctx)
 {
     // Restore this backup on error.
     be32_t* old_ptr = (be32_t*)malloc(max_emb_size(fs));
@@ -301,7 +301,7 @@ static int trunc_clin2ebin(ffsp_fs& fs, write_context& ctx)
     return 0;
 }
 
-static int trunc_ind(ffsp_fs& fs, write_context& ctx)
+static int trunc_ind(fs_context& fs, write_context& ctx)
 {
     if (ctx.new_size < ctx.old_size)
     {
@@ -331,7 +331,7 @@ static int trunc_ind(ffsp_fs& fs, write_context& ctx)
     return 0;
 }
 
-static int trunc_clin(ffsp_fs& fs, write_context& ctx)
+static int trunc_clin(fs_context& fs, write_context& ctx)
 {
     if (ctx.new_type == FFSP_DATA_EBIN)
         return trunc_clin2ebin(fs, ctx);
@@ -341,7 +341,7 @@ static int trunc_clin(ffsp_fs& fs, write_context& ctx)
         return trunc_ind(fs, ctx);
 }
 
-static int trunc_ebin(ffsp_fs& fs, write_context& ctx)
+static int trunc_ebin(fs_context& fs, write_context& ctx)
 {
     if (ctx.new_type == FFSP_DATA_EMB)
         return trunc_ind2emb(fs, ctx);
@@ -349,7 +349,7 @@ static int trunc_ebin(ffsp_fs& fs, write_context& ctx)
         return trunc_ind(fs, ctx);
 }
 
-static int write_emb(ffsp_fs& fs, write_context& ctx)
+static int write_emb(fs_context& fs, write_context& ctx)
 {
     if (!ctx.new_ind_size)
     {
@@ -419,7 +419,7 @@ static int write_emb(ffsp_fs& fs, write_context& ctx)
     return count - ctx.bytes_left;
 }
 
-static int write_clin(ffsp_fs& fs, write_context& ctx)
+static int write_clin(fs_context& fs, write_context& ctx)
 {
     size_t count = ctx.bytes_left;
 
@@ -475,7 +475,7 @@ static int write_clin(ffsp_fs& fs, write_context& ctx)
     return count - ctx.bytes_left;
 }
 
-static int write_ebin(ffsp_fs& fs, write_context& ctx)
+static int write_ebin(fs_context& fs, write_context& ctx)
 {
     /*
      * TODO: Split this function into smaller functions.
@@ -565,7 +565,7 @@ static int write_ebin(ffsp_fs& fs, write_context& ctx)
     return count - ctx.bytes_left;
 }
 
-int ffsp_truncate(ffsp_fs& fs, ffsp_inode* ino, uint64_t length)
+int ffsp_truncate(fs_context& fs, inode* ino, uint64_t length)
 {
     if (length > max_ebin_size(fs))
         return -EFBIG;
@@ -624,7 +624,7 @@ int ffsp_truncate(ffsp_fs& fs, ffsp_inode* ino, uint64_t length)
     return rc;
 }
 
-int ffsp_read(ffsp_fs& fs, ffsp_inode* ino, char* buf, size_t count, uint64_t offset)
+int ffsp_read(fs_context& fs, inode* ino, char* buf, size_t count, uint64_t offset)
 {
     if (count == 0)
         return 0;
@@ -658,7 +658,7 @@ int ffsp_read(ffsp_fs& fs, ffsp_inode* ino, char* buf, size_t count, uint64_t of
     return rc;
 }
 
-int ffsp_write(ffsp_fs& fs, ffsp_inode* ino, const char* buf, size_t count, uint64_t offset)
+int ffsp_write(fs_context& fs, inode* ino, const char* buf, size_t count, uint64_t offset)
 {
     if (count == 0)
         return 0;

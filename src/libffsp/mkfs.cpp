@@ -57,7 +57,7 @@ static uint32_t get_inode_cnt(uint32_t eb_size, uint32_t cl_size, uint32_t eb_cn
     // Note that the first inode number is always invalid.
     return (eb_size                             // Only look at the first erase block
             - cl_size                           // super block aligned to clustersize
-            - (eb_cnt * sizeof(ffsp_eraseblk))) // eb usage
+            - (eb_cnt * sizeof(eraseblock))) // eb usage
            / sizeof(uint32_t);                  // inodes are 4 bytes in size
 
     // TODO: FFSP_RESERVED_INODE_ID is not taken care of.
@@ -76,7 +76,7 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
     const uint32_t eb_cnt = get_eraseblk_cnt(fd, options.erasesize);
     const uint32_t ino_cnt = get_inode_cnt(options.erasesize, options.clustersize, eb_cnt);
 
-    ffsp_super sb = {};
+    superblock sb = {};
     sb.s_fsid = put_be32(FFSP_FILE_SYSTEM_ID);
     sb.s_flags = put_be32(0);
     sb.s_neraseblocks = put_be32(eb_cnt);
@@ -96,7 +96,7 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
     eb_buf_written += (options.clustersize - eb_buf_written);
 
     // The first EB is for the superblock, erase block usage and inodes ids
-    ffsp_eraseblk eb1 = {};
+    eraseblock eb1 = {};
     eb1.e_type = FFSP_EB_SUPER;
     eb1.e_lastwrite = put_be16(0);
     eb1.e_cvalid = put_be16(0);
@@ -105,7 +105,7 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
     eb_buf_written += sizeof(eb1);
 
     // The second EB is for directory entries
-    ffsp_eraseblk eb2 = {};
+    eraseblock eb2 = {};
     eb2.e_type = FFSP_EB_DENTRY_INODE;
     eb2.e_lastwrite = put_be16(0);
     eb2.e_cvalid = put_be16(1);              // Only the root directory exists...
@@ -116,7 +116,7 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
     for (uint32_t i = 2; i < eb_cnt; ++i)
     {
         // The remaining erase blocks are empty
-        ffsp_eraseblk eb = {};
+        eraseblock eb = {};
         eb.e_type = FFSP_EB_EMPTY;
         eb.e_lastwrite = put_be16(0);
         eb.e_cvalid = put_be16(0);
@@ -154,8 +154,8 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     eb_buf.reserve(options.erasesize);
     size_t eb_buf_written = 0;
 
-    ffsp_inode root = {};
-    root.i_size = put_be64(sizeof(ffsp_dentry) * 2);
+    inode root = {};
+    root.i_size = put_be64(sizeof(dentry) * 2);
     root.i_flags = put_be32(FFSP_DATA_EMB);
     root.i_no = put_be32(1);
     root.i_nlink = put_be32(2);
@@ -173,14 +173,14 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     eb_buf_written = sizeof(root);
 
     // Fill the embedded data with file and/or directory entries
-    ffsp_dentry dot = {}; // "."
+    dentry dot = {}; // "."
     dot.ino = put_be32(1);
     dot.len = static_cast<uint8_t>(strlen("."));
     strcpy(dot.name, ".");
     memcpy(eb_buf.data() + eb_buf_written, &dot, sizeof(dot));
     eb_buf_written += sizeof(dot);
 
-    ffsp_dentry dotdot = {}; // ".."
+    dentry dotdot = {}; // ".."
     dotdot.ino = put_be32(1);
     dotdot.len = static_cast<uint8_t>(strlen(".."));
     strcpy(dotdot.name, "..");

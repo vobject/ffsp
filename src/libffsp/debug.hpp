@@ -38,14 +38,14 @@ namespace ffsp
 #define FFSP_DEBUG_GC_READ 5
 #define FFSP_DEBUG_GC_WRITE 6
 
-void ffsp_debug_update(const ffsp_fs& fs, int type, unsigned long val);
+void ffsp_debug_update(const fs_context& fs, int type, unsigned long val);
 
-bool ffsp_debug_is_debug_path(ffsp_fs& fs, const char* path);
-bool ffsp_debug_getattr(ffsp_fs& fs, const char* path, struct stat& stbuf);
-bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>& dirs);
-bool ffsp_debug_open(ffsp_fs& fs, const char* path);
-bool ffsp_debug_release(ffsp_fs& fs, const char* path);
-bool ffsp_debug_read(ffsp_fs& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
+bool ffsp_debug_is_debug_path(fs_context& fs, const char* path);
+bool ffsp_debug_getattr(fs_context& fs, const char* path, struct stat& stbuf);
+bool ffsp_debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs);
+bool ffsp_debug_open(fs_context& fs, const char* path);
+bool ffsp_debug_release(fs_context& fs, const char* path);
+bool ffsp_debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
 
 } // namespace ffsp
 

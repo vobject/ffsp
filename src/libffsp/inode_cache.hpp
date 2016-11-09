@@ -29,17 +29,17 @@
 namespace ffsp
 {
 
-struct ffsp_inode_cache;
+struct inode_cache;
 
-ffsp_inode_cache* ffsp_inode_cache_init(const ffsp_fs& fs);
-void ffsp_inode_cache_uninit(ffsp_inode_cache* cache);
+inode_cache* ffsp_inode_cache_init(const fs_context& fs);
+void ffsp_inode_cache_uninit(inode_cache* cache);
 
-void ffsp_inode_cache_insert(ffsp_inode_cache& cache, ffsp_inode* ino);
-void ffsp_inode_cache_remove(ffsp_inode_cache& cache, ffsp_inode* ino);
-ffsp_inode* ffsp_inode_cache_find(const ffsp_inode_cache& cache, be32_t ino_no);
-std::vector<ffsp_inode*> ffsp_inode_cache_get(const ffsp_inode_cache& cache);
-std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
-                                                 const std::function<bool(const ffsp_inode&)>& p);
+void ffsp_inode_cache_insert(inode_cache& cache, inode* ino);
+void ffsp_inode_cache_remove(inode_cache& cache, inode* ino);
+inode* ffsp_inode_cache_find(const inode_cache& cache, be32_t ino_no);
+std::vector<inode*> ffsp_inode_cache_get(const inode_cache& cache);
+std::vector<inode*> ffsp_inode_cache_get_if(const inode_cache& cache,
+                                            const std::function<bool(const inode&)>& p);
 
 } // namespace ffsp
 

@@ -45,11 +45,11 @@
 namespace ffsp
 {
 
-static void read_super(ffsp_fs& fs)
+static void read_super(fs_context& fs)
 {
-    ffsp_super sb;
+    superblock sb;
     uint64_t read_bytes = 0;
-    if (!ffsp_read_raw(fs.fd, &sb, sizeof(ffsp_super), 0, read_bytes))
+    if (!ffsp_read_raw(fs.fd, &sb, sizeof(superblock), 0, read_bytes))
     {
         ffsp_log().critical("reading super block failed");
         abort();
@@ -71,12 +71,12 @@ static void read_super(ffsp_fs& fs)
     fs.nerasewrites = get_be32(sb.s_nerasewrites);
 }
 
-static void read_eb_usage(ffsp_fs& fs)
+static void read_eb_usage(fs_context& fs)
 {
     // Size of the array that holds the erase block meta information
-    uint64_t size = fs.neraseblocks * sizeof(ffsp_eraseblk);
+    uint64_t size = fs.neraseblocks * sizeof(eraseblock);
 
-    fs.eb_usage = (ffsp_eraseblk*)malloc(size);
+    fs.eb_usage = (eraseblock*)malloc(size);
     if (!fs.eb_usage)
     {
         ffsp_log().critical("malloc(erase blocks - size=%d) failed", size);
@@ -94,7 +94,7 @@ static void read_eb_usage(ffsp_fs& fs)
     ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 }
 
-static void read_ino_map(ffsp_fs& fs)
+static void read_ino_map(fs_context& fs)
 {
     // Size of the array in bytes holding the cluster ids.
     uint64_t size = fs.nino * sizeof(uint32_t);
@@ -117,7 +117,7 @@ static void read_ino_map(ffsp_fs& fs)
     ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
 }
 
-static void read_cl_occupancy(ffsp_fs& fs)
+static void read_cl_occupancy(fs_context& fs)
 {
     off_t size;
     int cl_occ_size;
@@ -149,7 +149,7 @@ static void read_cl_occupancy(ffsp_fs& fs)
     }
 }
 
-bool ffsp_mount(ffsp_fs& fs, const char* path)
+bool ffsp_mount(fs_context& fs, const char* path)
 {
     /*
      * O_DIRECT could also be used if all pwrite() calls get a
@@ -172,7 +172,7 @@ bool ffsp_mount(ffsp_fs& fs, const char* path)
 
     fs.summary_cache = ffsp_summary_cache_init(fs);
 
-    fs.ino_cache = ffsp_inode_cache_init(fs);
+    fs.inode_cache = ffsp_inode_cache_init(fs);
 
     size_t ino_bitmask_size = fs.nino / sizeof(uint32_t) + 1;
     fs.ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
@@ -209,7 +209,7 @@ error:
     return false;
 }
 
-void ffsp_unmount(ffsp_fs& fs)
+void ffsp_unmount(fs_context& fs)
 {
     ffsp_release_inodes(fs);
     ffsp_close_eraseblks(fs);
@@ -218,7 +218,7 @@ void ffsp_unmount(ffsp_fs& fs)
     if ((fs.fd != -1) && (close(fs.fd) == -1))
         ffsp_log().error("ffsp_unmount(): close(fd) failed");
 
-    ffsp_inode_cache_uninit(fs.ino_cache);
+    ffsp_inode_cache_uninit(fs.inode_cache);
     ffsp_summary_cache_uninit(fs.summary_cache);
     ffsp_gcinfo_uninit(fs.gcinfo);
     free(fs.eb_usage);

@@ -36,13 +36,13 @@ extern int gettimeofday(struct timeval* tp, struct timezone* tzp);
 namespace ffsp
 {
 
-static uint64_t fs_size(const ffsp_fs& fs)
+static uint64_t fs_size(const fs_context& fs)
 {
     /* do not count the first erase block */
     return (fs.neraseblocks - 1) * fs.erasesize;
 }
 
-static uint32_t free_cluster_cnt(const ffsp_fs& fs)
+static uint32_t free_cluster_cnt(const fs_context& fs)
 {
     uint32_t free_cl_cnt = 0; /* atm clusters and blocks are the same. */
 
@@ -60,7 +60,7 @@ static uint32_t free_cluster_cnt(const ffsp_fs& fs)
     return free_cl_cnt;
 }
 
-static uint32_t inode_cnt(const ffsp_fs& fs)
+static uint32_t inode_cnt(const fs_context& fs)
 {
     uint32_t free_ino_cnt = 0;
 
@@ -70,7 +70,7 @@ static uint32_t inode_cnt(const ffsp_fs& fs)
     return fs.nino - free_ino_cnt;
 }
 
-bool ffsp_update_time(ffsp_timespec& dest)
+bool ffsp_update_time(timespec& dest)
 {
     struct timeval tv;
     gettimeofday(&tv, nullptr);
@@ -79,7 +79,7 @@ bool ffsp_update_time(ffsp_timespec& dest)
     return true;
 }
 
-void ffsp_stat(ffsp_fs& fs, const ffsp_inode& ino, struct stat& stbuf)
+void ffsp_stat(fs_context& fs, const inode& ino, struct stat& stbuf)
 {
     (void)fs;
 
@@ -101,7 +101,7 @@ void ffsp_stat(ffsp_fs& fs, const ffsp_inode& ino, struct stat& stbuf)
 #endif
 }
 
-void ffsp_statfs(ffsp_fs& fs, struct statvfs& sfs)
+void ffsp_statfs(fs_context& fs, struct statvfs& sfs)
 {
     memset(&sfs, 0, sizeof(sfs));
     sfs.f_bsize = fs.blocksize;
@@ -113,7 +113,7 @@ void ffsp_statfs(ffsp_fs& fs, struct statvfs& sfs)
     sfs.f_namemax = FFSP_NAME_MAX;
 }
 
-void ffsp_utimens(ffsp_fs& fs, ffsp_inode& ino, const struct timespec tv[2])
+void ffsp_utimens(fs_context& fs, inode& ino, const struct ::timespec tv[2])
 {
     ino.i_atime.sec = put_be64(tv[0].tv_sec);
     ino.i_atime.nsec = put_be32(tv[0].tv_nsec);

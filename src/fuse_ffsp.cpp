@@ -60,12 +60,12 @@ static struct params
 } params;
 
 // Convert from fuse_file_info->fh to ffsp_inode...
-static ffsp_inode* get_inode(const fuse_file_info* fi)
+static inode* get_inode(const fuse_file_info* fi)
 {
-    return (ffsp_inode*)(size_t)fi->fh;
+    return (inode*)(size_t)fi->fh;
 }
 // ... and back to fuse_file_info->fh.
-static void set_inode(fuse_file_info* fi, const ffsp_inode* ino)
+static void set_inode(fuse_file_info* fi, const inode* ino)
 {
     fi->fh = (size_t)ino;
 }
@@ -79,7 +79,7 @@ void* init(fuse_conn_info* conn)
 {
     ffsp_log_init("ffsp_api", spdlog::level::debug);
 
-    auto* fs = new ffsp_fs;
+    auto* fs = new fs_context;
 
     if (!ffsp_mount(*fs, params.device.c_str()))
     {
@@ -114,7 +114,7 @@ void* init(fuse_conn_info* conn)
 
 void destroy(void* user)
 {
-    ffsp_fs* fs = static_cast<ffsp_fs*>(user);
+    fs_context* fs = static_cast<fs_context*>(user);
     ffsp_unmount(*fs);
     delete fs;
 
@@ -124,11 +124,11 @@ void destroy(void* user)
 #ifdef _WIN32
 int getattr(ffsp& fs, const char* path, struct FUSE_STAT* stbuf)
 #else
-int getattr(ffsp_fs& fs, const char* path, struct stat* stbuf)
+int getattr(fs_context& fs, const char* path, struct stat* stbuf)
 #endif
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
         return ffsp_debug_getattr(fs, path, *stbuf) ? 0 : -EIO;
@@ -172,7 +172,7 @@ int getattr(ffsp_fs& fs, const char* path, struct stat* stbuf)
     return 0;
 }
 
-int readdir(ffsp_fs& fs, const char* path, void* buf,
+int readdir(fs_context& fs, const char* path, void* buf,
             fuse_fill_dir_t filler, FUSE_OFF_T offset,
             fuse_file_info* fi)
 {
@@ -180,8 +180,8 @@ int readdir(ffsp_fs& fs, const char* path, void* buf,
     (void)fi;
 
     int rc;
-    ffsp_inode* ino;
-    ffsp_dentry* dent_buf;
+    inode* ino;
+    dentry* dent_buf;
     int dent_cnt;
 
     if (ffsp_debug_is_debug_path(fs, path))
@@ -223,10 +223,10 @@ int readdir(ffsp_fs& fs, const char* path, void* buf,
     return 0;
 }
 
-int open(ffsp_fs& fs, const char* path, fuse_file_info* fi)
+int open(fs_context& fs, const char* path, fuse_file_info* fi)
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
         return ffsp_debug_open(fs, path) ? 0 : -EIO;
@@ -246,7 +246,7 @@ int open(ffsp_fs& fs, const char* path, fuse_file_info* fi)
     return 0;
 }
 
-int release(ffsp_fs& fs, const char* path, fuse_file_info* fi)
+int release(fs_context& fs, const char* path, fuse_file_info* fi)
 {
     if (ffsp_debug_is_debug_path(fs, path))
         return ffsp_debug_release(fs, path) ? 0 : -EIO;
@@ -255,10 +255,10 @@ int release(ffsp_fs& fs, const char* path, fuse_file_info* fi)
     return 0;
 }
 
-int truncate(ffsp_fs& fs, const char* path, FUSE_OFF_T length)
+int truncate(fs_context& fs, const char* path, FUSE_OFF_T length)
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -274,11 +274,11 @@ int truncate(ffsp_fs& fs, const char* path, FUSE_OFF_T length)
     return 0;
 }
 
-int read(ffsp_fs& fs, const char* path, char* buf, size_t count,
+int read(fs_context& fs, const char* path, char* buf, size_t count,
          FUSE_OFF_T offset, fuse_file_info* fi)
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
     {
@@ -307,11 +307,11 @@ int read(ffsp_fs& fs, const char* path, char* buf, size_t count,
     return ffsp_read(fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
-int write(ffsp_fs& fs, const char* path, const char* buf, size_t count,
+int write(fs_context& fs, const char* path, const char* buf, size_t count,
           FUSE_OFF_T offset, fuse_file_info* fi)
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (offset < 0)
         return -EINVAL;
@@ -334,7 +334,7 @@ int write(ffsp_fs& fs, const char* path, const char* buf, size_t count,
     return ffsp_write(fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
-int mknod(ffsp_fs& fs, const char* path, mode_t mode, dev_t device)
+int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device)
 {
     uid_t uid;
     gid_t gid;
@@ -350,7 +350,7 @@ int mknod(ffsp_fs& fs, const char* path, mode_t mode, dev_t device)
     return ffsp_create(fs, path, mode, uid, gid, device);
 }
 
-int link(ffsp_fs& fs, const char* oldpath, const char* newpath)
+int link(fs_context& fs, const char* oldpath, const char* newpath)
 {
     if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
         return -EPERM;
@@ -358,7 +358,7 @@ int link(ffsp_fs& fs, const char* oldpath, const char* newpath)
     return ffsp_link(fs, oldpath, newpath);
 }
 
-int symlink(ffsp_fs& fs, const char* oldpath, const char* newpath)
+int symlink(fs_context& fs, const char* oldpath, const char* newpath)
 {
     uid_t uid;
     gid_t gid;
@@ -372,7 +372,7 @@ int symlink(ffsp_fs& fs, const char* oldpath, const char* newpath)
     return ffsp_symlink(fs, oldpath, newpath, uid, gid);
 }
 
-int readlink(ffsp_fs& fs, const char* path, char* buf, size_t bufsize)
+int readlink(fs_context& fs, const char* path, char* buf, size_t bufsize)
 {
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -380,7 +380,7 @@ int readlink(ffsp_fs& fs, const char* path, char* buf, size_t bufsize)
     return ffsp_readlink(fs, path, buf, bufsize);
 }
 
-int mkdir(ffsp_fs& fs, const char* path, mode_t mode)
+int mkdir(fs_context& fs, const char* path, mode_t mode)
 {
     uid_t uid;
     gid_t gid;
@@ -394,7 +394,7 @@ int mkdir(ffsp_fs& fs, const char* path, mode_t mode)
     return ffsp_create(fs, path, mode | S_IFDIR, uid, gid, 0);
 }
 
-int rmdir(ffsp_fs& fs, const char* path)
+int rmdir(fs_context& fs, const char* path)
 {
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -402,7 +402,7 @@ int rmdir(ffsp_fs& fs, const char* path)
     return ffsp_rmdir(fs, path);
 }
 
-int unlink(ffsp_fs& fs, const char* path)
+int unlink(fs_context& fs, const char* path)
 {
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -410,7 +410,7 @@ int unlink(ffsp_fs& fs, const char* path)
     return ffsp_unlink(fs, path);
 }
 
-int rename(ffsp_fs& fs, const char* oldpath, const char* newpath)
+int rename(fs_context& fs, const char* oldpath, const char* newpath)
 {
     if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
         return -EPERM;
@@ -418,10 +418,10 @@ int rename(ffsp_fs& fs, const char* oldpath, const char* newpath)
     return ffsp_rename(fs, oldpath, newpath);
 }
 
-int utimens(ffsp_fs& fs, const char* path, const struct timespec tv[2])
+int utimens(fs_context& fs, const char* path, const struct ::timespec tv[2])
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -434,10 +434,10 @@ int utimens(ffsp_fs& fs, const char* path, const struct timespec tv[2])
     return 0;
 }
 
-int chmod(ffsp_fs& fs, const char* path, mode_t mode)
+int chmod(fs_context& fs, const char* path, mode_t mode)
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -452,10 +452,10 @@ int chmod(ffsp_fs& fs, const char* path, mode_t mode)
     return 0;
 }
 
-int chown(ffsp_fs& fs, const char* path, uid_t uid, gid_t gid)
+int chown(fs_context& fs, const char* path, uid_t uid, gid_t gid)
 {
     int rc;
-    ffsp_inode* ino;
+    inode* ino;
 
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -471,7 +471,7 @@ int chown(ffsp_fs& fs, const char* path, uid_t uid, gid_t gid)
     return 0;
 }
 
-int statfs(ffsp_fs& fs, const char* path, struct statvfs* sfs)
+int statfs(fs_context& fs, const char* path, struct statvfs* sfs)
 {
     if (ffsp_debug_is_debug_path(fs, path))
         return -EPERM;
@@ -480,7 +480,7 @@ int statfs(ffsp_fs& fs, const char* path, struct statvfs* sfs)
     return 0;
 }
 
-int flush(ffsp_fs& fs, const char* path, fuse_file_info* fi)
+int flush(fs_context& fs, const char* path, fuse_file_info* fi)
 {
     (void)fi;
 
@@ -494,7 +494,7 @@ int flush(ffsp_fs& fs, const char* path, fuse_file_info* fi)
     return 0;
 }
 
-int fsync(ffsp_fs& fs, const char* path, int datasync, fuse_file_info* fi)
+int fsync(fs_context& fs, const char* path, int datasync, fuse_file_info* fi)
 {
     (void)datasync;
     (void)fi;

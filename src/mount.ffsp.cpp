@@ -367,7 +367,7 @@ struct fuse_ffsp_operations
             logger_->info("< {} destroy()", id);
         };
 
-        ops_.utimens = [](const char* path, const struct timespec tv[2]) {
+        ops_.utimens = [](const char* path, const struct ::timespec tv[2]) {
             auto id = ++op_id_;
             auto fs = get_fs(fuse_get_context());
             logger_->info("> {} utimens(path={}, access={}, mod={})", id, path, tv[0], tv[1]);
@@ -422,9 +422,9 @@ struct fuse_ffsp_operations
         spdlog::drop("ffsp_api");
     }
 
-    static ffsp::ffsp_fs* get_fs(fuse_context* ctx)
+    static ffsp::fs_context* get_fs(fuse_context* ctx)
     {
-        return static_cast<ffsp::ffsp_fs*>(ctx->private_data);
+        return static_cast<ffsp::fs_context*>(ctx->private_data);
     }
 
     template <typename T>

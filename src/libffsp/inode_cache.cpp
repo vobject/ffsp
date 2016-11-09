@@ -28,50 +28,50 @@
 namespace ffsp
 {
 
-struct ffsp_inode_cache
+struct inode_cache
 {
-    explicit ffsp_inode_cache(size_t size) : buf{size, nullptr} {}
-    std::vector<ffsp_inode*> buf;
+    explicit inode_cache(size_t size) : buf{size, nullptr} {}
+    std::vector<inode*> buf;
 };
 
-ffsp_inode_cache* ffsp_inode_cache_init(const ffsp_fs& fs)
+inode_cache* ffsp_inode_cache_init(const fs_context& fs)
 {
-    return new ffsp_inode_cache(fs.nino);
+    return new inode_cache(fs.nino);
 }
 
-void ffsp_inode_cache_uninit(ffsp_inode_cache* cache)
+void ffsp_inode_cache_uninit(inode_cache* cache)
 {
     delete cache;
 }
 
-void ffsp_inode_cache_insert(ffsp_inode_cache& cache, ffsp_inode* ino)
+void ffsp_inode_cache_insert(inode_cache& cache, inode* ino)
 {
     cache.buf[get_be32(ino->i_no)] = ino;
 }
 
-void ffsp_inode_cache_remove(ffsp_inode_cache& cache, ffsp_inode* ino)
+void ffsp_inode_cache_remove(inode_cache& cache, inode* ino)
 {
     cache.buf[get_be32(ino->i_no)] = nullptr;
 }
 
-ffsp_inode* ffsp_inode_cache_find(const ffsp_inode_cache& cache, be32_t ino_no)
+inode* ffsp_inode_cache_find(const inode_cache& cache, be32_t ino_no)
 {
     return cache.buf[get_be32(ino_no)];
 }
 
-std::vector<ffsp_inode*> ffsp_inode_cache_get(const ffsp_inode_cache& cache)
+std::vector<inode*> ffsp_inode_cache_get(const inode_cache& cache)
 {
-    std::vector<ffsp_inode*> ret;
+    std::vector<inode*> ret;
     for (size_t i = 1; i < cache.buf.size(); i++)
         if (cache.buf[i])
             ret.push_back(cache.buf[i]);
     return ret;
 }
 
-std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
-                                                 const std::function<bool(const ffsp_inode&)>& p)
+std::vector<inode*> ffsp_inode_cache_get_if(const inode_cache& cache,
+                                                 const std::function<bool(const inode&)>& p)
 {
-    std::vector<ffsp_inode*> ret;
+    std::vector<inode*> ret;
     for (size_t i = 1; i < cache.buf.size(); i++)
         if (cache.buf[i] && p(*cache.buf[i]))
             ret.push_back(cache.buf[i]);
