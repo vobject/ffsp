@@ -25,13 +25,13 @@
 
 #include <cassert>
 
-#define FFSP_FILE_SYSTEM_ID 0x46465350 // FFSP
-#define FFSP_VERSION_MAJOR 0
-#define FFSP_VERSION_MINOR 0
-#define FFSP_VERSION_PATCH 1
+constexpr uint32_t FFSP_FILE_SYSTEM_ID{0x46465350}; // FFSP
+constexpr int FFSP_VERSION_MAJOR{0};
+constexpr int FFSP_VERSION_MINOR{0};
+constexpr int FFSP_VERSION_PATCH{1};
 
-// #define FFSP_SUPER_NOATIME	0x01
-#define FFSP_NAME_MAX 248
+constexpr uint32_t FFSP_SUPER_NOATIME{0x01};
+constexpr int FFSP_NAME_MAX{248};
 
 struct ffsp_super
 {
@@ -66,21 +66,21 @@ struct ffsp_timespec
 static_assert(sizeof(ffsp_timespec) == 12, "ffsp_timespec: unexpected size");
 
 // Invalid index inside the inode map
-#define FFSP_INVALID_INO_NO 0
+constexpr uint32_t FFSP_INVALID_INO_NO{0};
 
 // Cluster ids that the inode map points to
-#define FFSP_FREE_CL_ID 0x00000000
-#define FFSP_RESERVED_CL_ID 0xffffffff
+constexpr uint32_t FFSP_FREE_CL_ID{0x00000000};
+constexpr uint32_t FFSP_RESERVED_CL_ID{0xffffffff};
 
 // erase block ids - 32bit
-#define FFSP_INVALID_EB_ID 0x00000000
+constexpr uint32_t FFSP_INVALID_EB_ID{0x00000000};
 
 // inode data format - 8bit
-//#define FFSP_DATA_SUPER	0x00
-#define FFSP_DATA_EMB 0x01
-#define FFSP_DATA_CLIN 0x02
-#define FFSP_DATA_EBIN 0x04
-//#define FFSP_DATA_CLEAN	0x08
+//constexpr uint8_t FFSP_DATA_SUPER{0x00};
+constexpr uint8_t FFSP_DATA_EMB{0x01};
+constexpr uint8_t FFSP_DATA_CLIN{0x02};
+constexpr uint8_t FFSP_DATA_EBIN{0x04};
+//constexpr uint8_t FFSP_DATA_CLEAN{0x08};
 
 struct ffsp_inode
 {
@@ -196,7 +196,7 @@ struct ffsp_fs
     uint32_t* ino_status_map;
 
     /* TODO: replace this with a real data structure and provide
-	 * accessory functions for manipulation */
+     * accessory functions for manipulation */
     // A buffer where each element represents a cluster in the file system.
     //  It contains information about how many valid inodes are present
     //  inside the concerned cluster.The array is indexed using the
