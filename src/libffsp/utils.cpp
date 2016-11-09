@@ -33,6 +33,9 @@ extern int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #include <sys/time.h>
 #endif
 
+namespace ffsp
+{
+
 static uint64_t fs_size(const ffsp_fs& fs)
 {
     /* do not count the first erase block */
@@ -119,3 +122,5 @@ void ffsp_utimens(ffsp_fs& fs, ffsp_inode& ino, const struct timespec tv[2])
     ffsp_mark_dirty(fs, &ino);
     ffsp_flush_inodes(fs, false);
 }
+
+} // namespace ffsp

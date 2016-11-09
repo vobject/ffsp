@@ -23,6 +23,9 @@
 
 #include "ffsp.hpp"
 
+namespace ffsp
+{
+
 struct ffsp_mkfs_options
 {
     uint32_t clustersize;
@@ -36,5 +39,7 @@ struct ffsp_mkfs_options
 bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options);
 
 bool ffsp_fmkfs(int fd, const ffsp_mkfs_options& options);
+
+} // namespace ffsp
 
 #endif /* MKFS_HPP */

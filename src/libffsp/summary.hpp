@@ -23,6 +23,9 @@
 
 #include "ffsp.hpp"
 
+namespace ffsp
+{
+
 struct ffsp_summary;
 
 ffsp_summary_cache* ffsp_summary_cache_init(const ffsp_fs& fs);
@@ -44,5 +47,7 @@ void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_n
 //bool ffsp_summary_required0(ffsp_eraseblk_type eb_type);
 //bool ffsp_summary_write0(ffsp_fs& fs, uint32_t eb_id, be32_t* summary);
 //void ffsp_summary_add_ref0(be32_t* summary, unsigned int ino_no, int writeops);
+
+} // namespace ffsp
 
 #endif /* SUMMARY_HPP */

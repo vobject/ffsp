@@ -23,7 +23,8 @@
 
 #include "libffsp/mkfs.hpp"
 
-struct ffsp_fs;
+namespace ffsp
+{
 
 namespace ffsp_testing
 {
@@ -87,5 +88,7 @@ bool default_mount_ffsp();
 bool default_unmount_ffsp();
 
 } // namespace ffsp_testing
+
+} // namespace ffsp
 
 #endif // FFSP_TEST_UTILS_HPP

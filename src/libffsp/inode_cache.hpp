@@ -26,6 +26,9 @@
 #include <functional>
 #include <vector>
 
+namespace ffsp
+{
+
 struct ffsp_inode_cache;
 
 ffsp_inode_cache* ffsp_inode_cache_init(const ffsp_fs& fs);
@@ -37,5 +40,7 @@ ffsp_inode* ffsp_inode_cache_find(const ffsp_inode_cache& cache, be32_t ino_no);
 std::vector<ffsp_inode*> ffsp_inode_cache_get(const ffsp_inode_cache& cache);
 std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
                                                  const std::function<bool(const ffsp_inode&)>& p);
+
+} // namespace ffsp
 
 #endif /* INODE_CACHE_HPP */

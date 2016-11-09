@@ -36,6 +36,9 @@ typedef SSIZE_T ssize_t;
 #include <unistd.h>
 #endif
 
+namespace ffsp
+{
+
 static ssize_t do_pread(int fd, void* buf, size_t count, off_t offset)
 {
 #ifdef _WIN32
@@ -142,3 +145,5 @@ bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, ui
     written = static_cast<uint64_t>(rc);
     return true;
 }
+
+} // namespace ffsp

@@ -31,6 +31,9 @@
 #include <cstdlib>
 #include <cstring>
 
+namespace ffsp
+{
+
 struct ffsp_gcinfo
 {
     ffsp_eraseblk_type eb_type;
@@ -511,3 +514,5 @@ void ffsp_gc(ffsp_fs& fs)
     }
     collect_empty_eraseblks(fs);
 }
+
+} // namespace ffsp

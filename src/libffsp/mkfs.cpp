@@ -38,6 +38,9 @@
 #include <unistd.h>
 #endif
 
+namespace ffsp
+{
+
 static uint32_t get_eraseblk_cnt(int fd, uint32_t eb_size)
 {
     off_t size = lseek(fd, 0, SEEK_END);
@@ -234,3 +237,5 @@ bool ffsp_fmkfs(int fd, const ffsp_mkfs_options& options)
     }
     return true;
 }
+
+} // namespace ffsp

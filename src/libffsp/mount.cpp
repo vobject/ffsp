@@ -42,6 +42,9 @@
 #include <unistd.h>
 #endif
 
+namespace ffsp
+{
+
 static void read_super(ffsp_fs& fs)
 {
     ffsp_super sb;
@@ -224,3 +227,5 @@ void ffsp_unmount(ffsp_fs& fs)
     free(fs.cl_occupancy);
     free(fs.buf);
 }
+
+} // namespace ffsp

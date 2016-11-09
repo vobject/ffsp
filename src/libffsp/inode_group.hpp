@@ -23,7 +23,12 @@
 
 #include "ffsp.hpp"
 
+namespace ffsp
+{
+
 int ffsp_read_inode_group(ffsp_fs& fs, unsigned int cl_id, ffsp_inode** inodes);
 int ffsp_write_inodes(ffsp_fs& fs, ffsp_inode** inodes, unsigned int ino_cnt);
+
+} // namespace ffsp
 
 #endif /* INODE_GROUP_HPP */

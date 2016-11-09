@@ -28,6 +28,9 @@
 #include <cstdlib>
 #include <cstring>
 
+namespace ffsp
+{
+
 //be32_t* ffsp_summary_list_add(const ffsp_fs& fs, ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type)
 //{
 //    ffsp_summary_list_node* node = new ffsp_summary_list_node;
@@ -197,3 +200,5 @@ void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_n
 {
     summary->buf_[cl_idx] = put_be32(ino_no);
 }
+
+} // namespace ffsp

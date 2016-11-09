@@ -22,6 +22,9 @@
 
 #include "spdlog/sinks/null_sink.h"
 
+namespace ffsp
+{
+
 static std::string s_logname;
 
 void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level)
@@ -63,3 +66,5 @@ spdlog::logger& ffsp_log()
         return *null_logger;
     }
 }
+
+} // namespace ffsp

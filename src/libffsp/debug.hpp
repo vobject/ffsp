@@ -28,6 +28,9 @@
 
 struct stat;
 
+namespace ffsp
+{
+
 #define FFSP_DEBUG_READ_RAW 1
 #define FFSP_DEBUG_WRITE_RAW 2
 #define FFSP_DEBUG_FUSE_READ 3
@@ -43,5 +46,7 @@ bool ffsp_debug_readdir(ffsp_fs& fs, const char* path, std::vector<std::string>&
 bool ffsp_debug_open(ffsp_fs& fs, const char* path);
 bool ffsp_debug_release(ffsp_fs& fs, const char* path);
 bool ffsp_debug_read(ffsp_fs& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
+
+} // namespace ffsp
 
 #endif /* DEBUG_HPP */

@@ -23,7 +23,12 @@
 
 #include "ffsp.hpp"
 
+namespace ffsp
+{
+
 bool ffsp_mount(ffsp_fs& fs, const char* path);
 void ffsp_unmount(ffsp_fs& fs);
+
+} // namespace ffsp
 
 #endif /* MOUNT_HPP */

@@ -422,9 +422,9 @@ struct fuse_ffsp_operations
         spdlog::drop("ffsp_api");
     }
 
-    static ffsp_fs* get_fs(fuse_context* ctx)
+    static ffsp::ffsp_fs* get_fs(fuse_context* ctx)
     {
-        return static_cast<ffsp_fs*>(ctx->private_data);
+        return static_cast<ffsp::ffsp_fs*>(ctx->private_data);
     }
 
     template <typename T>
@@ -453,8 +453,9 @@ static void show_usage(const char* progname)
 
 static void show_version(const char* progname)
 {
-    printf("FUSE %s version %d.%d.%d\n", progname, FFSP_VERSION_MAJOR,
-           FFSP_VERSION_MINOR, FFSP_VERSION_PATCH);
+    printf("FUSE %s version %d.%d.%d\n", progname, ffsp::FFSP_VERSION_MAJOR,
+                                                   ffsp::FFSP_VERSION_MINOR,
+                                                   ffsp::FFSP_VERSION_PATCH);
 }
 
 enum

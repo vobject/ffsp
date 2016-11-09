@@ -23,7 +23,12 @@
 
 #include <cstdint>
 
+namespace ffsp
+{
+
 bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read);
 bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written);
+
+} // namespace ffsp
 
 #endif /* IO_RAW_HPP */

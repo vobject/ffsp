@@ -25,6 +25,9 @@
 
 #include <cstddef>
 
+namespace ffsp
+{
+
 struct ffsp_inode_cache
 {
     explicit ffsp_inode_cache(size_t size) : buf{size, nullptr} {}
@@ -74,3 +77,5 @@ std::vector<ffsp_inode*> ffsp_inode_cache_get_if(const ffsp_inode_cache& cache,
             ret.push_back(cache.buf[i]);
     return ret;
 }
+
+} // namespace ffsp

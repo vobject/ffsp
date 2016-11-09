@@ -36,6 +36,9 @@
 #endif
 #endif
 
+namespace ffsp
+{
+
 int ffsp_eb_get_cvalid(const ffsp_fs& fs, unsigned int eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);
@@ -327,3 +330,5 @@ int ffsp_write_meta_data(ffsp_fs& fs)
     ffsp_debug_update(fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
     return written_bytes;
 }
+
+} // namespace ffsp

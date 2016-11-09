@@ -29,6 +29,9 @@
 #include <fuse_win.h>
 #endif
 
+namespace ffsp
+{
+
 ffsp_inode* ffsp_allocate_inode(const ffsp_fs& fs);
 void ffsp_delete_inode(ffsp_inode* ino);
 void* ffsp_inode_data(ffsp_inode* ino);
@@ -54,5 +57,7 @@ void ffsp_reset_dirty(ffsp_fs& fs, ffsp_inode* ino);
 int ffsp_cache_dir(ffsp_fs& fs, ffsp_inode* ino, ffsp_dentry** dent_buf, int* dentry_cnt);
 
 void ffsp_invalidate_ind_ptr(ffsp_fs& fs, const be32_t* ind_ptr, int cnt, int ind_type);
+
+} // namespace ffsp
 
 #endif /* INODE_HPP */

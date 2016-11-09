@@ -139,7 +139,7 @@ static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
 
 int main(int argc, char* argv[])
 {
-    ffsp_log_init("ffsp_mkfs", spdlog::level::debug);
+    ffsp::ffsp_log_init("ffsp_mkfs", spdlog::level::debug);
 
     mkfs_arguments args = {};
     if (!parse_arguments(argc, argv, args))
@@ -148,10 +148,10 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    ffsp_log().info("Setup file system: {})", args);
+    ffsp::ffsp_log().info("Setup file system: {})", args);
 
     int ret = EXIT_SUCCESS;
-    if (!ffsp_mkfs(args.device, {args.clustersize,
+    if (!ffsp::ffsp_mkfs(args.device, {args.clustersize,
                                  args.erasesize,
                                  args.ninoopen,
                                  args.neraseopen,
@@ -161,6 +161,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "%s: failed to setup file system", argv[0]);
         ret = EXIT_FAILURE;
     }
-    ffsp_log_deinit();
+    ffsp::ffsp_log_deinit();
     return ret;
 }

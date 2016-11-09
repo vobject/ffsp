@@ -30,6 +30,9 @@
 #include <cstdlib>
 #include <cstring>
 
+namespace ffsp
+{
+
 /* copy grouped elements into the cluster buffer. */
 static void group_inodes(const ffsp_fs& fs, ffsp_inode** group,
                          int group_elem_cnt, char* cl_buf)
@@ -172,3 +175,5 @@ int ffsp_write_inodes(ffsp_fs& fs, ffsp_inode** inodes, unsigned int ino_cnt)
     free(group);
     return 0;
 }
+
+} // namespace ffsp

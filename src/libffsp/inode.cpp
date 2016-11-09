@@ -43,6 +43,9 @@
 extern char* strndup(const char* s, size_t n);
 #endif
 
+namespace ffsp
+{
+
 ffsp_inode* ffsp_allocate_inode(const ffsp_fs& fs)
 {
     ffsp_inode* ino = (ffsp_inode*)malloc(fs.clustersize);
@@ -844,3 +847,5 @@ void ffsp_invalidate_ind_ptr(ffsp_fs& fs, const be32_t* ind_ptr, int cnt, int in
         }
     }
 }
+
+} // namespace ffsp

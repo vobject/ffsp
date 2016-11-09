@@ -34,6 +34,9 @@
 #include <cstdlib>
 #include <cstring>
 
+namespace ffsp
+{
+
 struct write_context
 {
     const char* buf{nullptr};
@@ -737,3 +740,5 @@ int ffsp_write(ffsp_fs& fs, ffsp_inode* ino, const char* buf, size_t count, uint
     ffsp_gc(fs);
     return rc;
 }
+
+} // namespace ffsp

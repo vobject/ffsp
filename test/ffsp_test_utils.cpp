@@ -39,6 +39,9 @@ fuse_context* fuse_get_context()
     return &dummy_ctx;
 }
 
+namespace ffsp
+{
+
 namespace ffsp_testing
 {
 
@@ -148,3 +151,5 @@ bool default_unmount_ffsp()
 }
 
 } // namespace ffsp_testing
+
+} // namespace ffsp

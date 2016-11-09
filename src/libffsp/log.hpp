@@ -25,8 +25,13 @@
 
 #include <string>
 
+namespace ffsp
+{
+
 void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level);
 void ffsp_log_deinit();
 spdlog::logger& ffsp_log();
+
+} // namespace ffsp
 
 #endif /* LOG_HPP */

@@ -28,6 +28,9 @@
 struct stat;
 struct statvfs;
 
+namespace ffsp
+{
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -36,5 +39,7 @@ bool ffsp_update_time(ffsp_timespec& dest);
 void ffsp_stat(ffsp_fs& fs, const ffsp_inode& ino, struct stat& stbuf);
 void ffsp_statfs(ffsp_fs& fs, struct statvfs& sfs);
 void ffsp_utimens(ffsp_fs& fs, ffsp_inode& ino, const struct timespec tvi[2]);
+
+} // namespace ffsp
 
 #endif /* UTILS_HPP */

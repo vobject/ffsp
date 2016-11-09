@@ -23,6 +23,9 @@
 
 #include "ffsp.hpp"
 
+namespace ffsp
+{
+
 int ffsp_eb_get_cvalid(const ffsp_fs& fs, unsigned int eb_id);
 void ffsp_eb_inc_cvalid(ffsp_fs& fs, unsigned int eb_id);
 void ffsp_eb_dec_cvalid(ffsp_fs& fs, unsigned int eb_id);
@@ -36,5 +39,7 @@ void ffsp_commit_write_operation(ffsp_fs& fs, ffsp_eraseblk_type eb_type,
                                  uint32_t eb_id, be32_t ino_no);
 void ffsp_close_eraseblks(ffsp_fs& fs);
 int ffsp_write_meta_data(ffsp_fs& fs);
+
+} // namespace ffsp
 
 #endif /* ERASEBLK_HPP */

@@ -30,6 +30,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+namespace ffsp
+{
+
 static struct ffsp_debug_info
 {
     uint64_t read_raw;
@@ -536,3 +539,5 @@ bool ffsp_debug_read(ffsp_fs& fs, const char* path, char* buf, uint64_t count, u
     }
     return -EIO;
 }
+
+} // namespace ffsp
