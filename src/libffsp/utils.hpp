@@ -34,11 +34,11 @@ namespace ffsp
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-bool ffsp_update_time(timespec& dest);
+bool update_time(timespec& dest);
 
-void ffsp_stat(fs_context& fs, const inode& ino, struct stat& stbuf);
-void ffsp_statfs(fs_context& fs, struct statvfs& sfs);
-void ffsp_utimens(fs_context& fs, inode& ino, const struct ::timespec tvi[2]);
+void stat(fs_context& fs, const inode& ino, struct ::stat& stbuf);
+void statfs(fs_context& fs, struct ::statvfs& sfs);
+void utimens(fs_context& fs, inode& ino, const struct ::timespec tvi[2]);
 
 } // namespace ffsp
 

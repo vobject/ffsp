@@ -15,7 +15,7 @@ class BasicFileSystemOperationsApiTest : public testing::Test
 protected:
     void SetUp() override
     {
-        ffsp::ffsp_log_init("ffsp_test", spdlog::level::debug);
+        ffsp::log_init("ffsp_test", spdlog::level::debug);
 
         ASSERT_TRUE(ffsp::test::default_create_file());
         ASSERT_TRUE(ffsp::test::default_make_fs());
@@ -27,7 +27,7 @@ protected:
         ASSERT_TRUE(ffsp::test::default_unmount_fs(fs_));
         ASSERT_TRUE(ffsp::test::default_remove_file());
 
-        ffsp::ffsp_log_deinit();
+        ffsp::log_deinit();
     }
 
     ffsp::fs_context fs_;

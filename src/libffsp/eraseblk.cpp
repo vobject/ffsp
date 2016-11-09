@@ -39,22 +39,22 @@
 namespace ffsp
 {
 
-int ffsp_eb_get_cvalid(const fs_context& fs, unsigned int eb_id)
+int eb_get_cvalid(const fs_context& fs, unsigned int eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void ffsp_eb_inc_cvalid(fs_context& fs, unsigned int eb_id)
+void eb_inc_cvalid(fs_context& fs, unsigned int eb_id)
 {
     inc_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void ffsp_eb_dec_cvalid(fs_context& fs, unsigned int eb_id)
+void eb_dec_cvalid(fs_context& fs, unsigned int eb_id)
 {
     dec_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-unsigned int ffsp_emtpy_eraseblk_count(const fs_context& fs)
+unsigned int emtpy_eraseblk_count(const fs_context& fs)
 {
     unsigned int cnt = 0;
 
@@ -67,7 +67,7 @@ unsigned int ffsp_emtpy_eraseblk_count(const fs_context& fs)
 
 static uint32_t find_empty_eraseblk(const fs_context& fs)
 {
-    if (ffsp_emtpy_eraseblk_count(fs) <= fs.nerasereserve)
+    if (emtpy_eraseblk_count(fs) <= fs.nerasereserve)
         return FFSP_INVALID_EB_ID;
 
     // Erase block id "0" is always reserved.
@@ -84,7 +84,7 @@ static uint32_t find_empty_eraseblk(const fs_context& fs)
     return FFSP_INVALID_EB_ID;
 }
 
-eraseblock_type ffsp_get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode)
+eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode)
 {
     // TODO: Check if it is ok to put all other types (blk, pipe, etc)
     //  apart from dentry into the same "file" erase blocks.
@@ -140,7 +140,7 @@ eraseblock_type ffsp_get_eraseblk_type(const fs_context& fs, int data_type, uint
     return FFSP_EB_EBIN;
 }
 
-int ffsp_find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
+int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
                                uint32_t& eb_id, uint32_t& cl_id)
 {
     if (eb_type == FFSP_EB_EBIN)
@@ -185,7 +185,7 @@ int ffsp_find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
     return 0;
 }
 
-void ffsp_commit_write_operation(fs_context& fs, eraseblock_type eb_type,
+void commit_write_operation(fs_context& fs, eraseblock_type eb_type,
                                  uint32_t eb_id, be32_t ino_no)
 {
     /* TODO: Error handling missing! */
@@ -211,45 +211,45 @@ void ffsp_commit_write_operation(fs_context& fs, eraseblock_type eb_type,
     }
 
     /* tell gcinfo that we wrote an erase block of a specific type */
-    unsigned int write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
+    unsigned int write_time = gcinfo_update_writetime(fs, eb_type);
 
     // Update the meta data of the erase block that was written to.
     fs.eb_usage[eb_id].e_type = eb_type;
     fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
-    ffsp_eb_inc_cvalid(fs, eb_id);
+    eb_inc_cvalid(fs, eb_id);
     inc_be16(fs.eb_usage[eb_id].e_writeops);
 
     int max_writeops = fs.erasesize / fs.clustersize;
     uint16_t writeops = get_be16(fs.eb_usage[eb_id].e_writeops);
 
-    if (!ffsp_summary_required(fs, eb_id))
+    if (!summary_required(fs, eb_id))
     {
         if (writeops == max_writeops)
         {
             // An erase block without summary is implicitly
             //  finalized when its maximum write operations count
             //  is reached.
-            ffsp_gcinfo_inc_writecnt(fs, eb_type);
+            gcinfo_inc_writecnt(fs, eb_type);
         }
         return;
     }
 
     // The erase block still needs a summary if it was just opened.
-    ffsp_summary* eb_summary;
+    summary* eb_summary;
     if (writeops == 1)
     {
         // Create a new erase block summary buffer for the newly
         //  opened erase block and add it to the summary list.
-        eb_summary = ffsp_summary_open(*fs.summary_cache, eb_type);
+        eb_summary = summary_open(*fs.summary_cache, eb_type);
     }
     else
     {
         // The summary for this erase block should already exist.
-        eb_summary = ffsp_summary_get(*fs.summary_cache, eb_type);
+        eb_summary = summary_get(*fs.summary_cache, eb_type);
     }
     // The last cluster of a cluster indirect erase block contains the
     //  inode ids of all inodes that have data inside this erase block.
-    ffsp_summary_add_ref(eb_summary, writeops - 1, get_be32(ino_no));
+    summary_add_ref(eb_summary, writeops - 1, get_be32(ino_no));
 
     // The summary information of every open erase block is cached.
     //  It will be written to the end of the erase block when this is full.
@@ -257,20 +257,20 @@ void ffsp_commit_write_operation(fs_context& fs, eraseblock_type eb_type,
     {
         // The last write operation filled the erase block.
         // Write its summary to finalize it.
-        ffsp_summary_write(fs, eb_summary, eb_id);
-        ffsp_summary_close(*fs.summary_cache, eb_summary);
+        summary_write(fs, eb_summary, eb_id);
+        summary_close(*fs.summary_cache, eb_summary);
 
         /* we just performed another write operation;
          * tell gcinfo and update the erase block's usage data */
-        write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
+        write_time = gcinfo_update_writetime(fs, eb_type);
 
         fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
         inc_be16(fs.eb_usage[eb_id].e_writeops);
-        ffsp_gcinfo_inc_writecnt(fs, eb_type);
+        gcinfo_inc_writecnt(fs, eb_type);
     }
 }
 
-void ffsp_close_eraseblks(fs_context& fs)
+void close_eraseblks(fs_context& fs)
 {
     /* TODO: Error handling missing! */
 
@@ -290,21 +290,21 @@ void ffsp_close_eraseblks(fs_context& fs)
 
         fs.eb_usage[eb_id].e_writeops = put_be16(max_writeops);
 
-        if (!ffsp_summary_required(fs, eb_id))
+        if (!summary_required(fs, eb_id))
             continue;
 
-        ffsp_summary* eb_summary = ffsp_summary_get(*fs.summary_cache, eb_type);
+        summary* eb_summary = summary_get(*fs.summary_cache, eb_type);
 
-        ffsp_summary_write(fs, eb_summary, eb_id);
-        ffsp_summary_close(*fs.summary_cache, eb_summary);
+        summary_write(fs, eb_summary, eb_id);
+        summary_close(*fs.summary_cache, eb_summary);
 
         /* tell gcinfo an erase block of a specific type was written */
-        unsigned int write_time = ffsp_gcinfo_update_writetime(fs, eb_type);
+        unsigned int write_time = gcinfo_update_writetime(fs, eb_type);
         fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
     }
 }
 
-int ffsp_write_meta_data(fs_context& fs)
+int write_meta_data(fs_context& fs)
 {
     /*
      * Copy erase block usage info and the content of the inode map
@@ -322,12 +322,12 @@ int ffsp_write_meta_data(fs_context& fs)
     uint64_t offset = fs.clustersize;
 
     uint64_t written_bytes = 0;
-    if (!ffsp_write_raw(fs.fd, fs.buf, meta_data_size, offset, written_bytes))
+    if (!write_raw(fs.fd, fs.buf, meta_data_size, offset, written_bytes))
     {
-        ffsp_log().error("writing meta data to first erase block failed");
+        log().error("writing meta data to first erase block failed");
         return -errno;
     }
-    ffsp_debug_update(fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
+    debug_update(fs, debug_metric::write_raw, written_bytes);
     return written_bytes;
 }
 

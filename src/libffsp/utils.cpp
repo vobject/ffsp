@@ -70,16 +70,16 @@ static uint32_t inode_cnt(const fs_context& fs)
     return fs.nino - free_ino_cnt;
 }
 
-bool ffsp_update_time(timespec& dest)
+bool update_time(timespec& dest)
 {
-    struct timeval tv;
+    struct ::timeval tv;
     gettimeofday(&tv, nullptr);
     dest.sec = put_be64(tv.tv_sec);
     dest.nsec = put_be32(tv.tv_usec * 1000);
     return true;
 }
 
-void ffsp_stat(fs_context& fs, const inode& ino, struct stat& stbuf)
+void stat(fs_context& fs, const inode& ino, struct ::stat& stbuf)
 {
     (void)fs;
 
@@ -101,7 +101,7 @@ void ffsp_stat(fs_context& fs, const inode& ino, struct stat& stbuf)
 #endif
 }
 
-void ffsp_statfs(fs_context& fs, struct statvfs& sfs)
+void statfs(fs_context& fs, struct ::statvfs& sfs)
 {
     memset(&sfs, 0, sizeof(sfs));
     sfs.f_bsize = fs.blocksize;
@@ -113,14 +113,14 @@ void ffsp_statfs(fs_context& fs, struct statvfs& sfs)
     sfs.f_namemax = FFSP_NAME_MAX;
 }
 
-void ffsp_utimens(fs_context& fs, inode& ino, const struct ::timespec tv[2])
+void utimens(fs_context& fs, inode& ino, const struct ::timespec tv[2])
 {
     ino.i_atime.sec = put_be64(tv[0].tv_sec);
     ino.i_atime.nsec = put_be32(tv[0].tv_nsec);
     ino.i_mtime.sec = put_be64(tv[1].tv_sec);
     ino.i_mtime.nsec = put_be32(tv[1].tv_nsec);
-    ffsp_mark_dirty(fs, &ino);
-    ffsp_flush_inodes(fs, false);
+    mark_dirty(fs, &ino);
+    flush_inodes(fs, false);
 }
 
 } // namespace ffsp

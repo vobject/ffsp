@@ -56,19 +56,19 @@ bool remove_file(const char* file_path)
     return (remove(file_path) == 0);
 }
 
-bool make_fs(const char* file_path, const ffsp_mkfs_options& opts)
+bool make_fs(const char* file_path, const mkfs_options& opts)
 {
-    return ffsp_mkfs(file_path, opts);
+    return mkfs(file_path, opts);
 }
 
 bool mount_fs(fs_context& fs, const char* file_path)
 {
-    return ffsp_mount(fs, file_path);
+    return mount(fs, file_path);
 }
 
 bool unmount_fs(fs_context& fs)
 {
-    ffsp_unmount(fs);
+    unmount(fs);
     return true;
 }
 
@@ -150,6 +150,6 @@ bool default_unmount_ffsp()
     return unmount_ffsp(default_bin_unmount, default_dir_mountpoint);
 }
 
-} // namespace ffsp_testing
+} // namespace test
 
 } // namespace ffsp

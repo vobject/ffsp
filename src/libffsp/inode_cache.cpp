@@ -34,32 +34,32 @@ struct inode_cache
     std::vector<inode*> buf;
 };
 
-inode_cache* ffsp_inode_cache_init(const fs_context& fs)
+inode_cache* inode_cache_init(const fs_context& fs)
 {
     return new inode_cache(fs.nino);
 }
 
-void ffsp_inode_cache_uninit(inode_cache* cache)
+void inode_cache_uninit(inode_cache* cache)
 {
     delete cache;
 }
 
-void ffsp_inode_cache_insert(inode_cache& cache, inode* ino)
+void inode_cache_insert(inode_cache& cache, inode* ino)
 {
     cache.buf[get_be32(ino->i_no)] = ino;
 }
 
-void ffsp_inode_cache_remove(inode_cache& cache, inode* ino)
+void inode_cache_remove(inode_cache& cache, inode* ino)
 {
     cache.buf[get_be32(ino->i_no)] = nullptr;
 }
 
-inode* ffsp_inode_cache_find(const inode_cache& cache, be32_t ino_no)
+inode* inode_cache_find(const inode_cache& cache, be32_t ino_no)
 {
     return cache.buf[get_be32(ino_no)];
 }
 
-std::vector<inode*> ffsp_inode_cache_get(const inode_cache& cache)
+std::vector<inode*> inode_cache_get(const inode_cache& cache)
 {
     std::vector<inode*> ret;
     for (size_t i = 1; i < cache.buf.size(); i++)
@@ -68,7 +68,7 @@ std::vector<inode*> ffsp_inode_cache_get(const inode_cache& cache)
     return ret;
 }
 
-std::vector<inode*> ffsp_inode_cache_get_if(const inode_cache& cache,
+std::vector<inode*> inode_cache_get_if(const inode_cache& cache,
                                                  const std::function<bool(const inode&)>& p)
 {
     std::vector<inode*> ret;

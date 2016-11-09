@@ -26,19 +26,17 @@
 namespace ffsp
 {
 
-int ffsp_eb_get_cvalid(const fs_context& fs, unsigned int eb_id);
-void ffsp_eb_inc_cvalid(fs_context& fs, unsigned int eb_id);
-void ffsp_eb_dec_cvalid(fs_context& fs, unsigned int eb_id);
+int eb_get_cvalid(const fs_context& fs, unsigned int eb_id);
+void eb_inc_cvalid(fs_context& fs, unsigned int eb_id);
+void eb_dec_cvalid(fs_context& fs, unsigned int eb_id);
 
-unsigned int ffsp_emtpy_eraseblk_count(const fs_context& fs);
-eraseblock_type ffsp_get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode);
+unsigned int emtpy_eraseblk_count(const fs_context& fs);
+eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode);
 
-int ffsp_find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
-                               uint32_t& eb_id, uint32_t& cl_id);
-void ffsp_commit_write_operation(fs_context& fs, eraseblock_type eb_type,
-                                 uint32_t eb_id, be32_t ino_no);
-void ffsp_close_eraseblks(fs_context& fs);
-int ffsp_write_meta_data(fs_context& fs);
+int find_writable_cluster(fs_context& fs, eraseblock_type eb_type, uint32_t& eb_id, uint32_t& cl_id);
+void commit_write_operation(fs_context& fs, eraseblock_type eb_type, uint32_t eb_id, be32_t ino_no);
+void close_eraseblks(fs_context& fs);
+int write_meta_data(fs_context& fs);
 
 } // namespace ffsp
 

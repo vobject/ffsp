@@ -32,7 +32,7 @@ namespace test
 bool create_file(const char* file_path, uint64_t file_size);
 bool remove_file(const char* file_path);
 
-bool make_fs(const char* file_path, const ffsp_mkfs_options& opts);
+bool make_fs(const char* file_path, const mkfs_options& opts);
 
 bool mount_fs(fs_context& fs, const char* file_path);
 bool unmount_fs(fs_context& fs);
@@ -62,13 +62,13 @@ bool unmount_ffsp(const char* program, const char* mountpoint);
     - number of inodes = (4194304 - 32768 - 32*8 - 4) / 4 = 1040319
 */
 const constexpr char* const default_fs_path{ "/tmp/test.ffsp_fs" };
-const constexpr uint64_t default_fs_size{ 1024 * 1024 * 128 };           // 128 MiB
-const constexpr ffsp_mkfs_options default_mkfs_options{ 1024 * 32,       // cluster
-                                                        1024 * 1024 * 4, // eraseblock
-                                                        128,             // open inodes
-                                                        5,               // open eraseblocks
-                                                        3,               // reserved eraseblocks
-                                                        5 };             // gc trigger
+const constexpr uint64_t default_fs_size{ 1024 * 1024 * 128 };      // 128 MiB
+const constexpr mkfs_options default_mkfs_options{ 1024 * 32,       // cluster
+                                                   1024 * 1024 * 4, // eraseblock
+                                                   128,             // open inodes
+                                                   5,               // open eraseblocks
+                                                   3,               // reserved eraseblocks
+                                                   5 };             // gc trigger
 
 const constexpr char* const default_bin_mkfs{ "./mkfs.ffsp" };
 const constexpr char* const default_bin_mount{ "./mount.ffsp" };
@@ -87,7 +87,7 @@ bool default_mkfs_ffsp();
 bool default_mount_ffsp();
 bool default_unmount_ffsp();
 
-} // namespace ffsp_testing
+} // namespace test
 
 } // namespace ffsp
 

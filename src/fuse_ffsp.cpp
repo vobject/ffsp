@@ -77,13 +77,13 @@ void set_params(const std::string& device)
 
 void* init(fuse_conn_info* conn)
 {
-    ffsp_log_init("ffsp_api", spdlog::level::debug);
+    log_init("ffsp_api", spdlog::level::debug);
 
     auto* fs = new fs_context;
 
-    if (!ffsp_mount(*fs, params.device.c_str()))
+    if (!ffsp::mount(*fs, params.device.c_str()))
     {
-        ffsp_log().error("ffsp_mount() failed. exiting...");
+        log().error("ffsp_mount() failed. exiting...");
         exit(EXIT_FAILURE);
     }
 
@@ -97,7 +97,7 @@ void* init(fuse_conn_info* conn)
     {
         conn->want |= FUSE_CAP_BIG_WRITES;
         conn->max_write = fs->clustersize;
-        ffsp_log().debug("Setting max_write to {}", conn->max_write);
+        log().debug("Setting max_write to {}", conn->max_write);
     }
 #else
     conn->max_write = fs->clustersize;
@@ -115,31 +115,29 @@ void* init(fuse_conn_info* conn)
 void destroy(void* user)
 {
     fs_context* fs = static_cast<fs_context*>(user);
-    ffsp_unmount(*fs);
+    ffsp::unmount(*fs);
     delete fs;
 
-    ffsp_log_deinit();
+    log_deinit();
 }
 
 #ifdef _WIN32
-int getattr(ffsp& fs, const char* path, struct FUSE_STAT* stbuf)
+int getattr(fs_context& fs, const char* path, struct FUSE_STAT* stbuf)
 #else
-int getattr(fs_context& fs, const char* path, struct stat* stbuf)
+int getattr(fs_context& fs, const char* path, struct ::stat* stbuf)
 #endif
 {
-    int rc;
+    if (ffsp::is_debug_path(fs, path))
+        return ffsp::debug_getattr(fs, path, *stbuf) ? 0 : -EIO;
+
     inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
-        return ffsp_debug_getattr(fs, path, *stbuf) ? 0 : -EIO;
-
-    rc = ffsp_lookup(fs, &ino, path);
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
 #ifdef _WIN32
-    struct stat stbuf_tmp;
-    ffsp_stat(fs, ino, &stbuf_tmp);
+    struct ::stat stbuf_tmp;
+    ffsp::stat(fs, ino, &stbuf_tmp);
 
     memset(stbuf, 0, sizeof(*stbuf));
     stbuf->st_dev = stbuf_tmp.st_dev;     /* dev_t <- _dev_t */
@@ -151,54 +149,49 @@ int getattr(fs_context& fs, const char* path, struct stat* stbuf)
     stbuf->st_rdev = stbuf_tmp.st_rdev;   /* dev_t <- _dev_t */
     stbuf->st_size = stbuf_tmp.st_size;   /* FUSE_OFF_T <- _off_t */
 
-    struct timespec atim;
+    struct ffsp::timespec atim;
     atim.tv_sec = stbuf_tmp.st_atime;
     atim.tv_nsec = 0;
     stbuf->st_atim = atim; /* timestruc_t <- time_t */
 
-    struct timespec mtim;
+    struct ffsp::timespec mtim;
     mtim.tv_sec = stbuf_tmp.st_mtime;
     mtim.tv_nsec = 0;
     stbuf->st_mtim = mtim; /* timestruc_t <- time_t */
 
-    struct timespec ctim;
+    struct ffsp::timespec ctim;
     ctim.tv_sec = stbuf_tmp.st_ctime;
     ctim.tv_nsec = 0;
     stbuf->st_ctim = ctim; /* timestruc_t <- time_t */
 #else
-    ffsp_stat(fs, *ino, *stbuf);
+    ffsp::stat(fs, *ino, *stbuf);
 #endif
 
     return 0;
 }
 
-int readdir(fs_context& fs, const char* path, void* buf,
-            fuse_fill_dir_t filler, FUSE_OFF_T offset,
-            fuse_file_info* fi)
+int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
+            FUSE_OFF_T offset, fuse_file_info* fi)
 {
     (void)offset;
     (void)fi;
 
-    int rc;
-    inode* ino;
-    dentry* dent_buf;
-    int dent_cnt;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
     {
         std::vector<std::string> dirs;
-        if (!ffsp_debug_readdir(fs, path, dirs))
+        if (!ffsp::debug_readdir(fs, path, dirs))
             return -EIO;
 
         for (const auto& dir : dirs)
         {
             if (filler(buf, dir.c_str(), nullptr, 0))
-                ffsp_log().debug("readdir({}): filler full!", path);
+                log().debug("readdir({}): filler full!", path);
         }
         return 0;
     }
 
-    rc = ffsp_lookup(fs, &ino, path);
+    inode* ino;
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
@@ -207,7 +200,9 @@ int readdir(fs_context& fs, const char* path, void* buf,
 
     // Number of potential ffsp_dentry elements. The exact number is not
     //  tracked. Return value of < 0 indicates an error.
-    rc = ffsp_cache_dir(fs, ino, &dent_buf, &dent_cnt);
+    dentry* dent_buf;
+    int dent_cnt;
+    rc = cache_dir(fs, ino, &dent_buf, &dent_cnt);
     if (rc < 0)
         return rc;
 
@@ -216,7 +211,7 @@ int readdir(fs_context& fs, const char* path, void* buf,
         if (get_be32(dent_buf[i].ino) == FFSP_INVALID_INO_NO)
             continue; // Invalid ffsp_entry
         if (filler(buf, dent_buf[i].name, NULL, 0))
-            ffsp_log().debug("readdir({}): filler full!", path);
+            log().debug("readdir({}): filler full!", path);
     }
     // TODO: Handle directory cache inside ffsp structure.
     free(dent_buf);
@@ -225,20 +220,18 @@ int readdir(fs_context& fs, const char* path, void* buf,
 
 int open(fs_context& fs, const char* path, fuse_file_info* fi)
 {
-    int rc;
+    if (ffsp::is_debug_path(fs, path))
+        return ffsp::debug_open(fs, path) ? 0 : -EIO;
+
     inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
-        return ffsp_debug_open(fs, path) ? 0 : -EIO;
-
-    rc = ffsp_lookup(fs, &ino, path);
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
     // TODO: Comment on why we explicitly made open & trunc atomic
     if (fi->flags & O_TRUNC)
     {
-        rc = ffsp_truncate(fs, ino, 0);
+        rc = ffsp::truncate(fs, ino, 0);
         if (rc < 0)
             return rc;
     }
@@ -248,8 +241,8 @@ int open(fs_context& fs, const char* path, fuse_file_info* fi)
 
 int release(fs_context& fs, const char* path, fuse_file_info* fi)
 {
-    if (ffsp_debug_is_debug_path(fs, path))
-        return ffsp_debug_release(fs, path) ? 0 : -EIO;
+    if (ffsp::is_debug_path(fs, path))
+        return ffsp::debug_release(fs, path) ? 0 : -EIO;
 
     set_inode(fi, NULL);
     return 0;
@@ -257,33 +250,28 @@ int release(fs_context& fs, const char* path, fuse_file_info* fi)
 
 int truncate(fs_context& fs, const char* path, FUSE_OFF_T length)
 {
-    int rc;
-    inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
     if (length < 0)
         return -EINVAL;
 
-    rc = ffsp_lookup(fs, &ino, path);
+    inode* ino;
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
-    ffsp_truncate(fs, ino, static_cast<uint64_t>(length));
+    ffsp::truncate(fs, ino, static_cast<uint64_t>(length));
     return 0;
 }
 
 int read(fs_context& fs, const char* path, char* buf, size_t count,
          FUSE_OFF_T offset, fuse_file_info* fi)
 {
-    int rc;
-    inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
     {
         uint64_t read = 0;
-        if (ffsp_debug_read(fs, path, buf, count, static_cast<uint64_t>(offset), read))
+        if (ffsp::debug_read(fs, path, buf, count, static_cast<uint64_t>(offset), read))
             return static_cast<int>(read);
         else
             return -EIO;
@@ -292,191 +280,175 @@ int read(fs_context& fs, const char* path, char* buf, size_t count,
     if (offset < 0)
         return -EINVAL;
 
+    inode* ino;
     if (fi)
     {
         ino = get_inode(fi);
     }
     else
     {
-        rc = ffsp_lookup(fs, &ino, path);
+        int rc = ffsp::lookup(fs, &ino, path);
         if (rc < 0)
             return rc;
     }
 
-    ffsp_debug_update(fs, FFSP_DEBUG_FUSE_READ, count);
-    return ffsp_read(fs, ino, buf, count, static_cast<uint64_t>(offset));
+    ffsp::debug_update(fs, debug_metric::fuse_read, count);
+    return ffsp::read(fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
 int write(fs_context& fs, const char* path, const char* buf, size_t count,
           FUSE_OFF_T offset, fuse_file_info* fi)
 {
-    int rc;
-    inode* ino;
-
     if (offset < 0)
         return -EINVAL;
 
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
+    inode* ino;
     if (fi)
     {
         ino = get_inode(fi);
     }
     else
     {
-        rc = ffsp_lookup(fs, &ino, path);
+        int rc = ffsp::lookup(fs, &ino, path);
         if (rc < 0)
             return rc;
     }
 
-    ffsp_debug_update(fs, FFSP_DEBUG_FUSE_WRITE, count);
-    return ffsp_write(fs, ino, buf, count, static_cast<uint64_t>(offset));
+    ffsp::debug_update(fs, debug_metric::fuse_write, count);
+    return ffsp::write(fs, ino, buf, count, static_cast<uint64_t>(offset));
 }
 
 int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device)
 {
-    uid_t uid;
-    gid_t gid;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    uid = fuse_get_context()->uid;
-    gid = fuse_get_context()->gid;
+    uid_t uid = fuse_get_context()->uid;
+    gid_t gid = fuse_get_context()->gid;
 
     // TODO: Make sure one and only one of the mode-flags is set.
 
-    return ffsp_create(fs, path, mode, uid, gid, device);
+    return ffsp::create(fs, path, mode, uid, gid, device);
 }
 
 int link(fs_context& fs, const char* oldpath, const char* newpath)
 {
-    if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
+    if (ffsp::is_debug_path(fs, oldpath) || ffsp::is_debug_path(fs, newpath))
         return -EPERM;
 
-    return ffsp_link(fs, oldpath, newpath);
+    return ffsp::link(fs, oldpath, newpath);
 }
 
 int symlink(fs_context& fs, const char* oldpath, const char* newpath)
 {
-    uid_t uid;
-    gid_t gid;
-
-    if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
+    if (ffsp::is_debug_path(fs, oldpath) || ffsp::is_debug_path(fs, newpath))
         return -EPERM;
 
-    uid = fuse_get_context()->uid;
-    gid = fuse_get_context()->gid;
+    uid_t uid = fuse_get_context()->uid;
+    gid_t gid = fuse_get_context()->gid;
 
-    return ffsp_symlink(fs, oldpath, newpath, uid, gid);
+    return ffsp::symlink(fs, oldpath, newpath, uid, gid);
 }
 
 int readlink(fs_context& fs, const char* path, char* buf, size_t bufsize)
 {
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    return ffsp_readlink(fs, path, buf, bufsize);
+    return ffsp::readlink(fs, path, buf, bufsize);
 }
 
 int mkdir(fs_context& fs, const char* path, mode_t mode)
 {
-    uid_t uid;
-    gid_t gid;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    uid = fuse_get_context()->uid;
-    gid = fuse_get_context()->gid;
+    uid_t uid = fuse_get_context()->uid;
+    gid_t gid = fuse_get_context()->gid;
 
-    return ffsp_create(fs, path, mode | S_IFDIR, uid, gid, 0);
-}
-
-int rmdir(fs_context& fs, const char* path)
-{
-    if (ffsp_debug_is_debug_path(fs, path))
-        return -EPERM;
-
-    return ffsp_rmdir(fs, path);
+    return ffsp::create(fs, path, mode | S_IFDIR, uid, gid, 0);
 }
 
 int unlink(fs_context& fs, const char* path)
 {
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    return ffsp_unlink(fs, path);
+    return ffsp::unlink(fs, path);
+}
+
+int rmdir(fs_context& fs, const char* path)
+{
+    if (ffsp::is_debug_path(fs, path))
+        return -EPERM;
+
+    return ffsp::rmdir(fs, path);
 }
 
 int rename(fs_context& fs, const char* oldpath, const char* newpath)
 {
-    if (ffsp_debug_is_debug_path(fs, oldpath) || ffsp_debug_is_debug_path(fs, newpath))
+    if (ffsp::is_debug_path(fs, oldpath) || is_debug_path(fs, newpath))
         return -EPERM;
 
-    return ffsp_rename(fs, oldpath, newpath);
+    return ffsp::rename(fs, oldpath, newpath);
 }
 
 int utimens(fs_context& fs, const char* path, const struct ::timespec tv[2])
 {
-    int rc;
-    inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    rc = ffsp_lookup(fs, &ino, path);
+    inode* ino;
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
-    ffsp_utimens(fs, *ino, tv);
+    ffsp::utimens(fs, *ino, tv);
     return 0;
 }
 
 int chmod(fs_context& fs, const char* path, mode_t mode)
 {
-    int rc;
-    inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    rc = ffsp_lookup(fs, &ino, path);
+    inode* ino;
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
     ino->i_mode = put_be32(mode);
-    ffsp_mark_dirty(fs, ino);
-    ffsp_flush_inodes(fs, false);
+    mark_dirty(fs, ino);
+    flush_inodes(fs, false);
     return 0;
 }
 
 int chown(fs_context& fs, const char* path, uid_t uid, gid_t gid)
 {
-    int rc;
-    inode* ino;
-
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    rc = ffsp_lookup(fs, &ino, path);
+    inode* ino;
+    int rc = ffsp::lookup(fs, &ino, path);
     if (rc < 0)
         return rc;
 
     ino->i_uid = put_be32(uid);
     ino->i_gid = put_be32(gid);
-    ffsp_mark_dirty(fs, ino);
-    ffsp_flush_inodes(fs, false);
+    mark_dirty(fs, ino);
+    flush_inodes(fs, false);
     return 0;
 }
 
-int statfs(fs_context& fs, const char* path, struct statvfs* sfs)
+int statfs(fs_context& fs, const char* path, struct ::statvfs* sfs)
 {
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
-    ffsp_statfs(fs, *sfs);
+    ffsp::statfs(fs, *sfs);
     return 0;
 }
 
@@ -484,7 +456,7 @@ int flush(fs_context& fs, const char* path, fuse_file_info* fi)
 {
     (void)fi;
 
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return 0;
 
     // TODO: Implement Me!
@@ -499,7 +471,7 @@ int fsync(fs_context& fs, const char* path, int datasync, fuse_file_info* fi)
     (void)datasync;
     (void)fi;
 
-    if (ffsp_debug_is_debug_path(fs, path))
+    if (ffsp::is_debug_path(fs, path))
         return 0;
 
     // TODO: Implement Me!

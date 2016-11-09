@@ -110,11 +110,11 @@ namespace ffsp
 //}
 
 
-struct ffsp_summary
+struct summary
 {
-    explicit ffsp_summary(size_t size) : buf_{size, put_be32(0)} {}
-    ffsp_summary* open() { if (open_) { return nullptr; } open_ = true; return this; }
-    ffsp_summary* get() { if (!open_) { return nullptr; } return this; }
+    explicit summary(size_t size) : buf_{size, put_be32(0)} {}
+    summary* open() { if (open_) { return nullptr; } open_ = true; return this; }
+    summary* get() { if (!open_) { return nullptr; } return this; }
     void close() { std::fill(buf_.begin(), buf_.end(), put_be32(0)); open_ = false; }
     const void* data() const { return buf_.data(); }
     std::vector<be32_t> buf_;
@@ -126,21 +126,21 @@ struct summary_cache
     explicit summary_cache(size_t size) : dentry_clin{size}, inode_clin{size} {}
 
     /* no other erase block types require a summary */
-    ffsp_summary dentry_clin;
-    ffsp_summary inode_clin;
+    summary dentry_clin;
+    summary inode_clin;
 };
 
-summary_cache* ffsp_summary_cache_init(const fs_context& fs)
+summary_cache* summary_cache_init(const fs_context& fs)
 {
     return new summary_cache{fs.clustersize};
 }
 
-void ffsp_summary_cache_uninit(summary_cache* cache)
+void summary_cache_uninit(summary_cache* cache)
 {
     delete cache;
 }
 
-ffsp_summary* ffsp_summary_open(summary_cache& cache, eraseblock_type eb_type)
+summary* summary_open(summary_cache& cache, eraseblock_type eb_type)
 {
     if (eb_type == FFSP_EB_DENTRY_CLIN)
         return cache.dentry_clin.open();
@@ -150,7 +150,7 @@ ffsp_summary* ffsp_summary_open(summary_cache& cache, eraseblock_type eb_type)
         return nullptr;
 }
 
-ffsp_summary* ffsp_summary_get(summary_cache& cache, eraseblock_type eb_type)
+summary* summary_get(summary_cache& cache, eraseblock_type eb_type)
 {
     if (eb_type == FFSP_EB_DENTRY_CLIN)
         return cache.dentry_clin.get();
@@ -160,7 +160,7 @@ ffsp_summary* ffsp_summary_get(summary_cache& cache, eraseblock_type eb_type)
         return nullptr;
 }
 
-void ffsp_summary_close(summary_cache& cache, ffsp_summary* summary)
+void summary_close(summary_cache& cache, summary* summary)
 {
     if (summary == &cache.dentry_clin)
         cache.dentry_clin.close();
@@ -168,7 +168,7 @@ void ffsp_summary_close(summary_cache& cache, ffsp_summary* summary)
         cache.inode_clin.close();
 }
 
-bool ffsp_summary_required(const fs_context& fs, uint32_t eb_id)
+bool summary_required(const fs_context& fs, uint32_t eb_id)
 {
     /*
      * Erase blocks containing cluster indirect data always
@@ -180,23 +180,23 @@ bool ffsp_summary_required(const fs_context& fs, uint32_t eb_id)
            (eb_type == FFSP_EB_FILE_CLIN);
 }
 
-bool ffsp_summary_write(const fs_context& fs, ffsp_summary* summary, uint32_t eb_id)
+bool summary_write(const fs_context& fs, summary* summary, uint32_t eb_id)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
 
     uint64_t written_bytes = 0;
-    if (!ffsp_write_raw(fs.fd, summary->data(), fs.clustersize, summary_off, written_bytes))
+    if (!write_raw(fs.fd, summary->data(), fs.clustersize, summary_off, written_bytes))
     {
-        ffsp_log().error("ffsp_summary_write(): failed to write erase block summary");
+        log().error("ffsp_summary_write(): failed to write erase block summary");
         return false;
     }
-    ffsp_debug_update(fs, FFSP_DEBUG_WRITE_RAW, written_bytes);
+    debug_update(fs, debug_metric::write_raw, written_bytes);
     return true;
 
 }
 
-void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_no)
+void summary_add_ref(summary* summary, uint16_t cl_idx, uint32_t ino_no)
 {
     summary->buf_[cl_idx] = put_be32(ino_no);
 }

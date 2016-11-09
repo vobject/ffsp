@@ -26,8 +26,8 @@
 namespace ffsp
 {
 
-int ffsp_read_inode_group(fs_context& fs, unsigned int cl_id, inode** inodes);
-int ffsp_write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt);
+int read_inode_group(fs_context& fs, unsigned int cl_id, inode** inodes);
+int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt);
 
 } // namespace ffsp
 

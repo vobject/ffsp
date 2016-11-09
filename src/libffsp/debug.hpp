@@ -31,21 +31,24 @@ struct stat;
 namespace ffsp
 {
 
-#define FFSP_DEBUG_READ_RAW 1
-#define FFSP_DEBUG_WRITE_RAW 2
-#define FFSP_DEBUG_FUSE_READ 3
-#define FFSP_DEBUG_FUSE_WRITE 4
-#define FFSP_DEBUG_GC_READ 5
-#define FFSP_DEBUG_GC_WRITE 6
+enum class debug_metric
+{
+    read_raw,
+    write_raw,
+    fuse_read,
+    fuse_write,
+    gc_read,
+    gc_write,
+};
 
-void ffsp_debug_update(const fs_context& fs, int type, unsigned long val);
+void debug_update(const fs_context& fs, debug_metric type, unsigned long val);
 
-bool ffsp_debug_is_debug_path(fs_context& fs, const char* path);
-bool ffsp_debug_getattr(fs_context& fs, const char* path, struct stat& stbuf);
-bool ffsp_debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs);
-bool ffsp_debug_open(fs_context& fs, const char* path);
-bool ffsp_debug_release(fs_context& fs, const char* path);
-bool ffsp_debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
+bool is_debug_path(fs_context& fs, const char* path);
+bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf);
+bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs);
+bool debug_open(fs_context& fs, const char* path);
+bool debug_release(fs_context& fs, const char* path);
+bool debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
 
 } // namespace ffsp
 

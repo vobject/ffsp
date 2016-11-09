@@ -44,14 +44,13 @@ void* init(fuse_conn_info* conn);
 void destroy(void* user);
 
 #ifdef _WIN32
-int getattr(ffsp& fs, const char* path, struct FUSE_STAT* stbuf);
+int getattr(fs_context& fs, const char* path, struct FUSE_STAT* stbuf);
 #else
-int getattr(fs_context& fs, const char* path, struct stat* stbuf);
+int getattr(fs_context& fs, const char* path, struct ::stat* stbuf);
 #endif
 
-int readdir(fs_context& fs, const char* path, void* buf,
-            fuse_fill_dir_t filler, FUSE_OFF_T offset,
-            fuse_file_info* fi);
+int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
+            FUSE_OFF_T offset, fuse_file_info* fi);
 
 int open(fs_context& fs, const char* path, fuse_file_info* fi);
 
@@ -87,7 +86,7 @@ int chmod(fs_context& fs, const char* path, mode_t mode);
 
 int chown(fs_context& fs, const char* path, uid_t uid, gid_t gid);
 
-int statfs(fs_context& fs, const char* path, struct statvfs* sfs);
+int statfs(fs_context& fs, const char* path, struct ::statvfs* sfs);
 
 int flush(fs_context& fs, const char* path, fuse_file_info* fi);
 

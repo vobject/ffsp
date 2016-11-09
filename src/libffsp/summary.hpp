@@ -26,19 +26,19 @@
 namespace ffsp
 {
 
+struct summary;
 struct summary_cache;
-struct ffsp_summary;
 
-summary_cache* ffsp_summary_cache_init(const fs_context& fs);
-void ffsp_summary_cache_uninit(summary_cache* cache);
+summary_cache* summary_cache_init(const fs_context& fs);
+void summary_cache_uninit(summary_cache* cache);
 
-ffsp_summary* ffsp_summary_open(summary_cache& cache, eraseblock_type eb_type);
-ffsp_summary* ffsp_summary_get(summary_cache& cache, eraseblock_type eb_type);
-void ffsp_summary_close(summary_cache& cache, ffsp_summary* summary);
+summary* summary_open(summary_cache& cache, eraseblock_type eb_type);
+summary* summary_get(summary_cache& cache, eraseblock_type eb_type);
+void summary_close(summary_cache& cache, summary* summary);
 
-bool ffsp_summary_required(const fs_context& fs, uint32_t eb_id);
-bool ffsp_summary_write(const fs_context& fs, ffsp_summary* summary, uint32_t eb_id);
-void ffsp_summary_add_ref(ffsp_summary* summary, uint16_t cl_idx, uint32_t ino_no);
+bool summary_required(const fs_context& fs, uint32_t eb_id);
+bool summary_write(const fs_context& fs, summary* summary, uint32_t eb_id);
+void summary_add_ref(summary* summary, uint16_t cl_idx, uint32_t ino_no);
 
 
 //be32_t* ffsp_summary_list_add(const ffsp_fs& fs, ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);

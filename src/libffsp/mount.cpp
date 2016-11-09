@@ -49,12 +49,12 @@ static void read_super(fs_context& fs)
 {
     superblock sb;
     uint64_t read_bytes = 0;
-    if (!ffsp_read_raw(fs.fd, &sb, sizeof(superblock), 0, read_bytes))
+    if (!read_raw(fs.fd, &sb, sizeof(superblock), 0, read_bytes))
     {
-        ffsp_log().critical("reading super block failed");
+        log().critical("reading super block failed");
         abort();
     }
-    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
+    debug_update(fs, debug_metric::read_raw, read_bytes);
 
     // The super block is only read once and its content is saved
     //  inside the ffsp structure.
@@ -79,19 +79,19 @@ static void read_eb_usage(fs_context& fs)
     fs.eb_usage = (eraseblock*)malloc(size);
     if (!fs.eb_usage)
     {
-        ffsp_log().critical("malloc(erase blocks - size=%d) failed", size);
+        log().critical("malloc(erase blocks - size=%d) failed", size);
         abort();
     }
 
     uint64_t offset = fs.clustersize;
     uint64_t read_bytes = 0;
-    if (!ffsp_read_raw(fs.fd, fs.eb_usage, size, offset, read_bytes))
+    if (!read_raw(fs.fd, fs.eb_usage, size, offset, read_bytes))
     {
-        ffsp_log().critical("reading erase block info failed");
+        log().critical("reading erase block info failed");
         free(fs.eb_usage);
         abort();
     }
-    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
+    debug_update(fs, debug_metric::read_raw, read_bytes);
 }
 
 static void read_ino_map(fs_context& fs)
@@ -102,19 +102,19 @@ static void read_ino_map(fs_context& fs)
     fs.ino_map = (be32_t*)malloc(size);
     if (!fs.ino_map)
     {
-        ffsp_log().critical("malloc(inode ids - size=%d) failed", size);
+        log().critical("malloc(inode ids - size=%d) failed", size);
         abort();
     }
 
     uint64_t offset = fs.erasesize - size; // read the invalid inode, too
     uint64_t read_bytes = 0;
-    if (!ffsp_read_raw(fs.fd, fs.ino_map, size, offset, read_bytes))
+    if (!read_raw(fs.fd, fs.ino_map, size, offset, read_bytes))
     {
-        ffsp_log().critical("reading cluster ids failed");
+        log().critical("reading cluster ids failed");
         free(fs.ino_map);
         abort();
     }
-    ffsp_debug_update(fs, FFSP_DEBUG_READ_RAW, read_bytes);
+    debug_update(fs, debug_metric::read_raw, read_bytes);
 }
 
 static void read_cl_occupancy(fs_context& fs)
@@ -126,7 +126,7 @@ static void read_cl_occupancy(fs_context& fs)
     size = lseek(fs.fd, 0, SEEK_END);
     if (size == -1)
     {
-        ffsp_log().critical("lseek() on device failed");
+        log().critical("lseek() on device failed");
         exit(EXIT_FAILURE);
     }
 
@@ -134,7 +134,7 @@ static void read_cl_occupancy(fs_context& fs)
     fs.cl_occupancy = (int*)malloc(cl_occ_size);
     if (!fs.cl_occupancy)
     {
-        ffsp_log().critical("malloc(cluster occupancy array) failed");
+        log().critical("malloc(cluster occupancy array) failed");
         abort();
     }
     memset(fs.cl_occupancy, 0, cl_occ_size);
@@ -149,7 +149,7 @@ static void read_cl_occupancy(fs_context& fs)
     }
 }
 
-bool ffsp_mount(fs_context& fs, const char* path)
+bool mount(fs_context& fs, const char* path)
 {
     /*
      * O_DIRECT could also be used if all pwrite() calls get a
@@ -163,22 +163,22 @@ bool ffsp_mount(fs_context& fs, const char* path)
 #endif
     if (fs.fd == -1)
     {
-        ffsp_log().error("ffsp_mount(): open(path={}) failed", path);
+        log().error("ffsp_mount(): open(path={}) failed", path);
         return false;
     }
     read_super(fs);
     read_eb_usage(fs);
     read_ino_map(fs);
 
-    fs.summary_cache = ffsp_summary_cache_init(fs);
+    fs.summary_cache = summary_cache_init(fs);
 
-    fs.inode_cache = ffsp_inode_cache_init(fs);
+    fs.inode_cache = inode_cache_init(fs);
 
     size_t ino_bitmask_size = fs.nino / sizeof(uint32_t) + 1;
     fs.ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
     if (!fs.ino_status_map)
     {
-        ffsp_log().critical("malloc(dirty inodes mask) failed");
+        log().critical("malloc(dirty inodes mask) failed");
         goto error;
     }
     memset(fs.ino_status_map, 0, ino_bitmask_size);
@@ -187,12 +187,12 @@ bool ffsp_mount(fs_context& fs, const char* path)
 
     fs.dirty_ino_cnt = 0;
 
-    fs.gcinfo = ffsp_gcinfo_init(fs);
+    fs.gcinfo = gcinfo_init(fs);
 
     fs.buf = (char*)malloc(fs.erasesize);
     if (!fs.buf)
     {
-        ffsp_log().critical("ffsp_mount(): malloc(erasesize) failed");
+        log().critical("ffsp_mount(): malloc(erasesize) failed");
         goto error;
     }
     return true;
@@ -209,18 +209,18 @@ error:
     return false;
 }
 
-void ffsp_unmount(fs_context& fs)
+void unmount(fs_context& fs)
 {
-    ffsp_release_inodes(fs);
-    ffsp_close_eraseblks(fs);
-    ffsp_write_meta_data(fs);
+    release_inodes(fs);
+    close_eraseblks(fs);
+    write_meta_data(fs);
 
     if ((fs.fd != -1) && (close(fs.fd) == -1))
-        ffsp_log().error("ffsp_unmount(): close(fd) failed");
+        log().error("ffsp_unmount(): close(fd) failed");
 
-    ffsp_inode_cache_uninit(fs.inode_cache);
-    ffsp_summary_cache_uninit(fs.summary_cache);
-    ffsp_gcinfo_uninit(fs.gcinfo);
+    inode_cache_uninit(fs.inode_cache);
+    summary_cache_uninit(fs.summary_cache);
+    gcinfo_uninit(fs.gcinfo);
     free(fs.eb_usage);
     free(fs.ino_map);
     free(fs.ino_status_map);

@@ -32,31 +32,31 @@
 namespace ffsp
 {
 
-inode* ffsp_allocate_inode(const fs_context& fs);
-void ffsp_delete_inode(inode* ino);
-void* ffsp_inode_data(inode* ino);
-unsigned int ffsp_get_inode_size(const fs_context& fs, const inode* ino);
-bool ffsp_is_inode_valid(const fs_context& fs, unsigned int cl_id, const inode* ino);
+inode* allocate_inode(const fs_context& fs);
+void delete_inode(inode* ino);
+void* inode_data(inode* ino);
+unsigned int get_inode_size(const fs_context& fs, const inode* ino);
+bool is_inode_valid(const fs_context& fs, unsigned int cl_id, const inode* ino);
 
-int ffsp_lookup_no(fs_context& fs, inode** ino, uint32_t ino_no);
-int ffsp_lookup(fs_context& fs, inode** ino, const char* path);
-int ffsp_flush_inodes(fs_context& fs, bool force);
-int ffsp_release_inodes(fs_context& fs);
+int lookup_no(fs_context& fs, inode** ino, uint32_t ino_no);
+int lookup(fs_context& fs, inode** ino, const char* path);
+int flush_inodes(fs_context& fs, bool force);
+int release_inodes(fs_context& fs);
 
-int ffsp_create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, dev_t device);
-int ffsp_symlink(fs_context& fs, const char* oldpath, const char* newpath, uid_t uid, gid_t gid);
-int ffsp_readlink(fs_context& fs, const char* path, char* buf, size_t len);
-int ffsp_link(fs_context& fs, const char* oldpath, const char* newpath);
-int ffsp_unlink(fs_context& fs, const char* path);
-int ffsp_rmdir(fs_context& fs, const char* path);
-int ffsp_rename(fs_context& fs, const char* oldpath, const char* newpath);
+int create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, dev_t device);
+int symlink(fs_context& fs, const char* oldpath, const char* newpath, uid_t uid, gid_t gid);
+int readlink(fs_context& fs, const char* path, char* buf, size_t len);
+int link(fs_context& fs, const char* oldpath, const char* newpath);
+int unlink(fs_context& fs, const char* path);
+int rmdir(fs_context& fs, const char* path);
+int rename(fs_context& fs, const char* oldpath, const char* newpath);
 
-void ffsp_mark_dirty(fs_context& fs, inode* ino);
-void ffsp_reset_dirty(fs_context& fs, inode* ino);
+void mark_dirty(fs_context& fs, inode* ino);
+void reset_dirty(fs_context& fs, inode* ino);
 
-int ffsp_cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dentry_cnt);
+int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dentry_cnt);
 
-void ffsp_invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, int ind_type);
+void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, int ind_type);
 
 } // namespace ffsp
 

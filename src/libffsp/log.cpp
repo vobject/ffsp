@@ -27,7 +27,7 @@ namespace ffsp
 
 static std::string s_logname;
 
-void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level)
+void log_init(const std::string& logname, spdlog::level::level_enum level)
 {
     s_logname = logname;
 
@@ -48,12 +48,12 @@ void ffsp_log_init(const std::string& logname, spdlog::level::level_enum level)
     }
 }
 
-void ffsp_log_deinit()
+void log_deinit()
 {
     spdlog::drop(s_logname);
 }
 
-spdlog::logger& ffsp_log()
+spdlog::logger& log()
 {
     auto logger = spdlog::get(s_logname);
     if (logger)

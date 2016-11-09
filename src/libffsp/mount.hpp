@@ -26,8 +26,8 @@
 namespace ffsp
 {
 
-bool ffsp_mount(fs_context& fs, const char* path);
-void ffsp_unmount(fs_context& fs);
+bool mount(fs_context& fs, const char* path);
+void unmount(fs_context& fs);
 
 } // namespace ffsp
 

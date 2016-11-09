@@ -26,7 +26,7 @@
 namespace ffsp
 {
 
-struct ffsp_mkfs_options
+struct mkfs_options
 {
     uint32_t clustersize;
     uint32_t erasesize;
@@ -36,9 +36,9 @@ struct ffsp_mkfs_options
     uint32_t nerasewrites;
 };
 
-bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options);
+bool mkfs(const char* path, const mkfs_options& options);
 
-bool ffsp_fmkfs(int fd, const ffsp_mkfs_options& options);
+bool fmkfs(int fd, const mkfs_options& options);
 
 } // namespace ffsp
 

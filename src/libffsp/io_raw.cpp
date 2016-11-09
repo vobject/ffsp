@@ -84,18 +84,18 @@ static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset)
 #endif
 }
 
-bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read)
+bool read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read)
 {
     if (count > std::numeric_limits<ssize_t>::max())
     {
-        ffsp_log().error("ffsp_read_raw(): count > ssize_t max");
+        log().error("ffsp_read_raw(): count > ssize_t max");
         errno = -EOVERFLOW; // implementation defined
         return false;
     }
 
     if (offset > std::numeric_limits<off_t>::max())
     {
-        ffsp_log().error("ffsp_read_raw(): offset > off_t max");
+        log().error("ffsp_read_raw(): offset > off_t max");
         errno = -EOVERFLOW;
         return false;
     }
@@ -103,7 +103,7 @@ bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t&
     ssize_t rc = do_pread(fd, buf, count, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        ffsp_log().error("ffsp_read_raw(): pread() failed with errno={}", errno);
+        log().error("ffsp_read_raw(): pread() failed with errno={}", errno);
         return false;
     }
 
@@ -115,18 +115,18 @@ bool ffsp_read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t&
     return true;
 }
 
-bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written)
+bool write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written)
 {
     if (count > std::numeric_limits<ssize_t>::max())
     {
-        ffsp_log().error("ffsp_write_raw(): count > ssize_t max");
+        log().error("ffsp_write_raw(): count > ssize_t max");
         errno = -EOVERFLOW; // implementation defined
         return false;
     }
 
     if (offset > std::numeric_limits<off_t>::max())
     {
-        ffsp_log().error("ffsp_write_raw(): offset > off_t max");
+        log().error("ffsp_write_raw(): offset > off_t max");
         errno = -EOVERFLOW;
         return false;
     }
@@ -134,7 +134,7 @@ bool ffsp_write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, ui
     ssize_t rc = do_pwrite(fd, buf, count, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        ffsp_log().error("ffsp_write_raw(): pwrite() failed with errno={}", errno);
+        log().error("ffsp_write_raw(): pwrite() failed with errno={}", errno);
         return false;
     }
 

@@ -66,7 +66,7 @@ static uint32_t get_inode_cnt(uint32_t eb_size, uint32_t cl_size, uint32_t eb_cn
     //  to be used as a valid inode_no.
 }
 
-static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
+static bool create_super_eb(int fd, const mkfs_options& options)
 {
     std::vector<char> eb_buf;
     eb_buf.reserve(options.erasesize);
@@ -140,7 +140,7 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
 
     // Write the first erase block into the file.
     uint64_t written_bytes = 0;
-    if (!ffsp_write_raw(fd, eb_buf.data(), options.erasesize, 0, written_bytes))
+    if (!write_raw(fd, eb_buf.data(), options.erasesize, 0, written_bytes))
     {
         perror("create_super_eb");
         return false;
@@ -148,7 +148,7 @@ static bool create_super_eb(int fd, const ffsp_mkfs_options& options)
     return true;
 }
 
-static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
+static bool create_inode_eb(int fd, const mkfs_options& options)
 {
     std::vector<char> eb_buf;
     eb_buf.reserve(options.erasesize);
@@ -168,7 +168,7 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     root.i_gid = put_be32(getgid());
     root.i_mode = put_be32(S_IFDIR | S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #endif
-    ffsp_update_time(root.i_ctime);
+    update_time(root.i_ctime);
     memcpy(eb_buf.data(), &root, sizeof(root));
     eb_buf_written = sizeof(root);
 
@@ -188,7 +188,7 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     eb_buf_written += sizeof(dotdot);
 
     uint64_t written_bytes = 0;
-    if (!ffsp_write_raw(fd, eb_buf.data(), eb_buf_written, options.erasesize, written_bytes))
+    if (!write_raw(fd, eb_buf.data(), eb_buf_written, options.erasesize, written_bytes))
     {
         perror("create_inode_eb");
         return false;
@@ -196,7 +196,7 @@ static bool create_inode_eb(int fd, const ffsp_mkfs_options& options)
     return true;
 }
 
-bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options)
+bool mkfs(const char* path, const mkfs_options& options)
 {
 #ifdef _WIN32
     int fd = open(path, O_WRONLY);
@@ -209,7 +209,7 @@ bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options)
         return false;
     }
 
-    if (!ffsp_fmkfs(fd, options))
+    if (!fmkfs(fd, options))
     {
         return false;
     }
@@ -222,7 +222,7 @@ bool ffsp_mkfs(const char* path, const ffsp_mkfs_options& options)
     return true;
 }
 
-bool ffsp_fmkfs(int fd, const ffsp_mkfs_options& options)
+bool fmkfs(int fd, const mkfs_options& options)
 {
     // Setup the first eraseblock with super, usage and inodemap
     if (!create_super_eb(fd, options))
