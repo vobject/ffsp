@@ -63,12 +63,13 @@ bool make_fs(const char* file_path, const mkfs_options& opts)
     return io_ctx && mkfs(*io_ctx, opts) && (ffsp::io_context_uninit(io_ctx), true);
 }
 
-bool mount_fs(fs_context& fs, const char* file_path)
+bool mount_fs(fs_context** fs, const char* file_path)
 {
-    return mount(fs, file_path);
+    *fs = mount(file_path);
+    return *fs;
 }
 
-bool unmount_fs(fs_context& fs)
+bool unmount_fs(fs_context* fs)
 {
     unmount(fs);
     return true;
@@ -120,12 +121,12 @@ bool default_make_fs()
     return make_fs(default_fs_path, default_mkfs_options);
 }
 
-bool default_mount_fs(fs_context& fs)
+bool default_mount_fs(fs_context** fs)
 {
     return mount_fs(fs, default_fs_path);
 }
 
-bool default_unmount_fs(fs_context& fs)
+bool default_unmount_fs(fs_context* fs)
 {
     return unmount_fs(fs);
 }

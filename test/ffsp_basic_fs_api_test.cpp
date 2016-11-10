@@ -19,7 +19,7 @@ protected:
 
         ASSERT_TRUE(ffsp::test::default_create_file());
         ASSERT_TRUE(ffsp::test::default_make_fs());
-        ASSERT_TRUE(ffsp::test::default_mount_fs(fs_));
+        ASSERT_TRUE(ffsp::test::default_mount_fs(&fs_));
     }
 
     void TearDown() override
@@ -30,7 +30,7 @@ protected:
         ffsp::log_deinit();
     }
 
-    ffsp::fs_context fs_;
+    ffsp::fs_context* fs_;
 };
 
 //TEST_F(BasicFileSystemOperationsTest, SmallFile)

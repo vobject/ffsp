@@ -34,8 +34,8 @@ bool remove_file(const char* file_path);
 
 bool make_fs(const char* file_path, const mkfs_options& opts);
 
-bool mount_fs(fs_context& fs, const char* file_path);
-bool unmount_fs(fs_context& fs);
+bool mount_fs(fs_context** fs, const char* file_path);
+bool unmount_fs(fs_context* fs);
 
 bool mkfs_ffsp(const char* program,
                uint32_t clustersize, uint32_t erasesize, uint32_t ninoopen,
@@ -80,8 +80,8 @@ bool default_remove_file();
 
 bool default_make_fs();
 
-bool default_mount_fs(fs_context& fs);
-bool default_unmount_fs(fs_context& fs);
+bool default_mount_fs(fs_context** fs);
+bool default_unmount_fs(fs_context* fs);
 
 bool default_mkfs_ffsp();
 bool default_mount_ffsp();

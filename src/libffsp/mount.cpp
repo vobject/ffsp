@@ -144,77 +144,77 @@ static void read_cl_occupancy(fs_context& fs)
     }
 }
 
-bool mount(fs_context& fs, const char* path)
+fs_context* mount(const char* path)
 {
-    fs.io_ctx = io_context_init(path);
-    if (!fs.io_ctx)
+    auto* fs = new fs_context;
+
+    fs->io_ctx = io_context_init(path);
+    if (!fs->io_ctx)
     {
         log().error("ffsp::mount(): init I/O context failed (path={})", path);
-        return false;
+        return nullptr;
     }
 
-    read_super(fs);
-    read_eb_usage(fs);
-    read_ino_map(fs);
+    read_super(*fs);
+    read_eb_usage(*fs);
+    read_ino_map(*fs);
 
-    fs.summary_cache = summary_cache_init(fs);
+    fs->summary_cache = summary_cache_init(*fs);
 
-    fs.inode_cache = inode_cache_init(fs);
+    fs->inode_cache = inode_cache_init(*fs);
 
-    size_t ino_bitmask_size = fs.nino / sizeof(uint32_t) + 1;
-    fs.ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
-    if (!fs.ino_status_map)
+    size_t ino_bitmask_size = fs->nino / sizeof(uint32_t) + 1;
+    fs->ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
+    if (!fs->ino_status_map)
     {
         log().critical("malloc(dirty inodes mask) failed");
         goto error;
     }
-    memset(fs.ino_status_map, 0, ino_bitmask_size);
+    memset(fs->ino_status_map, 0, ino_bitmask_size);
 
-    read_cl_occupancy(fs);
+    read_cl_occupancy(*fs);
 
-    fs.dirty_ino_cnt = 0;
+    fs->dirty_ino_cnt = 0;
 
-    fs.gcinfo = gcinfo_init(fs);
+    fs->gcinfo = gcinfo_init(*fs);
 
-    fs.buf = (char*)malloc(fs.erasesize);
-    if (!fs.buf)
+    fs->buf = (char*)malloc(fs->erasesize);
+    if (!fs->buf)
     {
         log().critical("ffsp::mount(): malloc(erasesize) failed");
         goto error;
     }
-    return true;
+    return fs;
 
 error:
     /* FIXME: will crash if one of the pointer was not yet allocated! */
 
-    free(fs.eb_usage);
-    free(fs.ino_map);
-    free(fs.ino_status_map);
-    free(fs.cl_occupancy);
-    free(fs.gcinfo);
-    free(fs.buf);
-    return false;
+    free(fs->eb_usage);
+    free(fs->ino_map);
+    free(fs->ino_status_map);
+    free(fs->cl_occupancy);
+    free(fs->gcinfo);
+    free(fs->buf);
+    return nullptr;
 }
 
-void unmount(fs_context& fs)
+void unmount(fs_context* fs)
 {
-    release_inodes(fs);
-    close_eraseblks(fs);
-    write_meta_data(fs);
+    release_inodes(*fs);
+    close_eraseblks(*fs);
+    write_meta_data(*fs);
 
-//    if ((fs.fd != -1) && (close(fs.fd) == -1))
-//        log().error("ffsp::unmount(): close(fd) failed");
+    inode_cache_uninit(fs->inode_cache);
+    summary_cache_uninit(fs->summary_cache);
+    gcinfo_uninit(fs->gcinfo);
+    io_context_uninit(fs->io_ctx);
 
-    inode_cache_uninit(fs.inode_cache);
-    summary_cache_uninit(fs.summary_cache);
-    gcinfo_uninit(fs.gcinfo);
-    io_context_uninit(fs.io_ctx);
-
-    free(fs.eb_usage);
-    free(fs.ino_map);
-    free(fs.ino_status_map);
-    free(fs.cl_occupancy);
-    free(fs.buf);
+    free(fs->eb_usage);
+    free(fs->ino_map);
+    free(fs->ino_status_map);
+    free(fs->cl_occupancy);
+    free(fs->buf);
+    delete fs;
 }
 
 } // namespace ffsp

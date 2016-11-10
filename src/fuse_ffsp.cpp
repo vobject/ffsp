@@ -79,9 +79,8 @@ void* init(fuse_conn_info* conn)
 {
     log_init("ffsp_api", spdlog::level::debug);
 
-    auto* fs = new fs_context;
-
-    if (!ffsp::mount(*fs, params.device.c_str()))
+    auto* fs = ffsp::mount(params.device.c_str());
+    if (!fs)
     {
         log().error("ffsp_mount() failed. exiting...");
         exit(EXIT_FAILURE);
@@ -114,9 +113,7 @@ void* init(fuse_conn_info* conn)
 
 void destroy(void* user)
 {
-    fs_context* fs = static_cast<fs_context*>(user);
-    ffsp::unmount(*fs);
-    delete fs;
+    ffsp::unmount(static_cast<fs_context*>(user));
 
     log_deinit();
 }
