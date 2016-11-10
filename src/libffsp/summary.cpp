@@ -180,13 +180,13 @@ bool summary_required(const fs_context& fs, uint32_t eb_id)
            (eb_type == FFSP_EB_FILE_CLIN);
 }
 
-bool summary_write(const fs_context& fs, summary* summary, uint32_t eb_id)
+bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
 
     uint64_t written_bytes = 0;
-    if (!write_raw(fs.fd, summary->data(), fs.clustersize, summary_off, written_bytes))
+    if (!write_raw(*fs.io_ctx, summary->data(), fs.clustersize, summary_off, written_bytes))
     {
         log().error("ffsp_summary_write(): failed to write erase block summary");
         return false;

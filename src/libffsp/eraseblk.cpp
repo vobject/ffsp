@@ -322,7 +322,7 @@ int write_meta_data(fs_context& fs)
     uint64_t offset = fs.clustersize;
 
     uint64_t written_bytes = 0;
-    if (!write_raw(fs.fd, fs.buf, meta_data_size, offset, written_bytes))
+    if (!write_raw(*fs.io_ctx, fs.buf, meta_data_size, offset, written_bytes))
     {
         log().error("writing meta data to first erase block failed");
         return -errno;

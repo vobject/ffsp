@@ -18,8 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "libffsp/mkfs.hpp"
 #include "libffsp/ffsp.hpp"
+#include "libffsp/mkfs.hpp"
+#include "libffsp/io_raw.hpp"
 #include "libffsp/log.hpp"
 
 #include "spdlog/fmt/ostr.h"
@@ -150,17 +151,19 @@ int main(int argc, char* argv[])
 
     ffsp::log().info("Setup file system: {})", args);
 
-    int ret = EXIT_SUCCESS;
-    if (!ffsp::mkfs(args.device, {args.clustersize,
-                                 args.erasesize,
-                                 args.ninoopen,
-                                 args.neraseopen,
-                                 args.nerasereserve,
-                                 args.nerasewrites}))
+    auto ret = EXIT_SUCCESS;
+    auto* io_ctx = ffsp::io_context_init(args.device);
+    if (!io_ctx || !ffsp::mkfs(*io_ctx, {args.clustersize,
+                                         args.erasesize,
+                                         args.ninoopen,
+                                         args.neraseopen,
+                                         args.nerasereserve,
+                                         args.nerasewrites}))
     {
-        fprintf(stderr, "%s: failed to setup file system", argv[0]);
+        perror("failed to setup file system");
         ret = EXIT_FAILURE;
     }
+    ffsp::io_context_uninit(io_ctx);
     ffsp::log_deinit();
     return ret;
 }

@@ -133,7 +133,7 @@ static int write_ind(fs_context& fs, write_context& ctx, const char* buf, be32_t
     uint64_t cl_off = cl_id * ctx.new_ind_size;
 
     uint64_t written_bytes = 0;
-    if (!write_raw(fs.fd, buf, ctx.new_ind_size, cl_off, written_bytes))
+    if (!write_raw(*fs.io_ctx, buf, ctx.new_ind_size, cl_off, written_bytes))
         return -errno;
     debug_update(fs, debug_metric::write_raw, written_bytes);
 
@@ -189,7 +189,7 @@ static int read_ind(fs_context& fs, inode* ino, char* buf,
             uint64_t cl_off = get_be32(ind_ptr[ind_index]) * ind_size + ind_offset;
 
             uint64_t read_bytes = 0;
-            if (read_raw(fs.fd, buf, ind_left, cl_off, read_bytes))
+            if (read_raw(*fs.io_ctx, buf, ind_left, cl_off, read_bytes))
                 debug_update(fs, debug_metric::read_raw, read_bytes);
         }
 
@@ -445,7 +445,7 @@ static int write_clin(fs_context& fs, write_context& ctx)
             cl_off = get_be32(ctx.ind_ptr[ind_index]) * ctx.new_ind_size;
 
             uint64_t read_bytes = 0;
-            if (!read_raw(fs.fd, fs.buf, ctx.new_ind_size, cl_off, read_bytes))
+            if (!read_raw(*fs.io_ctx, fs.buf, ctx.new_ind_size, cl_off, read_bytes))
                 return -errno;
             debug_update(fs, debug_metric::read_raw, read_bytes);
             overwrite = true;
@@ -521,7 +521,7 @@ static int write_ebin(fs_context& fs, write_context& ctx)
                      * cluster to initiate a cluster aligned
                      * write later. */
                     uint64_t read_bytes = 0;
-                    if (!read_raw(fs.fd, fs.buf, fs.clustersize, offset, read_bytes))
+                    if (!read_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset, read_bytes))
                         return -errno;
                     debug_update(fs, debug_metric::read_raw, read_bytes);
                 }
@@ -532,7 +532,7 @@ static int write_ebin(fs_context& fs, write_context& ctx)
                 memcpy(fs.buf + cl_offset, ctx.buf, cl_left);
 
                 uint64_t written_bytes = 0;
-                if (!write_raw(fs.fd, fs.buf, fs.clustersize, offset, written_bytes))
+                if (!write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset, written_bytes))
                     return -errno;
                 debug_update(fs, debug_metric::write_raw, written_bytes);
 

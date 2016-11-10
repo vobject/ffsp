@@ -86,7 +86,7 @@ int read_inode_group(fs_context& fs, unsigned int cl_id, inode** inodes)
     uint64_t cl_offset = cl_id * fs.clustersize;
 
     uint64_t read_bytes = 0;
-    if (!read_raw(fs.fd, fs.buf, fs.clustersize, cl_offset, read_bytes))
+    if (!read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_offset, read_bytes))
         return -errno;
     debug_update(fs, debug_metric::read_raw, read_bytes);
 
@@ -150,7 +150,7 @@ int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
 
         group_inodes(fs, group, group_elem_cnt, fs.buf);
         uint64_t written_bytes = 0;
-        if (!write_raw(fs.fd, fs.buf, fs.clustersize, offset, written_bytes))
+        if (!write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset, written_bytes))
         {
             free(group);
             return -errno;

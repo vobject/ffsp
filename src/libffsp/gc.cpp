@@ -315,13 +315,13 @@ static int move_inodes(fs_context& fs, unsigned int src_eb_id,
             continue;
 
         uint64_t read_bytes = 0;
-        read_raw(fs.fd, fs.buf, fs.clustersize, cl_off, read_bytes);
+        read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off, read_bytes);
         debug_update(fs, debug_metric::read_raw, read_bytes);
 
         eb_off = dest_eb_id * fs.erasesize;
         cl_off = eb_off + (dest_moved * fs.clustersize);
         uint64_t written_bytes = 0;
-        write_raw(fs.fd, fs.buf, fs.clustersize, cl_off, written_bytes);
+        write_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off, written_bytes);
         debug_update(fs, debug_metric::write_raw, written_bytes);
         debug_update(fs, debug_metric::gc_write, fs.clustersize);
 

@@ -36,7 +36,7 @@ struct inode_cache
 
 inode_cache* inode_cache_init(const fs_context& fs)
 {
-    return new inode_cache(fs.nino);
+    return new inode_cache{fs.nino};
 }
 
 void inode_cache_uninit(inode_cache* cache)

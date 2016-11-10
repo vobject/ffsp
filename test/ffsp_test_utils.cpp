@@ -23,6 +23,7 @@
 #include "libffsp/ffsp.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
+#include "libffsp/io_raw.hpp"
 
 #include "fuse_ffsp.hpp"
 
@@ -58,7 +59,8 @@ bool remove_file(const char* file_path)
 
 bool make_fs(const char* file_path, const mkfs_options& opts)
 {
-    return mkfs(file_path, opts);
+    auto* io_ctx = ffsp::io_context_init(file_path);
+    return io_ctx && mkfs(*io_ctx, opts) && (ffsp::io_context_uninit(io_ctx), true);
 }
 
 bool mount_fs(fs_context& fs, const char* file_path)

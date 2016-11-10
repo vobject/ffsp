@@ -21,9 +21,12 @@
 #include "io_raw.hpp"
 #include "log.hpp"
 
-#include <cerrno>
 #include <limits>
+#include <new>
 
+#include <cerrno>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #ifdef _WIN32
@@ -38,6 +41,125 @@ typedef SSIZE_T ssize_t;
 
 namespace ffsp
 {
+
+static ssize_t do_pread(int fd, void* buf, size_t count, off_t offset);
+static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset);
+
+struct io_context
+{
+    virtual ~io_context() {}
+
+    virtual off_t size() const = 0;
+    virtual ssize_t read(void* buf, size_t count, off_t offset) = 0;
+    virtual ssize_t write(const void* buf, size_t count, off_t offset) = 0;
+};
+
+struct file_io_context : io_context
+{
+    explicit file_io_context(int fd)
+        :fd_{fd}
+    {
+
+    }
+
+    virtual ~file_io_context()
+    {
+        if (::close(fd_) == -1)
+            log().error("ffsp::io_context_uninit(): close(fd) failed");
+    }
+
+    off_t size() const override
+    {
+        off_t size = ::lseek(fd_, 0, SEEK_END);
+        if (size == -1)
+            log().error("ffsp::io_context: lseek() failed");
+        return size;
+    }
+
+    ssize_t read(void* buf, size_t count, off_t offset) override
+    {
+        return do_pread(fd_, buf, count, offset);
+    }
+
+    ssize_t write(const void* buf, size_t count, off_t offset) override
+    {
+        return do_pwrite(fd_, buf, count, offset);
+    }
+
+    const int fd_;
+};
+
+struct buffer_io_context : io_context
+{
+    explicit buffer_io_context(char* buf, size_t size)
+        : buf_{buf}
+        , size_{size}
+    {
+
+    }
+
+    virtual ~buffer_io_context()
+    {
+        delete [] buf_;
+    }
+
+    off_t size() const override
+    {
+        return static_cast<off_t>(size_);
+    }
+
+    ssize_t read(void* buf, size_t count, off_t offset) override
+    {
+        memcpy(buf, buf_ + offset, count);
+        return static_cast<ssize_t>(count);
+    }
+
+    ssize_t write(const void* buf, size_t count, off_t offset) override
+    {
+        memcpy(buf_ + offset, buf, count);
+        return static_cast<ssize_t>(count);
+    }
+
+    char* buf_;
+    const size_t size_;
+};
+
+io_context* io_context_init(const char* path)
+{
+    /*
+     * O_DIRECT could also be used if all pwrite() calls get a
+     * page-aligned write pointer. But to get that calls to malloc had
+     * to be replaced by posix_memalign with 4k alignment.
+     */
+#ifdef _WIN32
+    int fd = ::open(path, O_RDWR);
+#else
+    int fd = ::open(path, O_RDWR | O_SYNC);
+#endif
+    if (fd == -1)
+        return nullptr;
+
+    return new file_io_context{fd};
+}
+
+io_context* io_context_init(size_t size)
+{
+    auto* buf = new(std::nothrow) char[size];
+    if (!buf)
+        return nullptr;
+
+    return new buffer_io_context{buf, size};
+}
+
+void io_context_uninit(io_context* ctx)
+{
+    delete ctx;
+}
+
+off_t io_context_size(const io_context& ctx)
+{
+    return ctx.size();
+}
 
 static ssize_t do_pread(int fd, void* buf, size_t count, off_t offset)
 {
@@ -84,7 +206,7 @@ static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset)
 #endif
 }
 
-bool read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read)
+bool read_raw(io_context& ctx, void* buf, uint64_t count, uint64_t offset, uint64_t& read)
 {
     if (count > std::numeric_limits<ssize_t>::max())
     {
@@ -100,7 +222,7 @@ bool read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read
         return false;
     }
 
-    ssize_t rc = do_pread(fd, buf, count, static_cast<off_t>(offset));
+    ssize_t rc = ctx.read(buf, count, static_cast<off_t>(offset));
     if (rc == -1)
     {
         log().error("ffsp_read_raw(): pread() failed with errno={}", errno);
@@ -115,7 +237,7 @@ bool read_raw(int fd, void* buf, uint64_t count, uint64_t offset, uint64_t& read
     return true;
 }
 
-bool write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_t& written)
+bool write_raw(io_context& ctx, const void* buf, uint64_t count, uint64_t offset, uint64_t& written)
 {
     if (count > std::numeric_limits<ssize_t>::max())
     {
@@ -131,7 +253,7 @@ bool write_raw(int fd, const void* buf, uint64_t count, uint64_t offset, uint64_
         return false;
     }
 
-    ssize_t rc = do_pwrite(fd, buf, count, static_cast<off_t>(offset));
+    ssize_t rc = ctx.write(buf, count, static_cast<off_t>(offset));
     if (rc == -1)
     {
         log().error("ffsp_write_raw(): pwrite() failed with errno={}", errno);

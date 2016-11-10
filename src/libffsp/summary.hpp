@@ -37,7 +37,7 @@ summary* summary_get(summary_cache& cache, eraseblock_type eb_type);
 void summary_close(summary_cache& cache, summary* summary);
 
 bool summary_required(const fs_context& fs, uint32_t eb_id);
-bool summary_write(const fs_context& fs, summary* summary, uint32_t eb_id);
+bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id);
 void summary_add_ref(summary* summary, uint16_t cl_idx, uint32_t ino_no);
 
 

@@ -26,6 +26,8 @@
 namespace ffsp
 {
 
+struct io_context;
+
 struct mkfs_options
 {
     uint32_t clustersize;
@@ -36,9 +38,7 @@ struct mkfs_options
     uint32_t nerasewrites;
 };
 
-bool mkfs(const char* path, const mkfs_options& options);
-
-bool fmkfs(int fd, const mkfs_options& options);
+bool mkfs(io_context& ctx, const mkfs_options& options);
 
 } // namespace ffsp
 

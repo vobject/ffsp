@@ -141,13 +141,14 @@ static_assert(sizeof(dentry) == 256, "dentry: unexpected size");
 
 // In-Memory-only structures
 
+struct io_context;
 struct inode_cache;
 struct summary_cache;
 struct gcinfo;
 
 struct fs_context
 {
-    int fd;
+    io_context* io_ctx;
 
     uint32_t fsid;          // file system ID
     uint32_t flags;         // mount flags - TODO: What are these for? -> noatime(?)

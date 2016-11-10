@@ -32,7 +32,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -49,7 +48,7 @@ static void read_super(fs_context& fs)
 {
     superblock sb;
     uint64_t read_bytes = 0;
-    if (!read_raw(fs.fd, &sb, sizeof(superblock), 0, read_bytes))
+    if (!read_raw(*fs.io_ctx, &sb, sizeof(superblock), 0, read_bytes))
     {
         log().critical("reading super block failed");
         abort();
@@ -85,7 +84,7 @@ static void read_eb_usage(fs_context& fs)
 
     uint64_t offset = fs.clustersize;
     uint64_t read_bytes = 0;
-    if (!read_raw(fs.fd, fs.eb_usage, size, offset, read_bytes))
+    if (!read_raw(*fs.io_ctx, fs.eb_usage, size, offset, read_bytes))
     {
         log().critical("reading erase block info failed");
         free(fs.eb_usage);
@@ -108,7 +107,7 @@ static void read_ino_map(fs_context& fs)
 
     uint64_t offset = fs.erasesize - size; // read the invalid inode, too
     uint64_t read_bytes = 0;
-    if (!read_raw(fs.fd, fs.ino_map, size, offset, read_bytes))
+    if (!read_raw(*fs.io_ctx, fs.ino_map, size, offset, read_bytes))
     {
         log().critical("reading cluster ids failed");
         free(fs.ino_map);
@@ -119,18 +118,14 @@ static void read_ino_map(fs_context& fs)
 
 static void read_cl_occupancy(fs_context& fs)
 {
-    off_t size;
-    int cl_occ_size;
-    unsigned int cl_id;
-
-    size = lseek(fs.fd, 0, SEEK_END);
+    off_t size = io_context_size(*fs.io_ctx);
     if (size == -1)
     {
-        log().critical("lseek() on device failed");
+        log().critical("retrieving file size from device failed");
         exit(EXIT_FAILURE);
     }
 
-    cl_occ_size = (size / fs.clustersize) * sizeof(int);
+    int cl_occ_size = (size / fs.clustersize) * sizeof(int);
     fs.cl_occupancy = (int*)malloc(cl_occ_size);
     if (!fs.cl_occupancy)
     {
@@ -143,7 +138,7 @@ static void read_cl_occupancy(fs_context& fs)
      * are valid in each cluster. */
     for (unsigned int i = 1; i < fs.nino; i++)
     {
-        cl_id = get_be32(fs.ino_map[i]);
+        unsigned int cl_id = get_be32(fs.ino_map[i]);
         if (cl_id)
             fs.cl_occupancy[cl_id]++;
     }
@@ -151,21 +146,13 @@ static void read_cl_occupancy(fs_context& fs)
 
 bool mount(fs_context& fs, const char* path)
 {
-    /*
-     * O_DIRECT could also be used if all pwrite() calls get a
-     * page-aligned write pointer. But to get that calls to malloc had
-     * to be replaced by posix_memalign with 4k alignment.
-     */
-#ifdef _WIN32
-    fs.fd = open(path, O_RDWR);
-#else
-    fs.fd = open(path, O_RDWR | O_SYNC);
-#endif
-    if (fs.fd == -1)
+    fs.io_ctx = io_context_init(path);
+    if (!fs.io_ctx)
     {
-        log().error("ffsp_mount(): open(path={}) failed", path);
+        log().error("ffsp::mount(): init I/O context failed (path={})", path);
         return false;
     }
+
     read_super(fs);
     read_eb_usage(fs);
     read_ino_map(fs);
@@ -192,7 +179,7 @@ bool mount(fs_context& fs, const char* path)
     fs.buf = (char*)malloc(fs.erasesize);
     if (!fs.buf)
     {
-        log().critical("ffsp_mount(): malloc(erasesize) failed");
+        log().critical("ffsp::mount(): malloc(erasesize) failed");
         goto error;
     }
     return true;
@@ -215,12 +202,14 @@ void unmount(fs_context& fs)
     close_eraseblks(fs);
     write_meta_data(fs);
 
-    if ((fs.fd != -1) && (close(fs.fd) == -1))
-        log().error("ffsp_unmount(): close(fd) failed");
+//    if ((fs.fd != -1) && (close(fs.fd) == -1))
+//        log().error("ffsp::unmount(): close(fd) failed");
 
     inode_cache_uninit(fs.inode_cache);
     summary_cache_uninit(fs.summary_cache);
     gcinfo_uninit(fs.gcinfo);
+    io_context_uninit(fs.io_ctx);
+
     free(fs.eb_usage);
     free(fs.ino_map);
     free(fs.ino_status_map);

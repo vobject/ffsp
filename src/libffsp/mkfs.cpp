@@ -41,9 +41,9 @@
 namespace ffsp
 {
 
-static uint32_t get_eraseblk_cnt(int fd, uint32_t eb_size)
+static uint32_t get_eraseblk_cnt(io_context& ctx, uint32_t eb_size)
 {
-    off_t size = lseek(fd, 0, SEEK_END);
+    off_t size = io_context_size(ctx);
     if (size == -1)
     {
         perror("lseek() on file system failed\n");
@@ -66,14 +66,14 @@ static uint32_t get_inode_cnt(uint32_t eb_size, uint32_t cl_size, uint32_t eb_cn
     //  to be used as a valid inode_no.
 }
 
-static bool create_super_eb(int fd, const mkfs_options& options)
+static bool create_super_eb(io_context& ctx, const mkfs_options& options)
 {
     std::vector<char> eb_buf;
     eb_buf.reserve(options.erasesize);
     size_t eb_buf_written = 0;
 
     const uint16_t max_writeops = options.erasesize / options.clustersize;
-    const uint32_t eb_cnt = get_eraseblk_cnt(fd, options.erasesize);
+    const uint32_t eb_cnt = get_eraseblk_cnt(ctx, options.erasesize);
     const uint32_t ino_cnt = get_inode_cnt(options.erasesize, options.clustersize, eb_cnt);
 
     superblock sb = {};
@@ -126,7 +126,7 @@ static bool create_super_eb(int fd, const mkfs_options& options)
     }
 
     // inode id 0 is defined to be invalid
-    be32_t cl_0 = put_be32(0xffffffff); // Value does not matter
+    be32_t cl_0 = put_be32(FFSP_RESERVED_CL_ID); // Value does not matter
     memcpy(eb_buf.data() + eb_buf_written, &cl_0, sizeof(cl_0));
     eb_buf_written += sizeof(cl_0);
 
@@ -140,7 +140,7 @@ static bool create_super_eb(int fd, const mkfs_options& options)
 
     // Write the first erase block into the file.
     uint64_t written_bytes = 0;
-    if (!write_raw(fd, eb_buf.data(), options.erasesize, 0, written_bytes))
+    if (!write_raw(ctx, eb_buf.data(), options.erasesize, 0, written_bytes))
     {
         perror("create_super_eb");
         return false;
@@ -148,7 +148,7 @@ static bool create_super_eb(int fd, const mkfs_options& options)
     return true;
 }
 
-static bool create_inode_eb(int fd, const mkfs_options& options)
+static bool create_inode_eb(io_context& ctx, const mkfs_options& options)
 {
     std::vector<char> eb_buf;
     eb_buf.reserve(options.erasesize);
@@ -188,7 +188,7 @@ static bool create_inode_eb(int fd, const mkfs_options& options)
     eb_buf_written += sizeof(dotdot);
 
     uint64_t written_bytes = 0;
-    if (!write_raw(fd, eb_buf.data(), eb_buf_written, options.erasesize, written_bytes))
+    if (!write_raw(ctx, eb_buf.data(), eb_buf_written, options.erasesize, written_bytes))
     {
         perror("create_inode_eb");
         return false;
@@ -196,42 +196,16 @@ static bool create_inode_eb(int fd, const mkfs_options& options)
     return true;
 }
 
-bool mkfs(const char* path, const mkfs_options& options)
-{
-#ifdef _WIN32
-    int fd = open(path, O_WRONLY);
-#else
-    int fd = open(path, O_WRONLY | O_SYNC);
-#endif
-    if (fd == -1)
-    {
-        perror("ffsp_mkfs open file");
-        return false;
-    }
-
-    if (!fmkfs(fd, options))
-    {
-        return false;
-    }
-
-    if (close(fd) == -1)
-    {
-        perror("ffsp_mkfs close file");
-        return false;
-    }
-    return true;
-}
-
-bool fmkfs(int fd, const mkfs_options& options)
+bool mkfs(io_context& ctx, const mkfs_options& options)
 {
     // Setup the first eraseblock with super, usage and inodemap
-    if (!create_super_eb(fd, options))
+    if (!create_super_eb(ctx, options))
     {
         return false;
     }
 
     // Create the inode for the root directory
-    if (!create_inode_eb(fd, options))
+    if (!create_inode_eb(ctx, options))
     {
         return false;
     }
