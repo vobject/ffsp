@@ -25,10 +25,13 @@
 #include "libffsp/ffsp.hpp"
 #include "libffsp/inode.hpp"
 #include "libffsp/io.hpp"
+#include "libffsp/io_raw.hpp"
 #include "libffsp/log.hpp"
+#include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
 #include "libffsp/utils.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -54,10 +57,13 @@ namespace ffsp
 namespace fuse
 {
 
-static struct params
+static struct mount_options
 {
-    std::string device;
-} params;
+    std::unique_ptr<std::string> device;
+    std::unique_ptr<mkfs_options> mkfs_opts;
+    size_t memsize{0};
+} mount_opts;
+
 
 // Convert from fuse_file_info->fh to ffsp_inode...
 static inode* get_inode(const fuse_file_info* fi)
@@ -70,19 +76,51 @@ static void set_inode(fuse_file_info* fi, const inode* ino)
     fi->fh = (size_t)ino;
 }
 
-void set_params(const std::string& device)
+void set_options(const std::string& device)
 {
-    params.device = device;
+    mount_opts.device.reset(new std::string{device});
+    mount_opts.mkfs_opts.reset();
+    mount_opts.memsize = 0;
+}
+
+void set_options(const std::string& device, const mkfs_options& options)
+{
+    mount_opts.device.reset(new std::string{device});
+    mount_opts.mkfs_opts.reset(new mkfs_options{options});
+    mount_opts.memsize = 0;
+}
+
+void set_options(size_t memsize, const mkfs_options& options)
+{
+    mount_opts.device.reset();
+    mount_opts.mkfs_opts.reset(new mkfs_options{options});
+    mount_opts.memsize = memsize;
 }
 
 void* init(fuse_conn_info* conn)
 {
     log_init("ffsp_api", spdlog::level::debug);
 
-    auto* fs = ffsp::mount(params.device.c_str());
+    io_context* io_ctx = mount_opts.device
+        ? ffsp::io_context_init(mount_opts.device->c_str())
+        : ffsp::io_context_init(mount_opts.memsize);
+
+    if (!io_ctx)
+    {
+        log().error("ffsp::init(): init I/O context failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (mount_opts.mkfs_opts && !mkfs(*io_ctx, *mount_opts.mkfs_opts))
+    {
+        log().error("fuse::init(): mkfs failed");
+        exit(EXIT_FAILURE);
+    }
+
+    fs_context* fs = ffsp::mount(io_ctx);
     if (!fs)
     {
-        log().error("ffsp_mount() failed. exiting...");
+        log().error("fuse::init(): mounting failed");
         exit(EXIT_FAILURE);
     }
 
@@ -113,7 +151,8 @@ void* init(fuse_conn_info* conn)
 
 void destroy(void* user)
 {
-    ffsp::unmount(static_cast<fs_context*>(user));
+    io_context* io_ctx = ffsp::unmount(static_cast<fs_context*>(user));
+    ffsp::io_context_uninit(io_ctx);
 
     log_deinit();
 }

@@ -121,7 +121,7 @@ static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
             case 'w':
                 args.nerasewrites = static_cast<uint32_t>(std::stoul(optarg));
                 break;
-            case '?':
+            case 'h':
                 show_usage(argv[0]);
                 exit(EXIT_SUCCESS);
             default:

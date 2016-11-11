@@ -19,6 +19,7 @@
  */
 
 #include "mount.hpp"
+#include "mkfs.hpp"
 #include "eraseblk.hpp"
 #include "debug.hpp"
 #include "ffsp.hpp"
@@ -144,16 +145,11 @@ static void read_cl_occupancy(fs_context& fs)
     }
 }
 
-fs_context* mount(const char* path)
+fs_context* mount(io_context* ctx)
 {
     auto* fs = new fs_context;
 
-    fs->io_ctx = io_context_init(path);
-    if (!fs->io_ctx)
-    {
-        log().error("ffsp::mount(): init I/O context failed (path={})", path);
-        return nullptr;
-    }
+    fs->io_ctx = ctx;
 
     read_super(*fs);
     read_eb_usage(*fs);
@@ -198,7 +194,7 @@ error:
     return nullptr;
 }
 
-void unmount(fs_context* fs)
+io_context* unmount(fs_context* fs)
 {
     release_inodes(*fs);
     close_eraseblks(*fs);
@@ -207,14 +203,16 @@ void unmount(fs_context* fs)
     inode_cache_uninit(fs->inode_cache);
     summary_cache_uninit(fs->summary_cache);
     gcinfo_uninit(fs->gcinfo);
-    io_context_uninit(fs->io_ctx);
 
     free(fs->eb_usage);
     free(fs->ino_map);
     free(fs->ino_status_map);
     free(fs->cl_occupancy);
     free(fs->buf);
+
+    io_context* io_ctx = fs->io_ctx;
     delete fs;
+    return io_ctx;
 }
 
 } // namespace ffsp

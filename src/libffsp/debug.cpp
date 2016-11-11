@@ -355,17 +355,17 @@ static uint32_t get_path_id(const char* path, DebugElementType type)
     std::string id_str;
     switch (type)
     {
-    case DebugElementType::EraseblockFile:
-        id_str = path + DEBUG_ERASEBLOCK_DIR.size() + 1;
-        break;
-    case DebugElementType::ClusterFile:
-        id_str = path + DEBUG_CLUSTER_DIR.size() + 1;
-        break;
-    case DebugElementType::InodeFile:
-        id_str = path + DEBUG_INODE_DIR.size() + 1;
-        break;
-    default:
-        break;
+        case DebugElementType::EraseblockFile:
+            id_str = path + DEBUG_ERASEBLOCK_DIR.size() + 1;
+            break;
+        case DebugElementType::ClusterFile:
+            id_str = path + DEBUG_CLUSTER_DIR.size() + 1;
+            break;
+        case DebugElementType::InodeFile:
+            id_str = path + DEBUG_INODE_DIR.size() + 1;
+            break;
+        default:
+            break;
     }
 
     const auto id = std::stoul(id_str);
@@ -386,31 +386,31 @@ bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf)
 
     switch (type)
     {
-    case DebugElementType::Invalid:
-        return false;
+        case DebugElementType::Invalid:
+            return false;
 
-    case DebugElementType::RootDir:
-    case DebugElementType::EraseblockDir:
-    case DebugElementType::ClusterDir:
-    case DebugElementType::InodeDir:
-        get_default_dir_stat(stbuf);
-        return true;
+        case DebugElementType::RootDir:
+        case DebugElementType::EraseblockDir:
+        case DebugElementType::ClusterDir:
+        case DebugElementType::InodeDir:
+            get_default_dir_stat(stbuf);
+            return true;
 
-    case DebugElementType::SuperFile:
-        file_size = get_super_info(fs).size();
-        break;
-    case DebugElementType::MetricsFile:
-        file_size = get_metrics_info(fs).size();
-        break;
-    case DebugElementType::EraseblockFile:
-        file_size = get_eb_info(fs, get_path_id(path, type)).size();
-        break;
-    case DebugElementType::ClusterFile:
-        file_size = get_cl_info(fs, get_path_id(path, type)).size();
-        break;
-    case DebugElementType::InodeFile:
-        file_size = get_ino_info(fs, get_path_id(path, type)).size();
-        break;
+        case DebugElementType::SuperFile:
+            file_size = get_super_info(fs).size();
+            break;
+        case DebugElementType::MetricsFile:
+            file_size = get_metrics_info(fs).size();
+            break;
+        case DebugElementType::EraseblockFile:
+            file_size = get_eb_info(fs, get_path_id(path, type)).size();
+            break;
+        case DebugElementType::ClusterFile:
+            file_size = get_cl_info(fs, get_path_id(path, type)).size();
+            break;
+        case DebugElementType::InodeFile:
+            file_size = get_ino_info(fs, get_path_id(path, type)).size();
+            break;
     }
 
     get_default_file_stat(stbuf);
@@ -423,59 +423,59 @@ bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& d
     dirs.clear();
     switch (get_debug_elem_type(fs, path))
     {
-    case DebugElementType::Invalid:
-    case DebugElementType::SuperFile:
-    case DebugElementType::MetricsFile:
-    case DebugElementType::EraseblockFile:
-    case DebugElementType::ClusterFile:
-    case DebugElementType::InodeFile:
-        return false;
-
-    case DebugElementType::RootDir:
-        dirs.push_back("super");
-        dirs.push_back("metrics");
-        dirs.push_back("eraseblocks.d");
-        dirs.push_back("clusters.d");
-        dirs.push_back("inodes.d");
-        break;
-    case DebugElementType::EraseblockDir:
-        dirs.reserve(fs.neraseblocks);
-        for (uint32_t i = 0; i < fs.neraseblocks; i++)
-            dirs.push_back(std::to_string(i));
-        break;
-    case DebugElementType::ClusterDir:
-        dirs.reserve(fs.neraseblocks * fs.erasesize / fs.clustersize);
-        for (uint32_t i = 0; i < (fs.neraseblocks * fs.erasesize / fs.clustersize); i++)
-            dirs.push_back(std::to_string(i));
-        break;
-    case DebugElementType::InodeDir:
-        {
-            const unsigned int cl_per_eb = fs.erasesize / fs.clustersize;
-            inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
-            for (uint32_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
+        case DebugElementType::Invalid:
+        case DebugElementType::SuperFile:
+        case DebugElementType::MetricsFile:
+        case DebugElementType::EraseblockFile:
+        case DebugElementType::ClusterFile:
+        case DebugElementType::InodeFile:
+            return false;
+    
+        case DebugElementType::RootDir:
+            dirs.push_back("super");
+            dirs.push_back("metrics");
+            dirs.push_back("eraseblocks.d");
+            dirs.push_back("clusters.d");
+            dirs.push_back("inodes.d");
+            break;
+        case DebugElementType::EraseblockDir:
+            dirs.reserve(fs.neraseblocks);
+            for (uint32_t i = 0; i < fs.neraseblocks; i++)
+                dirs.push_back(std::to_string(i));
+            break;
+        case DebugElementType::ClusterDir:
+            dirs.reserve(fs.neraseblocks * fs.erasesize / fs.clustersize);
+            for (uint32_t i = 0; i < (fs.neraseblocks * fs.erasesize / fs.clustersize); i++)
+                dirs.push_back(std::to_string(i));
+            break;
+        case DebugElementType::InodeDir:
             {
-                const eraseblock& eb = fs.eb_usage[eb_id];
-                if (eb.e_type == FFSP_EB_DENTRY_INODE || eb.e_type == FFSP_EB_FILE_INODE)
+                const unsigned int cl_per_eb = fs.erasesize / fs.clustersize;
+                inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
+                for (uint32_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
                 {
-                    for (unsigned int cl_idx = 0; cl_idx < cl_per_eb; cl_idx++)
+                    const eraseblock& eb = fs.eb_usage[eb_id];
+                    if (eb.e_type == FFSP_EB_DENTRY_INODE || eb.e_type == FFSP_EB_FILE_INODE)
                     {
-                        const unsigned int cl_id = eb_id * fs.erasesize / fs.clustersize + cl_idx;
-
-                        int ino_cnt = read_inode_group(fs, cl_id, inodes);
-                        if (ino_cnt)
+                        for (unsigned int cl_idx = 0; cl_idx < cl_per_eb; cl_idx++)
                         {
-                            for (int ino_idx = 0; ino_idx < ino_cnt; ino_idx++)
+                            const unsigned int cl_id = eb_id * fs.erasesize / fs.clustersize + cl_idx;
+    
+                            int ino_cnt = read_inode_group(fs, cl_id, inodes);
+                            if (ino_cnt)
                             {
-                                dirs.push_back(std::to_string(get_be32(inodes[ino_idx]->i_no)));
-                                free(inodes[ino_idx]);
+                                for (int ino_idx = 0; ino_idx < ino_cnt; ino_idx++)
+                                {
+                                    dirs.push_back(std::to_string(get_be32(inodes[ino_idx]->i_no)));
+                                    free(inodes[ino_idx]);
+                                }
                             }
                         }
                     }
                 }
+                free(inodes);
             }
-            free(inodes);
-        }
-        break;
+            break;
     }
     return true;
 }

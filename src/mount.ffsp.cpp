@@ -19,6 +19,7 @@
  */
 
 #include "libffsp/ffsp.hpp"
+#include "libffsp/mkfs.hpp"
 
 #include "fuse_ffsp.hpp"
 
@@ -27,6 +28,8 @@
 
 #include <atomic>
 #include <string>
+
+#include <cstddef>
 
 #ifdef _WIN32
 std::ostream& operator<<(std::ostream& os, const struct FUSE_STAT& stat)
@@ -458,13 +461,46 @@ static void show_version(const char* progname)
                                                    ffsp::FFSP_VERSION_PATCH);
 }
 
+struct mount_arguments
+{
+    std::string device;
+
+    bool in_memory{false};
+    size_t memsize{0};
+
+    bool format{false};
+    uint32_t clustersize{0};
+    uint32_t erasesize{0};
+    uint32_t ninoopen{0};
+    uint32_t neraseopen{0};
+    uint32_t nerasereserve{0};
+    uint32_t nerasewrites{0};
+};
+
 enum
 {
     KEY_HELP,
     KEY_VERSION,
 };
 
+#define FFSP_MOUNT_OPT(t, p, v) { t, offsetof(mount_arguments, p), v }
+
 static fuse_opt ffsp_opt[] = {
+    FFSP_MOUNT_OPT("--memonly", in_memory, 1),
+#ifdef _WIN32
+    FFSP_MOUNT_OPT("--memsize=%Iu", memsize, 0),
+#else
+    FFSP_MOUNT_OPT("--memsize=%zd", memsize, 0),
+#endif
+
+    FFSP_MOUNT_OPT("--format", format, 1),
+    FFSP_MOUNT_OPT("--clustersize=%u", clustersize, 0),
+    FFSP_MOUNT_OPT("--erasesize=%u", erasesize, 0),
+    FFSP_MOUNT_OPT("--open-ino=%u", ninoopen, 0),
+    FFSP_MOUNT_OPT("--open-eb=%u", neraseopen, 0),
+    FFSP_MOUNT_OPT("--reserve-eb=%u", nerasereserve, 0),
+    FFSP_MOUNT_OPT("--write-eb=%u", nerasewrites, 0),
+
     FUSE_OPT_KEY("-h", KEY_HELP),
     FUSE_OPT_KEY("--help", KEY_HELP),
     FUSE_OPT_KEY("-V", KEY_VERSION),
@@ -472,24 +508,19 @@ static fuse_opt ffsp_opt[] = {
     FUSE_OPT_END,
 };
 
-static struct ffsp_params
-{
-    std::string device;
-} ffsp_params;
-
 static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outargs)
 {
-    (void)data;
-
     switch (key)
     {
         case FUSE_OPT_KEY_NONOPT:
-            if (ffsp_params.device.empty())
+        {
+            auto* margs = static_cast<mount_arguments*>(data);
+            if (margs && margs->device.empty())
             {
                 if (arg[0] == '/')
                 {
                     // absolute path
-                    ffsp_params.device = arg;
+                    margs->device = arg;
                     return 0;
                 }
 
@@ -506,12 +537,12 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
                     return -1;
                 }
 
-                ffsp_params.device = std::string(cwd) + "/" + arg;
+                margs->device = std::string(cwd) + "/" + arg;
                 free(cwd);
                 return 0;
             }
             return 1;
-
+        }
         case KEY_HELP:
             show_usage(outargs->argv[0]);
             exit(EXIT_SUCCESS);
@@ -526,18 +557,36 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
 int main(int argc, char* argv[])
 {
     fuse_args args = FUSE_ARGS_INIT(argc, argv);
-    if (fuse_opt_parse(&args, nullptr, ffsp_opt, ffsp_opt_proc) == -1)
+    mount_arguments margs;
+    if (fuse_opt_parse(&args, &margs, ffsp_opt, ffsp_opt_proc) == -1)
     {
         printf("fuse_opt_parse() failed!\n");
         return EXIT_FAILURE;
     }
 
-    if (ffsp_params.device.empty())
+    if (margs.device.empty() && !margs.in_memory)
     {
         printf("device argument missing\n");
         return EXIT_FAILURE;
     }
-    ffsp::fuse::set_params(ffsp_params.device);
+
+    if (margs.in_memory)
+    {
+        ffsp::fuse::set_options(
+            margs.memsize, {margs.clustersize, margs.erasesize,
+                            margs.ninoopen, margs.neraseopen,
+                            margs.nerasereserve, margs.nerasewrites});
+    }
+    else
+    {
+        if (!margs.format)
+            ffsp::fuse::set_options(margs.device);
+        else
+            ffsp::fuse::set_options(
+                margs.device, {margs.clustersize, margs.erasesize,
+                               margs.ninoopen, margs.neraseopen,
+                               margs.nerasereserve, margs.nerasewrites});
+    }
 
     if (fuse_opt_add_arg(&args, "-odefault_permissions") == -1)
     {

@@ -33,11 +33,14 @@ namespace ffsp
 {
 
 struct fs_context;
+struct mkfs_options;
 
 namespace fuse
 {
 
-void set_params(const std::string& device);
+void set_options(const std::string& device);
+void set_options(const std::string& device, const mkfs_options& options);
+void set_options(size_t memsize, const mkfs_options& options);
 
 void* init(fuse_conn_info* conn);
 

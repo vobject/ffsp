@@ -32,7 +32,6 @@ struct io_context;
 io_context* io_context_init(const char* path);
 io_context* io_context_init(size_t size);
 void io_context_uninit(io_context* ctx);
-
 off_t io_context_size(const io_context& ctx);
 
 bool read_raw(io_context& ctx, void* buf, uint64_t count, uint64_t offset, uint64_t& read);

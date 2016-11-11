@@ -26,8 +26,10 @@
 namespace ffsp
 {
 
-fs_context* mount(const char* path);
-void unmount(fs_context* fs);
+struct io_context;
+
+fs_context* mount(io_context* ctx);
+io_context* unmount(fs_context* fs);
 
 } // namespace ffsp
 

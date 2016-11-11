@@ -60,19 +60,20 @@ bool remove_file(const char* file_path)
 bool make_fs(const char* file_path, const mkfs_options& opts)
 {
     auto* io_ctx = ffsp::io_context_init(file_path);
-    return io_ctx && mkfs(*io_ctx, opts) && (ffsp::io_context_uninit(io_ctx), true);
+    return io_ctx && ffsp::mkfs(*io_ctx, opts) && (ffsp::io_context_uninit(io_ctx), true);
 }
 
 bool mount_fs(fs_context** fs, const char* file_path)
 {
-    *fs = mount(file_path);
+    auto* io_ctx = ffsp::io_context_init(file_path);
+    *fs = ffsp::mount(io_ctx);
     return *fs;
 }
 
 bool unmount_fs(fs_context* fs)
 {
-    unmount(fs);
-    return true;
+    auto* io_ctx = ffsp::unmount(fs);
+    return io_ctx && (ffsp::io_context_uninit(io_ctx), true);
 }
 
 bool mkfs_ffsp(const char* program,
