@@ -20,10 +20,12 @@
 
 #include "debug.hpp"
 #include "inode_group.hpp"
+#include "io_raw.hpp"
 
 #include <string>
 #include <sstream>
 #include <vector>
+#include <cerrno>
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
@@ -496,7 +498,7 @@ bool debug_release(fs_context& fs, const char* path)
     return true;
 }
 
-bool debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read)
+ssize_t debug_read(fs_context& fs, const char* path, char* buf, uint64_t nbyte, uint64_t offset)
 {
     const auto type = get_debug_elem_type(fs, path);
     std::string str;
@@ -504,11 +506,13 @@ bool debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uin
     switch (type)
     {
     case DebugElementType::Invalid:
+        return -EIO;
+
     case DebugElementType::RootDir:
     case DebugElementType::EraseblockDir:
     case DebugElementType::ClusterDir:
     case DebugElementType::InodeDir:
-        return false;
+        return -EISDIR;
 
     case DebugElementType::SuperFile:
         str = get_super_info(fs);
@@ -529,13 +533,13 @@ bool debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uin
 
     if (offset < str.size())
     {
-        read = str.size() - offset;
-        if (read > count)
-            read = count;
+        size_t read = str.size() - offset;
+        if (read > nbyte)
+            read = nbyte;
         memcpy(buf, &str[offset], read);
-        return true;
+        return static_cast<ssize_t>(read);
     }
-    return -EIO;
+    return -EOVERFLOW;
 }
 
 } // namespace ffsp

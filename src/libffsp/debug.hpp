@@ -26,10 +26,14 @@
 #include <string>
 #include <vector>
 
+#include <sys/types.h>
+
 struct stat;
 
 namespace ffsp
 {
+
+union io_return;
 
 enum class debug_metric
 {
@@ -48,7 +52,7 @@ bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf);
 bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs);
 bool debug_open(fs_context& fs, const char* path);
 bool debug_release(fs_context& fs, const char* path);
-bool debug_read(fs_context& fs, const char* path, char* buf, uint64_t count, uint64_t offset, uint64_t& read);
+ssize_t debug_read(fs_context& fs, const char* path, char* buf, uint64_t nbyte, uint64_t offset);
 
 } // namespace ffsp
 

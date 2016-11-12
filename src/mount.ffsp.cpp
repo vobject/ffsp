@@ -305,24 +305,24 @@ struct fuse_ffsp_operations
             return rc;
         };
 
-        ops_.read = [](const char* path, char* buf, size_t count,
+        ops_.read = [](const char* path, char* buf, size_t nbyte,
                        FUSE_OFF_T offset, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} read(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), count, offset, deref(fi));
-            int rc = ffsp::fuse::read(fs, path, buf, count, offset, fi);
+            log.trace("> {} read(path={}, buf={}, nbyte={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), nbyte, offset, deref(fi));
+            int rc = ffsp::fuse::read(fs, path, buf, nbyte, offset, fi);
             log.trace("< {} read(rc={})", id, rc);
             return rc;
         };
 
-        ops_.write = [](const char* path, const char* buf, size_t count,
+        ops_.write = [](const char* path, const char* buf, size_t nbyte,
                         FUSE_OFF_T offset, fuse_file_info* fi) {
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} write(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), count, offset, deref(fi));
-            int rc = ffsp::fuse::write(fs, path, buf, count, offset, fi);
+            log.trace("> {} write(path={}, buf={}, nbyte={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), nbyte, offset, deref(fi));
+            int rc = ffsp::fuse::write(fs, path, buf, nbyte, offset, fi);
             log.trace("< {} write(rc={})", id, rc);
             return rc;
         };

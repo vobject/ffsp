@@ -34,7 +34,6 @@
 #include <cstdio>
 #include <io.h>
 typedef SSIZE_T ssize_t;
-#define SSIZE_MAX MAXSSIZE_T
 #else
 #include <unistd.h>
 #endif
@@ -42,16 +41,16 @@ typedef SSIZE_T ssize_t;
 namespace ffsp
 {
 
-static ssize_t do_pread(int fd, void* buf, size_t count, off_t offset);
-static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset);
+static ssize_t do_pread(int fd, void* buf, size_t nbyte, off_t offset);
+static ssize_t do_pwrite(int fd, const void* buf, size_t nbyte, off_t offset);
 
 struct io_context
 {
     virtual ~io_context() {}
 
-    virtual off_t size() const = 0;
-    virtual ssize_t read(void* buf, size_t count, off_t offset) = 0;
-    virtual ssize_t write(const void* buf, size_t count, off_t offset) = 0;
+    virtual uint64_t size() const = 0;
+    virtual ssize_t read(void* buf, size_t nbyte, off_t offset) = 0;
+    virtual ssize_t write(const void* buf, size_t nbyte, off_t offset) = 0;
 };
 
 struct file_io_context : io_context
@@ -68,22 +67,25 @@ struct file_io_context : io_context
             log().error("ffsp::io_context_uninit(): close(fd) failed");
     }
 
-    off_t size() const override
+    uint64_t size() const override
     {
         off_t size = ::lseek(fd_, 0, SEEK_END);
         if (size == -1)
-            log().error("ffsp::io_context: lseek() failed");
-        return size;
+        {
+            log().critical("ffsp::io_context: lseek() failed");
+            abort();
+        }
+        return static_cast<uint64_t>(size);
     }
 
-    ssize_t read(void* buf, size_t count, off_t offset) override
+    ssize_t read(void* buf, size_t nbyte, off_t offset) override
     {
-        return do_pread(fd_, buf, count, offset);
+        return do_pread(fd_, buf, nbyte, offset);
     }
 
-    ssize_t write(const void* buf, size_t count, off_t offset) override
+    ssize_t write(const void* buf, size_t nbyte, off_t offset) override
     {
-        return do_pwrite(fd_, buf, count, offset);
+        return do_pwrite(fd_, buf, nbyte, offset);
     }
 
     const int fd_;
@@ -103,21 +105,21 @@ struct buffer_io_context : io_context
         delete [] buf_;
     }
 
-    off_t size() const override
+    uint64_t size() const override
     {
-        return static_cast<off_t>(size_);
+        return size_;
     }
 
-    ssize_t read(void* buf, size_t count, off_t offset) override
+    ssize_t read(void* buf, size_t nbyte, off_t offset) override
     {
-        memcpy(buf, buf_ + offset, count);
-        return static_cast<ssize_t>(count);
+        memcpy(buf, buf_ + offset, nbyte);
+        return static_cast<ssize_t>(nbyte);
     }
 
-    ssize_t write(const void* buf, size_t count, off_t offset) override
+    ssize_t write(const void* buf, size_t nbyte, off_t offset) override
     {
-        memcpy(buf_ + offset, buf, count);
-        return static_cast<ssize_t>(count);
+        memcpy(buf_ + offset, buf, nbyte);
+        return static_cast<ssize_t>(nbyte);
     }
 
     char* buf_;
@@ -156,116 +158,105 @@ void io_context_uninit(io_context* ctx)
     delete ctx;
 }
 
-off_t io_context_size(const io_context& ctx)
+uint64_t io_context_size(const io_context& ctx)
 {
     return ctx.size();
 }
 
-static ssize_t do_pread(int fd, void* buf, size_t count, off_t offset)
+static ssize_t do_pread(int fd, void* buf, size_t nbyte, off_t offset)
 {
 #ifdef _WIN32
-    ssize_t rc;
-    off_t oldoff;
-    int olderrno;
-
-    oldoff = lseek(fd, offset, SEEK_SET);
-    if (oldoff < 0)
+    off_t oldoff = ::lseek(fd, offset, SEEK_SET);
+    if (oldoff == -1)
         return -1;
 
-    rc = read(fd, buf, count);
+    ssize_t rc = ::read(fd, buf, nbyte);
 
-    olderrno = errno;
-    lseek(fd, oldoff, SEEK_SET);
-    errno = olderrno;
-    return rc;
-#else
-    return pread(fd, buf, count, offset);
-#endif
-}
-
-static ssize_t do_pwrite(int fd, const void* buf, size_t count, off_t offset)
-{
-#ifdef _WIN32
-    ssize_t rc;
-    off_t oldoff;
-    int olderrno;
-
-    oldoff = lseek(fd, offset, SEEK_SET);
-    if (oldoff < 0)
-        return -1;
-
-    rc = write(fd, buf, count);
-
-    olderrno = errno;
-    lseek(fd, oldoff, SEEK_SET);
+    int olderrno = errno;
+    ::lseek(fd, oldoff, SEEK_SET);
     errno = olderrno;
 
     return rc;
 #else
-    return pwrite(fd, buf, count, offset);
+    return ::pread(fd, buf, nbyte, offset);
 #endif
 }
 
-bool read_raw(io_context& ctx, void* buf, uint64_t count, uint64_t offset, uint64_t& read)
+static ssize_t do_pwrite(int fd, const void* buf, size_t nbyte, off_t offset)
 {
-    if (count > std::numeric_limits<ssize_t>::max())
+#ifdef _WIN32
+    off_t oldoff = ::lseek(fd, offset, SEEK_SET);
+    if (oldoff == -1)
+        return -1;
+
+    ssize_t rc = ::write(fd, buf, nbyte);
+
+    int olderrno = errno;
+    ::lseek(fd, oldoff, SEEK_SET);
+    errno = olderrno;
+
+    return rc;
+#else
+    return ::pwrite(fd, buf, nbyte, offset);
+#endif
+}
+
+ssize_t read_raw(io_context& ctx, void* buf, uint64_t nbyte, uint64_t offset)
+{
+    if (nbyte > std::numeric_limits<ssize_t>::max())
     {
-        log().error("ffsp_read_raw(): count > ssize_t max");
-        errno = -EOVERFLOW; // implementation defined
-        return false;
+        log().error("ffsp::read_raw(): nbyte > ssize_t max");
+        return -EOVERFLOW; // implementation defined
     }
 
     if (offset > std::numeric_limits<off_t>::max())
     {
-        log().error("ffsp_read_raw(): offset > off_t max");
-        errno = -EOVERFLOW;
-        return false;
+        log().error("ffsp::read_raw(): offset > off_t max");
+        return -EOVERFLOW;
     }
 
-    ssize_t rc = ctx.read(buf, count, static_cast<off_t>(offset));
+    ssize_t rc = ctx.read(buf, nbyte, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        log().error("ffsp_read_raw(): pread() failed with errno={}", errno);
-        return false;
+        auto rc = -errno;
+        log().error("ffsp::read_raw(): pread() failed with errno={}", -rc);
+        return rc;
     }
 
     // TODO: Handle EINTR.
     // TODO: Find out if interrupts can occur when the file system was
     //        not started with the "-o intr" flag.
 
-    read = static_cast<uint64_t>(rc);
-    return true;
+    return rc;
 }
 
-bool write_raw(io_context& ctx, const void* buf, uint64_t count, uint64_t offset, uint64_t& written)
+ssize_t write_raw(io_context& ctx, const void* buf, uint64_t nbyte, uint64_t offset)
 {
-    if (count > std::numeric_limits<ssize_t>::max())
+    if (nbyte > std::numeric_limits<ssize_t>::max())
     {
-        log().error("ffsp_write_raw(): count > ssize_t max");
-        errno = -EOVERFLOW; // implementation defined
-        return false;
+        log().error("ffsp::write_raw(): nbyte > ssize_t max");
+        return -EOVERFLOW; // implementation defined
     }
 
     if (offset > std::numeric_limits<off_t>::max())
     {
-        log().error("ffsp_write_raw(): offset > off_t max");
-        errno = -EOVERFLOW;
-        return false;
+        log().error("ffsp::write_raw(): offset > off_t max");
+        return -EOVERFLOW;
     }
 
-    ssize_t rc = ctx.write(buf, count, static_cast<off_t>(offset));
+    ssize_t rc = ctx.write(buf, nbyte, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        log().error("ffsp_write_raw(): pwrite() failed with errno={}", errno);
-        return false;
+        auto rc = -errno;
+        log().error("ffsp::write_raw(): pwrite() failed with errno={}", -rc);
+        return rc;
     }
 
     // TODO: Handle EINTR.
     // TODO: Find out if interrupts can occur when the file system was
     //        not started with the "-o intr" flag.
 
-    written = static_cast<uint64_t>(rc);
-    return true;
+    return rc;
 }
 
 } // namespace ffsp

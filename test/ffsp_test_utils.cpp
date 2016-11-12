@@ -97,6 +97,8 @@ bool mkfs_ffsp(const char* program,
 bool mount_ffsp(const char* program, const char* device, const char* mountpoint)
 {
     const std::string command = std::string(program)
+                              + " --logfile=ffsp_fstest.log"
+                              + " -vvvv"
                               + " " + device
                               + " " + mountpoint;
     return std::system(command.c_str()) == 0;

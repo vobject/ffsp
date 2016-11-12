@@ -185,13 +185,13 @@ bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id)
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
 
-    uint64_t written_bytes = 0;
-    if (!write_raw(*fs.io_ctx, summary->data(), fs.clustersize, summary_off, written_bytes))
+    ssize_t rc = write_raw(*fs.io_ctx, summary->data(), fs.clustersize, summary_off);
+    if (rc < 0)
     {
-        log().error("ffsp_summary_write(): failed to write erase block summary");
+        log().error("ffsp::summary_write(): failed to write erase block summary with error={}", rc);
         return false;
     }
-    debug_update(fs, debug_metric::write_raw, written_bytes);
+    debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(rc));
     return true;
 
 }

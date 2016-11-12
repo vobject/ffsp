@@ -290,8 +290,8 @@ static unsigned int find_collectable_eraseblk(fs_context& fs, eraseblock_type eb
  * Returns the number of valid inode clusters inside the destination
  * erase block.
  */
-static int move_inodes(fs_context& fs, unsigned int src_eb_id,
-                       unsigned int dest_eb_id, int dest_moved)
+static unsigned int move_inodes(fs_context& fs, unsigned int src_eb_id,
+                                unsigned int dest_eb_id, unsigned int dest_moved)
 {
     /* TODO: Error handling missing! */
 
@@ -303,29 +303,32 @@ static int move_inodes(fs_context& fs, unsigned int src_eb_id,
         abort();
     }
 
-    int max_cvalid = fs.erasesize / fs.clustersize;
-    for (int i = 0; i < max_cvalid; i++)
+    uint32_t max_cvalid = fs.erasesize / fs.clustersize;
+    for (uint32_t i = 0; i < max_cvalid; i++)
     {
         uint64_t eb_off = src_eb_id * fs.erasesize;
         uint64_t cl_off = eb_off + (i * fs.clustersize);
-        unsigned int cl_id = cl_off / fs.clustersize;
+        uint32_t cl_id = static_cast<uint32_t>(cl_off / fs.clustersize);
 
         int ino_cnt = read_inode_group(fs, cl_id, inodes);
         if (!ino_cnt)
             continue;
 
-        uint64_t read_bytes = 0;
-        read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off, read_bytes);
-        debug_update(fs, debug_metric::read_raw, read_bytes);
+        ssize_t read_rc = read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off);
+        if (!(read_rc < 0))
+            debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(read_rc));
 
         eb_off = dest_eb_id * fs.erasesize;
         cl_off = eb_off + (dest_moved * fs.clustersize);
-        uint64_t written_bytes = 0;
-        write_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off, written_bytes);
-        debug_update(fs, debug_metric::write_raw, written_bytes);
-        debug_update(fs, debug_metric::gc_write, fs.clustersize);
 
-        cl_id = cl_off / fs.clustersize;
+        ssize_t write_rc = write_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off);
+        if (!(write_rc < 0))
+        {
+            debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(write_rc));
+            debug_update(fs, debug_metric::gc_write, fs.clustersize);
+        }
+
+        cl_id = static_cast<uint32_t>(cl_off / fs.clustersize);
         for (int j = 0; j < ino_cnt; j++)
         {
             fs.ino_map[get_be32(inodes[j]->i_no)] = put_be32(cl_id);
@@ -350,10 +353,10 @@ static void collect_inodes(fs_context& fs, eraseblock_type eb_type)
 {
     /* TODO: Error handling missing! */
 
-    int max_writeops = fs.erasesize / fs.clustersize;
-    int max_cvalid = max_writeops;
+    uint32_t max_writeops = fs.erasesize / fs.clustersize;
+    uint32_t max_cvalid = max_writeops;
 
-    int moved_cl_cnt = 0;
+    unsigned int moved_cl_cnt = 0;
     unsigned int free_eb_id = find_empty_eraseblk(fs);
 
     do

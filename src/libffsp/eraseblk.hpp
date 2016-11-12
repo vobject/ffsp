@@ -23,12 +23,14 @@
 
 #include "ffsp.hpp"
 
+#include <sys/types.h>
+
 namespace ffsp
 {
 
-int eb_get_cvalid(const fs_context& fs, unsigned int eb_id);
-void eb_inc_cvalid(fs_context& fs, unsigned int eb_id);
-void eb_dec_cvalid(fs_context& fs, unsigned int eb_id);
+int eb_get_cvalid(const fs_context& fs, uint32_t eb_id);
+void eb_inc_cvalid(fs_context& fs, uint32_t eb_id);
+void eb_dec_cvalid(fs_context& fs, uint32_t eb_id);
 
 unsigned int emtpy_eraseblk_count(const fs_context& fs);
 eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode);
@@ -36,7 +38,7 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t 
 int find_writable_cluster(fs_context& fs, eraseblock_type eb_type, uint32_t& eb_id, uint32_t& cl_id);
 void commit_write_operation(fs_context& fs, eraseblock_type eb_type, uint32_t eb_id, be32_t ino_no);
 void close_eraseblks(fs_context& fs);
-int write_meta_data(fs_context& fs);
+ssize_t write_meta_data(fs_context& fs);
 
 } // namespace ffsp
 

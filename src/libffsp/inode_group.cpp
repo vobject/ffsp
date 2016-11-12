@@ -85,10 +85,10 @@ int read_inode_group(fs_context& fs, unsigned int cl_id, inode** inodes)
 {
     uint64_t cl_offset = cl_id * fs.clustersize;
 
-    uint64_t read_bytes = 0;
-    if (!read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_offset, read_bytes))
-        return -errno;
-    debug_update(fs, debug_metric::read_raw, read_bytes);
+    ssize_t rc = read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_offset);
+    if (rc < 0)
+        return static_cast<int>(rc);
+    debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
 
     int ino_cnt = 0;
     char* ino_buf = fs.buf;
@@ -144,18 +144,18 @@ int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
         {
             log().debug("Failed to find writable cluster or erase block");
             free(group);
-            return rc;
+            return -ENOSPC;
         }
         uint64_t offset = cl_id * fs.clustersize;
 
         group_inodes(fs, group, group_elem_cnt, fs.buf);
-        uint64_t written_bytes = 0;
-        if (!write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset, written_bytes))
+        ssize_t write_rc = write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset);
+        if (write_rc < 0)
         {
             free(group);
-            return -errno;
+            return static_cast<int>(write_rc);
         }
-        debug_update(fs, debug_metric::write_raw, written_bytes);
+        debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(write_rc));
 
         /* ignore the last parameter - it is only needed if we wrote
          * into an erase block with a summary block at its end. but

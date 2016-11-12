@@ -297,17 +297,11 @@ int truncate(fs_context& fs, const char* path, FUSE_OFF_T length)
     return 0;
 }
 
-int read(fs_context& fs, const char* path, char* buf, size_t count,
+int read(fs_context& fs, const char* path, char* buf, size_t nbyte,
          FUSE_OFF_T offset, fuse_file_info* fi)
 {
     if (ffsp::is_debug_path(fs, path))
-    {
-        uint64_t read = 0;
-        if (ffsp::debug_read(fs, path, buf, count, static_cast<uint64_t>(offset), read))
-            return static_cast<int>(read);
-        else
-            return -EIO;
-    }
+        return static_cast<int>(ffsp::debug_read(fs, path, buf, nbyte, static_cast<uint64_t>(offset)));
 
     if (offset < 0)
         return -EINVAL;
@@ -324,19 +318,19 @@ int read(fs_context& fs, const char* path, char* buf, size_t count,
             return rc;
     }
 
-    ffsp::debug_update(fs, debug_metric::fuse_read, count);
-    return ffsp::read(fs, ino, buf, count, static_cast<uint64_t>(offset));
+    ffsp::debug_update(fs, debug_metric::fuse_read, nbyte);
+    return static_cast<int>(ffsp::read(fs, ino, buf, nbyte, static_cast<uint64_t>(offset)));
 }
 
-int write(fs_context& fs, const char* path, const char* buf, size_t count,
+int write(fs_context& fs, const char* path, const char* buf, size_t nbyte,
           FUSE_OFF_T offset, fuse_file_info* fi)
 {
-    if (offset < 0)
-        return -EINVAL;
-
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
 
+    if (offset < 0)
+        return -EINVAL;
+
     inode* ino;
     if (fi)
     {
@@ -349,8 +343,8 @@ int write(fs_context& fs, const char* path, const char* buf, size_t count,
             return rc;
     }
 
-    ffsp::debug_update(fs, debug_metric::fuse_write, count);
-    return ffsp::write(fs, ino, buf, count, static_cast<uint64_t>(offset));
+    ffsp::debug_update(fs, debug_metric::fuse_write, nbyte);
+    return static_cast<int>(ffsp::write(fs, ino, buf, nbyte, static_cast<uint64_t>(offset)));
 }
 
 int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device)

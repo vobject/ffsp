@@ -32,3 +32,17 @@ TEST_F(BasicFileSystemOperationsTest, SmallFiles)
 //    command = std::string("cat ") + ffsp_testing::default_dir_mountpoint + "/.FFSP";
 //    ASSERT_TRUE(std::system(command.c_str()) == 0);
 }
+
+TEST_F(BasicFileSystemOperationsTest, SmallFiles2)
+{
+//    std::string command;
+
+//    command = std::string("cat /dev/urandom > ") + ffsp::test::default_dir_mountpoint + "/urandom";
+//    ASSERT_TRUE(std::system(command.c_str()) == 0);
+
+//    command = std::string("cp /etc/lsb-release ") + ffsp::test::default_dir_mountpoint;
+//    ASSERT_TRUE(std::system(command.c_str()) == 0);
+
+//    command = std::string("cat ") + ffsp_testing::default_dir_mountpoint + "/.FFSP";
+//    ASSERT_TRUE(std::system(command.c_str()) == 0);
+}

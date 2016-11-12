@@ -39,22 +39,22 @@
 namespace ffsp
 {
 
-int eb_get_cvalid(const fs_context& fs, unsigned int eb_id)
+int eb_get_cvalid(const fs_context& fs, uint32_t eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void eb_inc_cvalid(fs_context& fs, unsigned int eb_id)
+void eb_inc_cvalid(fs_context& fs, uint32_t eb_id)
 {
     inc_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void eb_dec_cvalid(fs_context& fs, unsigned int eb_id)
+void eb_dec_cvalid(fs_context& fs, uint32_t eb_id)
 {
     dec_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-unsigned int emtpy_eraseblk_count(const fs_context& fs)
+uint32_t emtpy_eraseblk_count(const fs_context& fs)
 {
     unsigned int cnt = 0;
 
@@ -141,7 +141,7 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t 
 }
 
 int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
-                               uint32_t& eb_id, uint32_t& cl_id)
+                          uint32_t& eb_id, uint32_t& cl_id)
 {
     if (eb_type == FFSP_EB_EBIN)
     {
@@ -304,7 +304,7 @@ void close_eraseblks(fs_context& fs)
     }
 }
 
-int write_meta_data(fs_context& fs)
+ssize_t write_meta_data(fs_context& fs)
 {
     /*
      * Copy erase block usage info and the content of the inode map
@@ -321,14 +321,14 @@ int write_meta_data(fs_context& fs)
     size_t meta_data_size = eb_usage_size + ino_map_size;
     uint64_t offset = fs.clustersize;
 
-    uint64_t written_bytes = 0;
-    if (!write_raw(*fs.io_ctx, fs.buf, meta_data_size, offset, written_bytes))
+    ssize_t rc = write_raw(*fs.io_ctx, fs.buf, meta_data_size, offset);
+    if (rc < 0)
     {
         log().error("writing meta data to first erase block failed");
-        return -errno;
+        return rc;
     }
-    debug_update(fs, debug_metric::write_raw, written_bytes);
-    return written_bytes;
+    debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(rc));
+    return rc;
 }
 
 } // namespace ffsp

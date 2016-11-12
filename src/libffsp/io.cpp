@@ -47,32 +47,11 @@ struct write_context
     be32_t* ind_ptr{nullptr};
     uint64_t old_size{0};
     uint64_t new_size{0};
-    unsigned int old_ind_size{0};
-    unsigned int new_ind_size{0};
-    int old_type{0};
-    int new_type{0};
+    uint64_t old_ind_size{0};
+    uint64_t new_ind_size{0};
+    uint8_t old_type{0};
+    uint8_t new_type{0};
 };
-
-static uint32_t max_emb_size(const fs_context& fs)
-{
-    return fs.clustersize - sizeof(inode);
-}
-
-static uint64_t max_clin_size(const fs_context& fs)
-{
-    // Number of possible pointers to indirect clusters times
-    //  size of an indirect cluster.
-    return (fs.clustersize - sizeof(inode)) /
-           sizeof(be32_t) * fs.clustersize;
-}
-
-static uint64_t max_ebin_size(const fs_context& fs)
-{
-    // Number of possible pointers to indirect erase blocks times
-    //  size of an indirect erase block.
-    return (fs.clustersize - sizeof(inode)) /
-           sizeof(be32_t) * fs.erasesize;
-}
 
 static bool is_buf_empty(const char* buf, size_t size)
 {
@@ -82,14 +61,33 @@ static bool is_buf_empty(const char* buf, size_t size)
     return true;
 }
 
-static int ind_from_offset(uint64_t offset, uint32_t ind_size)
+static uint64_t max_emb_size(const fs_context& fs)
+{
+    return fs.clustersize - sizeof(inode);
+}
+
+static uint64_t max_clin_size(const fs_context& fs)
+{
+    // Number of possible pointers to indirect clusters times
+    //  size of an indirect cluster.
+    return (fs.clustersize - sizeof(inode)) / sizeof(be32_t) * fs.clustersize;
+}
+
+static uint64_t max_ebin_size(const fs_context& fs)
+{
+    // Number of possible pointers to indirect erase blocks times
+    //  size of an indirect erase block.
+    return (fs.clustersize - sizeof(inode)) / sizeof(be32_t) * fs.erasesize;
+}
+
+static uint32_t ind_from_offset(uint64_t offset, uint64_t ind_size)
 {
     //	unsigned int cluster = cl_from_offset(fs, offset);
     //	return cluster / fs.eb_per_cl;
-    return offset / ind_size;
+    return static_cast<uint32_t>(offset / ind_size);
 }
 
-static int ind_size_from_size(fs_context& fs, uint64_t size)
+static uint64_t ind_size_from_size(fs_context& fs, uint64_t size)
 {
     if (size > max_clin_size(fs))
         return fs.erasesize;
@@ -99,7 +97,7 @@ static int ind_size_from_size(fs_context& fs, uint64_t size)
         return 0; // No indirect data for this file size
 }
 
-static int data_type_from_size(fs_context& fs, uint32_t size)
+static uint8_t data_type_from_size(fs_context& fs, uint64_t size)
 {
     if (size > max_clin_size(fs))
         return FFSP_DATA_EBIN;
@@ -109,7 +107,7 @@ static int data_type_from_size(fs_context& fs, uint32_t size)
         return FFSP_DATA_EMB;
 }
 
-static int write_ind(fs_context& fs, write_context& ctx, const char* buf, be32_t* ind_id)
+static ssize_t write_ind(fs_context& fs, write_context& ctx, const char* buf, be32_t* ind_id)
 {
     if (is_buf_empty(buf, ctx.new_ind_size))
     {
@@ -122,62 +120,61 @@ static int write_ind(fs_context& fs, write_context& ctx, const char* buf, be32_t
     eraseblock_type eb_type = get_eraseblk_type(fs, ctx.new_type, mode);
 
     // Search for a cluster id or an erase block id to write to.
-    unsigned int eb_id;
-    unsigned int cl_id;
+    uint32_t eb_id;
+    uint32_t cl_id;
     int rc = find_writable_cluster(fs, eb_type, eb_id, cl_id);
     if (rc < 0)
     {
         log().debug("Failed to find writable cluster or erase block");
-        return rc;
+        return -ENOSPC;
     }
     uint64_t cl_off = cl_id * ctx.new_ind_size;
 
-    uint64_t written_bytes = 0;
-    if (!write_raw(*fs.io_ctx, buf, ctx.new_ind_size, cl_off, written_bytes))
-        return -errno;
-    debug_update(fs, debug_metric::write_raw, written_bytes);
+    ssize_t write_rc = write_raw(*fs.io_ctx, buf, ctx.new_ind_size, cl_off);
+    if (write_rc < 0)
+        return write_rc;
+    debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(write_rc));
 
     // This operation may internally finalize erase blocks by
     //  writing their erase block summary.
     commit_write_operation(fs, eb_type, eb_id, ctx.ino->i_no);
     *ind_id = put_be32(cl_id);
-    return written_bytes;
+    return write_rc;
 }
 
-static int read_emb(fs_context& fs, inode* ino,
-                    char* buf, size_t size, uint64_t offset)
+static ssize_t read_emb(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t offset)
 {
     (void)fs;
     char* emb_data = (char*)inode_data(ino);
     const uint64_t i_size = get_be64(ino->i_size);
 
-    if ((offset + size) > i_size)
-        size = i_size - offset;
+    if ((offset + nbyte) > i_size)
+        nbyte = i_size - offset;
 
-    memcpy(buf, emb_data + offset, size);
-    return size;
+    memcpy(buf, emb_data + offset, nbyte);
+    return static_cast<ssize_t>(nbyte);
 }
 
-static int read_ind(fs_context& fs, inode* ino, char* buf,
-                    size_t count, uint64_t offset, uint32_t ind_size)
+static ssize_t read_ind(fs_context& fs, inode* ino, char* buf,
+                        uint64_t nbyte, uint64_t offset, uint64_t ind_size)
 {
     /* indirect cluster ids containing data */
     be32_t* ind_ptr = (be32_t*)inode_data(ino);
 
     /* current cluster id from the embedded data */
-    int ind_index = offset / ind_size;
+    uint32_t ind_index = static_cast<uint32_t>(offset / ind_size);
 
     /* offset inside the first cluster to read from */
-    int ind_offset = offset % ind_size;
+    uint64_t ind_offset = offset % ind_size;
 
     /* never try to read more than there is available */
-    count = MIN(count, get_be64(ino->i_size) - offset);
-    uint64_t bytes_left = count;
+    nbyte = std::min(nbyte, get_be64(ino->i_size) - offset);
+    uint64_t bytes_left = nbyte;
 
     while (bytes_left)
     {
         /* number of bytes to be read from the current indirect cluster */
-        int ind_left = MIN(bytes_left, ind_size - ind_offset);
+        uint64_t ind_left = std::min(bytes_left, ind_size - ind_offset);
 
         if (!get_be32(ind_ptr[ind_index]))
         {
@@ -188,9 +185,9 @@ static int read_ind(fs_context& fs, inode* ino, char* buf,
         {
             uint64_t cl_off = get_be32(ind_ptr[ind_index]) * ind_size + ind_offset;
 
-            uint64_t read_bytes = 0;
-            if (read_raw(*fs.io_ctx, buf, ind_left, cl_off, read_bytes))
-                debug_update(fs, debug_metric::read_raw, read_bytes);
+            ssize_t rc = read_raw(*fs.io_ctx, buf, ind_left, cl_off);
+            if (!(rc < 0))
+                debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
         }
 
         buf += ind_left;
@@ -198,22 +195,22 @@ static int read_ind(fs_context& fs, inode* ino, char* buf,
         ind_offset = 0;
         ++ind_index;
     }
-    return count - bytes_left;
+    return static_cast<ssize_t>(nbyte - bytes_left);
 }
 
-static int trunc_emb2ind(fs_context& fs, write_context& ctx, const char* ind_buf)
+static ssize_t trunc_emb2ind(fs_context& fs, write_context& ctx, const char* ind_buf)
 {
-    int rc = write_ind(fs, ctx, ind_buf, &ctx.ind_ptr[0]);
+    ssize_t rc = write_ind(fs, ctx, ind_buf, &ctx.ind_ptr[0]);
     if (rc < 0)
         return rc;
 
     // The indirect chunk index where the writing starts
-    int ind_last = ind_from_offset(ctx.new_size - 1, ctx.new_ind_size);
+    uint32_t ind_last = ind_from_offset(ctx.new_size - 1, ctx.new_ind_size);
 
     // Additional indirect blocks to be reserved for the rest of
     //  "ctx.new_size". Start with index 1 because indirect block
     //  0 already contains the old embedded data.
-    for (int i = 1; i < ind_last; ++i)
+    for (uint32_t i = 1; i < ind_last; ++i)
         ctx.ind_ptr[i] = put_be32(0);
 
     ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) & ~ctx.old_type);
@@ -221,13 +218,13 @@ static int trunc_emb2ind(fs_context& fs, write_context& ctx, const char* ind_buf
     return 0;
 }
 
-static int trunc_ind2emb(fs_context& fs, write_context& ctx)
+static ssize_t trunc_ind2emb(fs_context& fs, write_context& ctx)
 {
-    int rc = read_ind(fs, ctx.ino, fs.buf, ctx.new_size, 0, ctx.old_ind_size);
+    ssize_t rc = read_ind(fs, ctx.ino, fs.buf, ctx.new_size, 0, ctx.old_ind_size);
     if (rc < 0)
         return rc;
 
-    int ind_last = ind_from_offset(ctx.old_size - 1, ctx.old_ind_size);
+    uint32_t ind_last = ind_from_offset(ctx.old_size - 1, ctx.old_ind_size);
 
     // The file will be shrunk to fit into an inode's embedded
     //  data store. Therefore all indirect pointers will
@@ -245,7 +242,7 @@ static int trunc_ind2emb(fs_context& fs, write_context& ctx)
     return 0;
 }
 
-static int trunc_clin2ebin(fs_context& fs, write_context& ctx)
+static ssize_t trunc_clin2ebin(fs_context& fs, write_context& ctx)
 {
     // Restore this backup on error.
     be32_t* old_ptr = (be32_t*)malloc(max_emb_size(fs));
@@ -255,12 +252,12 @@ static int trunc_clin2ebin(fs_context& fs, write_context& ctx)
         abort();
     }
     memcpy(old_ptr, ctx.ind_ptr, max_emb_size(fs));
-    int old_ptr_cnt = ind_from_offset(ctx.old_size - 1, fs.clustersize) + 1;
+    uint32_t old_ptr_cnt = ind_from_offset(ctx.old_size - 1, fs.clustersize) + 1;
 
     uint64_t written = 0;
     while (written < ctx.old_size)
     {
-        int rc = read_ind(fs, ctx.ino, fs.buf, fs.erasesize, written, fs.clustersize);
+        ssize_t rc = read_ind(fs, ctx.ino, fs.buf, fs.erasesize, written, fs.clustersize);
         if (rc < 0)
         {
             free(old_ptr);
@@ -268,14 +265,14 @@ static int trunc_clin2ebin(fs_context& fs, write_context& ctx)
         }
 
         // We did not read full erase block. Zero out the rest.
-        if ((uint32_t)rc < fs.erasesize)
-            memset(fs.buf + rc, 0, fs.erasesize - rc);
+        if (static_cast<uint64_t>(rc) < fs.erasesize)
+            memset(fs.buf + rc, 0, fs.erasesize - static_cast<uint64_t>(rc));
 
         rc = write_ind(fs, ctx, fs.buf, &ctx.ind_ptr[written / fs.erasesize]);
         if (rc < 0)
         {
             // Reset newly allocated erase block to empty
-            int ind_ptr_cnt = ind_from_offset(written - 1, fs.erasesize) + 1;
+            uint32_t ind_ptr_cnt = ind_from_offset(written - 1, fs.erasesize) + 1;
             invalidate_ind_ptr(fs, ctx.ind_ptr, ind_ptr_cnt, ctx.new_type);
             // Reset the inode's old indirect cluster pointers
             memcpy(ctx.ind_ptr, old_ptr, max_emb_size(fs));
@@ -284,14 +281,14 @@ static int trunc_clin2ebin(fs_context& fs, write_context& ctx)
             return rc;
         }
 
-        written += rc;
+        written += static_cast<uint64_t>(rc);
     }
     invalidate_ind_ptr(fs, old_ptr, old_ptr_cnt, ctx.old_type);
 
-    int ind_first = ind_from_offset(written - 1, fs.erasesize);
-    int ind_last = ind_from_offset(ctx.new_size - 1, fs.erasesize);
+    uint32_t ind_first = ind_from_offset(written - 1, fs.erasesize);
+    uint32_t ind_last = ind_from_offset(ctx.new_size - 1, fs.erasesize);
 
-    for (int i = ind_first + 1; i <= ind_last; ++i)
+    for (uint32_t i = ind_first + 1; i <= ind_last; ++i)
         ctx.ind_ptr[i] = put_be32(0);
 
     free(old_ptr);
@@ -301,14 +298,14 @@ static int trunc_clin2ebin(fs_context& fs, write_context& ctx)
     return 0;
 }
 
-static int trunc_ind(fs_context& fs, write_context& ctx)
+static ssize_t trunc_ind(fs_context& fs, write_context& ctx)
 {
     if (ctx.new_size < ctx.old_size)
     {
         // Handle file reduction
-        int ind_first = ind_from_offset(ctx.new_size - 1, ctx.new_ind_size);
-        int ind_last = ind_from_offset(ctx.old_size - 1, ctx.new_ind_size);
-        int ind_cnt = ind_last - ind_first;
+        uint32_t ind_first = ind_from_offset(ctx.new_size - 1, ctx.new_ind_size);
+        uint32_t ind_last = ind_from_offset(ctx.old_size - 1, ctx.new_ind_size);
+        uint32_t ind_cnt = ind_last - ind_first;
 
         invalidate_ind_ptr(fs, ctx.ind_ptr + ind_first + 1, ind_cnt, ctx.old_type);
     }
@@ -322,16 +319,16 @@ static int trunc_ind(fs_context& fs, write_context& ctx)
         //  this requirement. Because the calling function might also
         //  have something to write into the affected cluster.
 
-        int ind_first = ind_from_offset(ctx.old_size - 1, ctx.new_ind_size);
-        int ind_last = ind_from_offset(ctx.new_size - 1, ctx.new_ind_size);
+        uint32_t ind_first = ind_from_offset(ctx.old_size - 1, ctx.new_ind_size);
+        uint32_t ind_last = ind_from_offset(ctx.new_size - 1, ctx.new_ind_size);
 
-        for (int i = ind_first + 1; i <= ind_last; ++i)
+        for (uint32_t i = ind_first + 1; i <= ind_last; ++i)
             ctx.ind_ptr[i] = put_be32(0);
     }
     return 0;
 }
 
-static int trunc_clin(fs_context& fs, write_context& ctx)
+static ssize_t trunc_clin(fs_context& fs, write_context& ctx)
 {
     if (ctx.new_type == FFSP_DATA_EBIN)
         return trunc_clin2ebin(fs, ctx);
@@ -341,7 +338,7 @@ static int trunc_clin(fs_context& fs, write_context& ctx)
         return trunc_ind(fs, ctx);
 }
 
-static int trunc_ebin(fs_context& fs, write_context& ctx)
+static ssize_t trunc_ebin(fs_context& fs, write_context& ctx)
 {
     if (ctx.new_type == FFSP_DATA_EMB)
         return trunc_ind2emb(fs, ctx);
@@ -349,7 +346,7 @@ static int trunc_ebin(fs_context& fs, write_context& ctx)
         return trunc_ind(fs, ctx);
 }
 
-static int write_emb(fs_context& fs, write_context& ctx)
+static ssize_t write_emb(fs_context& fs, write_context& ctx)
 {
     if (!ctx.new_ind_size)
     {
@@ -365,9 +362,9 @@ static int write_emb(fs_context& fs, write_context& ctx)
                    ctx.new_size - ctx.old_size);
         }
         memcpy(emb_data + ctx.offset, ctx.buf, ctx.bytes_left);
-        return ctx.bytes_left;
+        return static_cast<ssize_t>(ctx.bytes_left);
     }
-    size_t count = ctx.bytes_left;
+    size_t nbyte = ctx.bytes_left;
 
     // Move all the inode embedded data into a temporary buffer because
     //  it will be moved into an indirect cluster or erase block later.
@@ -376,8 +373,8 @@ static int write_emb(fs_context& fs, write_context& ctx)
 
     // Calculate in which indirect cluster or erase block the write request
     //  starts (ind_index) and at which offset therein (ind_offset).
-    int ind_index = ctx.offset / ctx.new_ind_size;
-    int ind_offset = ctx.offset % ctx.new_ind_size;
+    uint32_t ind_index = static_cast<uint32_t>(ctx.offset / ctx.new_ind_size);
+    uint64_t ind_offset = ctx.offset % ctx.new_ind_size;
 
     // Check if the current write request already starts inside the
     //  embedded data offset. If so, perform it. The modified data will
@@ -385,7 +382,7 @@ static int write_emb(fs_context& fs, write_context& ctx)
     if (ind_index == 0)
     {
         // Bytes to be written into the current indirect block.
-        unsigned int ind_left = MIN(ctx.bytes_left, ctx.new_ind_size - ind_offset);
+        uint64_t ind_left = std::min(ctx.bytes_left, ctx.new_ind_size - ind_offset);
         memcpy(fs.buf + ind_offset, ctx.buf, ind_left);
         ctx.buf += ind_left;
         ctx.bytes_left -= ind_left;
@@ -396,7 +393,7 @@ static int write_emb(fs_context& fs, write_context& ctx)
     // Move the data inside the inode (embedded data) into an indirect
     //  cluster or even erase block (based on how big it is going to get
     //  during the whole write request).
-    int rc = trunc_emb2ind(fs, ctx, fs.buf);
+    ssize_t rc = trunc_emb2ind(fs, ctx, fs.buf);
     if (rc < 0)
         return rc;
 
@@ -404,7 +401,7 @@ static int write_emb(fs_context& fs, write_context& ctx)
     while (ctx.bytes_left)
     {
         // Bytes to be written into the current indirect block.
-        unsigned int ind_left = MIN(ctx.bytes_left, ctx.new_ind_size - ind_offset);
+        uint64_t ind_left = std::min(ctx.bytes_left, ctx.new_ind_size - ind_offset);
         memcpy(fs.buf + ind_offset, ctx.buf, ind_left);
 
         rc = write_ind(fs, ctx, fs.buf, &ctx.ind_ptr[ind_index]);
@@ -416,39 +413,39 @@ static int write_emb(fs_context& fs, write_context& ctx)
         ctx.bytes_left -= ind_left;
         ind_offset = 0;
     }
-    return count - ctx.bytes_left;
+    return static_cast<ssize_t>(nbyte - ctx.bytes_left);
 }
 
-static int write_clin(fs_context& fs, write_context& ctx)
+static ssize_t write_clin(fs_context& fs, write_context& ctx)
 {
-    size_t count = ctx.bytes_left;
+    size_t nbyte = ctx.bytes_left;
 
     // In which indirect cluster does the writing start?
-    int ind_index = ctx.offset / ctx.new_ind_size;
+    uint32_t ind_index = static_cast<uint32_t>(ctx.offset / ctx.new_ind_size);
 
     // The write-offset inside a cluster
-    int ind_offset = ctx.offset % ctx.new_ind_size;
+    uint64_t ind_offset = ctx.offset % ctx.new_ind_size;
 
     while (ctx.bytes_left)
     {
         // Number of bytes to write into the current indirect cluster
-        unsigned int ind_left = MIN(ctx.bytes_left, ctx.new_ind_size - ind_offset);
+        uint64_t ind_left = std::min(ctx.bytes_left, ctx.new_ind_size - ind_offset);
 
         // We start or finish writing inside an existing cluster.
         //  In this case do not decrease the amount of free clusters in this
         //  erase block because the already existing cluster will be
         //  invalidated and therefore be "free" again.
-        uint64_t cl_off;
-        bool overwrite;
+        uint64_t cl_off = 0;
+        bool overwrite = false;
         if ((ind_left < ctx.new_ind_size) && get_be32(ctx.ind_ptr[ind_index]))
         {
             cl_off = get_be32(ctx.ind_ptr[ind_index]) * ctx.new_ind_size;
-
-            uint64_t read_bytes = 0;
-            if (!read_raw(*fs.io_ctx, fs.buf, ctx.new_ind_size, cl_off, read_bytes))
-                return -errno;
-            debug_update(fs, debug_metric::read_raw, read_bytes);
             overwrite = true;
+
+            ssize_t rc = read_raw(*fs.io_ctx, fs.buf, ctx.new_ind_size, cl_off);
+            if (rc < 0)
+                return rc;
+            debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
         }
         else
         {
@@ -457,7 +454,7 @@ static int write_clin(fs_context& fs, write_context& ctx)
         }
         memcpy(fs.buf + ind_offset, ctx.buf, ind_left);
 
-        int rc = write_ind(fs, ctx, fs.buf, &ctx.ind_ptr[ind_index]);
+        ssize_t rc = write_ind(fs, ctx, fs.buf, &ctx.ind_ptr[ind_index]);
         if (rc < 0)
             return rc;
 
@@ -465,37 +462,37 @@ static int write_clin(fs_context& fs, write_context& ctx)
         {
             // The last write operation replaced an existing
             //  cluster. Invalidate the overwritten cluster.
-            eb_dec_cvalid(fs, cl_off / fs.erasesize);
+            eb_dec_cvalid(fs, static_cast<uint32_t>(cl_off / fs.erasesize));
         }
         ++ind_index;
         ctx.buf += ind_left;
         ctx.bytes_left -= ind_left;
         ind_offset = 0;
     }
-    return count - ctx.bytes_left;
+    return static_cast<ssize_t>(nbyte - ctx.bytes_left);
 }
 
-static int write_ebin(fs_context& fs, write_context& ctx)
+static ssize_t write_ebin(fs_context& fs, write_context& ctx)
 {
     /*
      * TODO: Split this function into smaller functions.
      */
 
-    size_t count = ctx.bytes_left;
+    size_t nbyte = ctx.bytes_left;
 
     /* indirect erase block index that is to be written */
-    int eb_index = ctx.offset / ctx.new_ind_size;
+    uint32_t eb_index = static_cast<uint32_t>(ctx.offset / ctx.new_ind_size);
 
     /* write-offset inside the erase block */
-    int eb_offset = ctx.offset % ctx.new_ind_size;
+    uint64_t eb_offset = ctx.offset % ctx.new_ind_size;
 
     while (ctx.bytes_left)
     {
         /* number of bytes left to be written into the current erase block */
-        unsigned int eb_left = MIN(ctx.bytes_left, ctx.new_ind_size - eb_offset);
+        uint64_t eb_left = std::min(ctx.bytes_left, ctx.new_ind_size - eb_offset);
 
         /* indirect erase block id that is to be written */
-        int eb_id = get_be32(ctx.ind_ptr[eb_index]);
+        uint32_t eb_id = get_be32(ctx.ind_ptr[eb_index]);
 
         if ((eb_left < ctx.new_ind_size) && eb_id)
         {
@@ -504,13 +501,13 @@ static int write_ebin(fs_context& fs, write_context& ctx)
              * directly into the existing one. But do it in
              * cluster-sized chunks. */
 
-            unsigned int cl_count = eb_left;
-            int cl_index = eb_offset / fs.clustersize;
-            int cl_offset = eb_offset % fs.clustersize;
+            uint64_t cl_count = eb_left;
+            uint32_t cl_index = static_cast<uint32_t>(eb_offset / fs.clustersize);
+            uint64_t cl_offset = eb_offset % fs.clustersize;
 
             while (cl_count)
             {
-                unsigned int cl_left = MIN(cl_count, fs.clustersize - cl_offset);
+                uint64_t cl_left = std::min(cl_count, fs.clustersize - cl_offset);
                 uint64_t offset = eb_id * ctx.new_ind_size + cl_index * fs.clustersize;
                 /* offset = ctx.offset / fs.clustersize; */
 
@@ -520,10 +517,10 @@ static int write_ebin(fs_context& fs, write_context& ctx)
                      * read the content of the to-be-written-into
                      * cluster to initiate a cluster aligned
                      * write later. */
-                    uint64_t read_bytes = 0;
-                    if (!read_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset, read_bytes))
-                        return -errno;
-                    debug_update(fs, debug_metric::read_raw, read_bytes);
+                    ssize_t rc = read_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset);
+                    if (rc < 0)
+                        return rc;
+                    debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
                 }
                 else
                 {
@@ -531,10 +528,10 @@ static int write_ebin(fs_context& fs, write_context& ctx)
                 }
                 memcpy(fs.buf + cl_offset, ctx.buf, cl_left);
 
-                uint64_t written_bytes = 0;
-                if (!write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset, written_bytes))
-                    return -errno;
-                debug_update(fs, debug_metric::write_raw, written_bytes);
+                ssize_t rc = write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset);
+                if (rc < 0)
+                    return rc;
+                debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(rc));
 
                 ctx.buf += cl_left;
                 cl_count -= cl_left;
@@ -549,7 +546,7 @@ static int write_ebin(fs_context& fs, write_context& ctx)
              * overwritten. */
             memset(fs.buf, 0, eb_offset);
             memcpy(fs.buf + eb_offset, ctx.buf, eb_left);
-            int rc = write_ind(fs, ctx, fs.buf, &ctx.ind_ptr[eb_index]);
+            ssize_t rc = write_ind(fs, ctx, fs.buf, &ctx.ind_ptr[eb_index]);
             if (rc < 0)
                 return rc;
 
@@ -562,7 +559,7 @@ static int write_ebin(fs_context& fs, write_context& ctx)
         ++eb_index;
         eb_offset = 0;
     }
-    return count - ctx.bytes_left;
+    return static_cast<ssize_t>(nbyte - ctx.bytes_left);
 }
 
 int truncate(fs_context& fs, inode* ino, uint64_t length)
@@ -587,7 +584,7 @@ int truncate(fs_context& fs, inode* ino, uint64_t length)
 
     uint32_t i_flags = get_be32(ino->i_flags);
 
-    int rc;
+    ssize_t rc;
     if (i_flags & FFSP_DATA_EMB)
     {
         ctx.old_type = FFSP_DATA_EMB;
@@ -605,72 +602,71 @@ int truncate(fs_context& fs, inode* ino, uint64_t length)
     }
     else
     {
-        log().error("ffsp_truncate(): unknown inode type");
-        return -1;
+        log().error("ffsp::truncate(): unknown inode type");
+        return -EPERM;
     }
-    if (rc < 0)
-        return -EIO;
 
-    ino->i_size = put_be64(length);
-    update_time(ino->i_ctime);
-    update_time(ino->i_mtime);
-    mark_dirty(fs, ino);
-    flush_inodes(fs, false);
+    if (!(rc < 0))
+    {
+        ino->i_size = put_be64(length);
+        update_time(ino->i_ctime);
+        update_time(ino->i_mtime);
+        mark_dirty(fs, ino);
+        flush_inodes(fs, false);
 
-    // The recent call to mark the current inode dirty might have
-    //  triggered flushing all dirty inodes to disk. Therefore we should
-    //  check if inode erase blocks need cleaning.
-    gc(fs);
-    return rc;
+        // The recent call to mark the current inode dirty might have
+        //  triggered flushing all dirty inodes to disk. Therefore we should
+        //  check if inode erase blocks need cleaning.
+        gc(fs);
+    }
+    return static_cast<int>(rc);
 }
 
-int read(fs_context& fs, inode* ino, char* buf, size_t count, uint64_t offset)
+ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t offset)
 {
-    if (count == 0)
+    if (nbyte == 0)
         return 0;
 
     if (offset >= get_be64(ino->i_size))
     {
-        log().debug("ffsp_read(off={}): too big", offset);
+        log().debug("ffsp::read(offset={}): too big", offset);
         return 0;
     }
     uint32_t i_flags = get_be32(ino->i_flags);
 
-    int rc;
+    ssize_t rc;
     if (i_flags & FFSP_DATA_EMB)
-        rc = read_emb(fs, ino, buf, count, offset);
+        rc = read_emb(fs, ino, buf, nbyte, offset);
     else if (i_flags & FFSP_DATA_CLIN)
-        rc = read_ind(fs, ino, buf, count, offset, fs.clustersize);
+        rc = read_ind(fs, ino, buf, nbyte, offset, fs.clustersize);
     else if (i_flags & FFSP_DATA_EBIN)
-        rc = read_ind(fs, ino, buf, count, offset, fs.erasesize);
+        rc = read_ind(fs, ino, buf, nbyte, offset, fs.erasesize);
     else
     {
-        log().error("ffsp_read(): unknown inode type");
-        return -1;
+        log().error("ffsp::read(): unknown inode type");
+        return -EPERM;
     }
-    if (rc < 0)
-        return -EIO;
 
-    // TODO: Decide what to do with this.
-    //	if (!(fs.flags & FFSP_SUPER_NOATIME))
-    //		ffsp_update_atime(cl->ino);
+//    TODO: Decide what to do with this.
+//    if (!(fs.flags & FFSP_SUPER_NOATIME))
+//        ffsp_update_atime(cl->ino);
 
     return rc;
 }
 
-int write(fs_context& fs, inode* ino, const char* buf, size_t count, uint64_t offset)
+ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint64_t offset)
 {
-    if (count == 0)
+    if (nbyte == 0)
         return 0;
 
     write_context ctx;
     ctx.buf = buf;
-    ctx.bytes_left = count;
+    ctx.bytes_left = nbyte;
     ctx.offset = offset;
     ctx.ino = ino;
     ctx.ind_ptr = (be32_t*)inode_data(ino);
     ctx.old_size = get_be64(ino->i_size);
-    ctx.new_size = MAX(get_be64(ino->i_size), offset + count);
+    ctx.new_size = MAX(get_be64(ino->i_size), offset + nbyte);
     ctx.old_ind_size = ind_size_from_size(fs, ctx.old_size);
     ctx.new_ind_size = ind_size_from_size(fs, ctx.new_size);
     ctx.new_type = data_type_from_size(fs, ctx.new_size);
@@ -680,7 +676,7 @@ int write(fs_context& fs, inode* ino, const char* buf, size_t count, uint64_t of
 
     uint32_t i_flags = get_be32(ino->i_flags);
 
-    int rc;
+    ssize_t rc;
     if (i_flags & FFSP_DATA_EMB)
     {
         ctx.old_type = FFSP_DATA_EMB;
@@ -723,21 +719,22 @@ int write(fs_context& fs, inode* ino, const char* buf, size_t count, uint64_t of
     }
     else
     {
-        log().error("ffsp_write(): unknown inode type");
-        return -1;
+        log().error("ffsp::write(): unknown inode type");
+        return -EPERM;
     }
-    if (rc < 0)
-        return -EIO;
 
-    ino->i_size = put_be64(ctx.new_size);
-    update_time(ino->i_mtime);
-    mark_dirty(fs, ino);
-    flush_inodes(fs, false);
+    if (!(rc < 0))
+    {
+        ino->i_size = put_be64(ctx.new_size);
+        update_time(ino->i_mtime);
+        mark_dirty(fs, ino);
+        flush_inodes(fs, false);
 
-    // The recent call to mark the current inode dirty might have
-    //  triggered flushing all dirty inodes to disk. Therefore we should
-    //  check if inode erase blocks need cleaning.
-    gc(fs);
+        // The recent call to mark the current inode dirty might have
+        //  triggered flushing all dirty inodes to disk. Therefore we should
+        //  check if inode erase blocks need cleaning.
+        gc(fs);
+    }
     return rc;
 }
 

@@ -24,13 +24,14 @@
 #include "ffsp.hpp"
 
 #include <cstddef>
+#include <sys/types.h>
 
 namespace ffsp
 {
 
 int truncate(fs_context& fs, inode* ino, uint64_t length);
-int read(fs_context& fs, inode* ino, char* buf, size_t count, uint64_t offset);
-int write(fs_context& fs, inode* ino, const char* buf, size_t count, uint64_t offset);
+ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t count, uint64_t offset);
+ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t count, uint64_t offset);
 
 } // namespace ffsp
 

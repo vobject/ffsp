@@ -48,13 +48,13 @@ namespace ffsp
 static void read_super(fs_context& fs)
 {
     superblock sb;
-    uint64_t read_bytes = 0;
-    if (!read_raw(*fs.io_ctx, &sb, sizeof(superblock), 0, read_bytes))
+    ssize_t rc = read_raw(*fs.io_ctx, &sb, sizeof(superblock), 0);
+    if (rc < 0)
     {
         log().critical("reading super block failed");
         abort();
     }
-    debug_update(fs, debug_metric::read_raw, read_bytes);
+    debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
 
     // The super block is only read once and its content is saved
     //  inside the ffsp structure.
@@ -79,19 +79,19 @@ static void read_eb_usage(fs_context& fs)
     fs.eb_usage = (eraseblock*)malloc(size);
     if (!fs.eb_usage)
     {
-        log().critical("malloc(erase blocks - size=%d) failed", size);
+        log().critical("malloc(erase blocks - size={}) failed", size);
         abort();
     }
 
     uint64_t offset = fs.clustersize;
-    uint64_t read_bytes = 0;
-    if (!read_raw(*fs.io_ctx, fs.eb_usage, size, offset, read_bytes))
+    ssize_t rc = read_raw(*fs.io_ctx, fs.eb_usage, size, offset);
+    if (rc < 0)
     {
         log().critical("reading erase block info failed");
         free(fs.eb_usage);
         abort();
     }
-    debug_update(fs, debug_metric::read_raw, read_bytes);
+    debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
 }
 
 static void read_ino_map(fs_context& fs)
@@ -102,19 +102,19 @@ static void read_ino_map(fs_context& fs)
     fs.ino_map = (be32_t*)malloc(size);
     if (!fs.ino_map)
     {
-        log().critical("malloc(inode ids - size=%d) failed", size);
+        log().critical("malloc(inode ids - size={}) failed", size);
         abort();
     }
 
     uint64_t offset = fs.erasesize - size; // read the invalid inode, too
-    uint64_t read_bytes = 0;
-    if (!read_raw(*fs.io_ctx, fs.ino_map, size, offset, read_bytes))
+    ssize_t rc = read_raw(*fs.io_ctx, fs.ino_map, size, offset);
+    if (rc < 0)
     {
         log().critical("reading cluster ids failed");
         free(fs.ino_map);
         abort();
     }
-    debug_update(fs, debug_metric::read_raw, read_bytes);
+    debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
 }
 
 static void read_cl_occupancy(fs_context& fs)
