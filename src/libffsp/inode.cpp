@@ -338,7 +338,7 @@ int lookup(fs_context& fs, inode** ino, const char* path)
     lookup_no(fs, &dir_ino, 1);
 
     char* path_mod = strndup(path, FFSP_NAME_MAX + 1);
-    for (char* p = path_mod;; p = NULL)
+    for (char* p = path_mod;; p = nullptr)
     {
         const char* token = strtok(p, "/");
         if (!token)
@@ -395,8 +395,7 @@ static bool is_inode_dirty(const fs_context& fs, const inode& ino)
  */
 static std::vector<inode*> get_dirty_inodes(const fs_context& fs, bool dentries)
 {
-    return inode_cache_get_if(*fs.inode_cache,
-                                   [&](const inode& ino){
+    return inode_cache_get_if(*fs.inode_cache, [&](const inode& ino){
         if (is_inode_dirty(fs, ino))
         {
             if (dentries && S_ISDIR(get_be32(ino.i_mode)))
@@ -534,7 +533,7 @@ int link(fs_context& fs, const char* oldpath, const char* newpath)
     unsigned int inode_no = get_be32(ino->i_no);
     mode_t mode = get_be32(ino->i_mode);
 
-    rc = add_dentry(fs, newpath, inode_no, mode, NULL);
+    rc = add_dentry(fs, newpath, inode_no, mode, nullptr);
     if (rc < 0)
         return rc;
 

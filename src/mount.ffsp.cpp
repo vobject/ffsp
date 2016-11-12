@@ -19,6 +19,7 @@
  */
 
 #include "libffsp/ffsp.hpp"
+#include "libffsp/log.hpp"
 #include "libffsp/mkfs.hpp"
 
 #include "fuse_ffsp.hpp"
@@ -156,15 +157,18 @@ std::ostream& operator<<(std::ostream& os, const ptr_wrapper<T>& wrapper)
 
 struct fuse_ffsp_operations
 {
-    fuse_ffsp_operations()
+    fuse_ffsp_operations(int verbosity, const char* logfile)
         : ops_()
     {
-        const std::vector<spdlog::sink_ptr> sinks{
-            std::make_shared<spdlog::sinks::stdout_sink_mt>(),
-            std::make_shared<spdlog::sinks::simple_file_sink_mt>("ffsp_api.log", true)
+        auto v2l = [](int verbosity){
+            if (verbosity == 4) return spdlog::level::trace;
+            if (verbosity == 3) return spdlog::level::debug;
+            if (verbosity == 2) return spdlog::level::info;
+            if (verbosity == 1) return spdlog::level::warn;
+            return spdlog::level::err;
         };
-        logger_ = std::make_shared<spdlog::logger>("ffsp_api", std::begin(sinks), std::end(sinks));
-        spdlog::register_logger(logger_);
+
+        ffsp::log_init("ffsp", v2l(verbosity), logfile ? logfile : "");
 
 #ifdef _WIN32
         ops_.getattr = [](const char* path, struct FUSE_STAT* stbuf)
@@ -173,174 +177,193 @@ struct fuse_ffsp_operations
 #endif
         {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} getattr(path={}, stbuf={})", id, deref(path), static_cast<void*>(stbuf));
-            int rc = ffsp::fuse::getattr(*fs, path, stbuf);
-            logger_->info("< {} getattr(rc={}, stbuf={})", id, rc, deref(stbuf));
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} getattr(path={}, stbuf={})", id, deref(path), static_cast<void*>(stbuf));
+            int rc = ffsp::fuse::getattr(fs, path, stbuf);
+            log.trace("< {} getattr(rc={}, stbuf={})", id, rc, deref(stbuf));
             return rc;
         };
 
         ops_.readlink = [](const char* path, char* buf, size_t bufsize) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} readlink(path={}, buf={}, bufsize={})", id, deref(path), static_cast<void*>(buf), bufsize);
-            int rc = ffsp::fuse::readlink(*fs, path, buf, bufsize);
-            logger_->info("< {} readlink(rc={}, buf={})", id, rc, deref(buf));
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} readlink(path={}, buf={}, bufsize={})", id, deref(path), static_cast<void*>(buf), bufsize);
+            int rc = ffsp::fuse::readlink(fs, path, buf, bufsize);
+            log.trace("< {} readlink(rc={}, buf={})", id, rc, deref(buf));
             return rc;
         };
 
         ops_.mknod = [](const char* path, mode_t mode, dev_t device) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} mknod(path={}, mode={:#o}, device={})", id, deref(path), mode, device);
-            int rc = ffsp::fuse::mknod(*fs, path, mode, device);
-            logger_->info("< {} mknod(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} mknod(path={}, mode={:#o}, device={})", id, deref(path), mode, device);
+            int rc = ffsp::fuse::mknod(fs, path, mode, device);
+            log.trace("< {} mknod(rc={})", id, rc);
             return rc;
         };
 
         ops_.mkdir = [](const char* path, mode_t mode) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} mkdir(path={}, mode={:#o})", id, deref(path), mode);
-            int rc = ffsp::fuse::mkdir(*fs, path, mode);
-            logger_->info("< {} mkdir(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} mkdir(path={}, mode={:#o})", id, deref(path), mode);
+            int rc = ffsp::fuse::mkdir(fs, path, mode);
+            log.trace("< {} mkdir(rc={})", id, rc);
             return rc;
         };
 
         ops_.unlink = [](const char* path) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} unlink(path={})", id, deref(path));
-            int rc = ffsp::fuse::unlink(*fs, path);
-            logger_->info("< {} unlink(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} unlink(path={})", id, deref(path));
+            int rc = ffsp::fuse::unlink(fs, path);
+            log.trace("< {} unlink(rc={})", id, rc);
             return rc;
         };
 
         ops_.rmdir = [](const char* path) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} rmdir(path={})", id, deref(path));
-            int rc = ffsp::fuse::rmdir(*fs, path);
-            logger_->info("< {} rmdir(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} rmdir(path={})", id, deref(path));
+            int rc = ffsp::fuse::rmdir(fs, path);
+            log.trace("< {} rmdir(rc={})", id, rc);
             return rc;
         };
 
         ops_.symlink = [](const char* oldpath, const char* newpath) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} symlink(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
-            int rc = ffsp::fuse::symlink(*fs, oldpath, newpath);
-            logger_->info("< {} symlink(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} symlink(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
+            int rc = ffsp::fuse::symlink(fs, oldpath, newpath);
+            log.trace("< {} symlink(rc={})", id, rc);
             return rc;
         };
 
         ops_.rename = [](const char* oldpath, const char* newpath) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} rename(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
-            int rc = ffsp::fuse::rename(*fs, oldpath, newpath);
-            logger_->info("< {} rename(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} rename(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
+            int rc = ffsp::fuse::rename(fs, oldpath, newpath);
+            log.trace("< {} rename(rc={})", id, rc);
             return rc;
         };
 
         ops_.link = [](const char* oldpath, const char* newpath) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} link(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
-            int rc = ffsp::fuse::link(*fs, oldpath, newpath);
-            logger_->info("< {} link(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} link(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
+            int rc = ffsp::fuse::link(fs, oldpath, newpath);
+            log.trace("< {} link(rc={})", id, rc);
             return rc;
         };
 
         ops_.chmod = [](const char* path, mode_t mode) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} chmod(path={}, mode={:#o})", id, deref(path), mode);
-            int rc = ffsp::fuse::chmod(*fs, path, mode);
-            logger_->info("< {} chmod(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} chmod(path={}, mode={:#o})", id, deref(path), mode);
+            int rc = ffsp::fuse::chmod(fs, path, mode);
+            log.trace("< {} chmod(rc={})", id, rc);
             return rc;
         };
 
         ops_.chown = [](const char* path, uid_t uid, gid_t gid) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} chown(path={}, uid={}, gid={})", id, deref(path), uid, gid);
-            int rc = ffsp::fuse::chown(*fs, path, uid, gid);
-            logger_->info("< {} chown(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} chown(path={}, uid={}, gid={})", id, deref(path), uid, gid);
+            int rc = ffsp::fuse::chown(fs, path, uid, gid);
+            log.trace("< {} chown(rc={})", id, rc);
             return rc;
         };
 
         ops_.truncate = [](const char* path, FUSE_OFF_T length) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} truncate(path={}, length={})", id, deref(path), length);
-            int rc = ffsp::fuse::truncate(*fs, path, length);
-            logger_->info("< {} truncate(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} truncate(path={}, length={})", id, deref(path), length);
+            int rc = ffsp::fuse::truncate(fs, path, length);
+            log.trace("< {} truncate(rc={})", id, rc);
             return rc;
         };
 
         ops_.open = [](const char* path, fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} open(path={}, fi={})", id, deref(path), deref(fi));
-            int rc = ffsp::fuse::open(*fs, path, fi);
-            logger_->info("< {} open(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} open(path={}, fi={})", id, deref(path), deref(fi));
+            int rc = ffsp::fuse::open(fs, path, fi);
+            log.trace("< {} open(rc={})", id, rc);
             return rc;
         };
 
         ops_.read = [](const char* path, char* buf, size_t count,
                        FUSE_OFF_T offset, fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} read(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), count, offset, deref(fi));
-            int rc = ffsp::fuse::read(*fs, path, buf, count, offset, fi);
-            logger_->info("< {} read(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} read(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), count, offset, deref(fi));
+            int rc = ffsp::fuse::read(fs, path, buf, count, offset, fi);
+            log.trace("< {} read(rc={})", id, rc);
             return rc;
         };
 
         ops_.write = [](const char* path, const char* buf, size_t count,
                         FUSE_OFF_T offset, fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} write(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), count, offset, deref(fi));
-            int rc = ffsp::fuse::write(*fs, path, buf, count, offset, fi);
-            logger_->info("< {} write(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} write(path={}, buf={}, count={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), count, offset, deref(fi));
+            int rc = ffsp::fuse::write(fs, path, buf, count, offset, fi);
+            log.trace("< {} write(rc={})", id, rc);
             return rc;
         };
 
         ops_.statfs = [](const char* path, struct statvfs* sfs) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} statfs(path={}, sfs={})", id, deref(path), static_cast<void*>(sfs));
-            int rc = ffsp::fuse::statfs(*fs, path, sfs);
-            logger_->info("< {} statfs(rc={}, sfs={})", id, rc, deref(sfs));
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} statfs(path={}, sfs={})", id, deref(path), static_cast<void*>(sfs));
+            int rc = ffsp::fuse::statfs(fs, path, sfs);
+            log.trace("< {} statfs(rc={}, sfs={})", id, rc, deref(sfs));
             return rc;
         };
 
         ops_.flush = [](const char* path, fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} flush(path={}, fi={})", id, deref(path), deref(fi));
-            int rc = ffsp::fuse::flush(*fs, path, fi);
-            logger_->info("< {} flush(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} flush(path={}, fi={})", id, deref(path), deref(fi));
+            int rc = ffsp::fuse::flush(fs, path, fi);
+            log.trace("< {} flush(rc={})", id, rc);
             return rc;
         };
 
         ops_.release = [](const char* path, fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} release(path={}, fi={})", id, deref(path), deref(fi));
-            int rc = ffsp::fuse::release(*fs, path, fi);
-            logger_->info("< {} release(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} release(path={}, fi={})", id, deref(path), deref(fi));
+            int rc = ffsp::fuse::release(fs, path, fi);
+            log.trace("< {} release(rc={})", id, rc);
             return rc;
         };
 
         ops_.fsync = [](const char* path, int datasync, fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} fsync(path={}, datasync={}, fi={})", id, deref(path), datasync, deref(fi));
-            int rc = ffsp::fuse::fsync(*fs, path, datasync, fi);
-            logger_->info("< {} fsync(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} fsync(path={}, datasync={}, fi={})", id, deref(path), datasync, deref(fi));
+            int rc = ffsp::fuse::fsync(fs, path, datasync, fi);
+            log.trace("< {} fsync(rc={})", id, rc);
             return rc;
         };
 
@@ -348,34 +371,38 @@ struct fuse_ffsp_operations
                           fuse_fill_dir_t filler, FUSE_OFF_T offset,
                           fuse_file_info* fi) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, deref(path), buf, (filler != nullptr), offset, deref(fi));
-            int rc = ffsp::fuse::readdir(*fs, path, buf, filler, offset, fi);
-            logger_->info("< {} readdir(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, deref(path), buf, (filler != nullptr), offset, deref(fi));
+            int rc = ffsp::fuse::readdir(fs, path, buf, filler, offset, fi);
+            log.trace("< {} readdir(rc={})", id, rc);
             return rc;
         };
 
         ops_.init = [](fuse_conn_info* conn) {
             auto id = ++op_id_;
-            logger_->info("> {} init(conn={})", id, deref(conn));
+            auto& log = get_log();
+            log.trace("> {} init(conn={})", id, deref(conn));
             void* private_data = ffsp::fuse::init(conn);
-            logger_->info("< {} init(private_data={}, conn={})", id, private_data, deref(conn));
+            log.trace("< {} init(private_data={}, conn={})", id, private_data, deref(conn));
             return private_data;
         };
 
         ops_.destroy = [](void* user) {
             auto id = ++op_id_;
-            logger_->info("> {} destroy(user={})", id, user);
+            auto& log = get_log();
+            log.trace("> {} destroy(user={})", id, user);
             ffsp::fuse::destroy(user);
-            logger_->info("< {} destroy()", id);
+            log.trace("< {} destroy()", id);
         };
 
         ops_.utimens = [](const char* path, const struct ::timespec tv[2]) {
             auto id = ++op_id_;
-            auto fs = get_fs(fuse_get_context());
-            logger_->info("> {} utimens(path={}, access={}, mod={})", id, path, tv[0], tv[1]);
-            int rc = ffsp::fuse::utimens(*fs, path, tv);
-            logger_->info("< {} utimens(rc={})", id, rc);
+            auto& log = get_log();
+            auto& fs = get_fs(fuse_get_context());
+            log.trace("> {} utimens(path={}, access={}, mod={})", id, path, tv[0], tv[1]);
+            int rc = ffsp::fuse::utimens(fs, path, tv);
+            log.trace("< {} utimens(rc={})", id, rc);
             return rc;
         };
 
@@ -421,13 +448,17 @@ struct fuse_ffsp_operations
 
     ~fuse_ffsp_operations()
     {
-        logger_.reset();
-        spdlog::drop("ffsp_api");
+        ffsp::log_deinit();
     }
 
-    static ffsp::fs_context* get_fs(fuse_context* ctx)
+    static ffsp::fs_context& get_fs(fuse_context* ctx)
     {
-        return static_cast<ffsp::fs_context*>(ctx->private_data);
+        return *static_cast<ffsp::fs_context*>(ctx->private_data);
+    }
+
+    static spdlog::logger& get_log()
+    {
+        return ffsp::log();
     }
 
     template <typename T>
@@ -440,18 +471,33 @@ struct fuse_ffsp_operations
 
     // every operation (aka FUSE API call) has a unique id
     static std::atomic_uint op_id_;
-
-    static std::shared_ptr<spdlog::logger> logger_;
 };
 std::atomic_uint fuse_ffsp_operations::op_id_;
-std::shared_ptr<spdlog::logger> fuse_ffsp_operations::logger_;
 
 static void show_usage(const char* progname)
 {
-    printf("Usage:\n");
-    printf("%s DEVICE MOUNTPOINT\n", progname);
-    printf("%s -h, --help        display this help and exit\n", progname);
-    printf("%s -V, -version      print version and exit\n", progname);
+    printf("Usage: %s DEVICE MOUNTPOINT\n"
+           "      --logfile=FILE    Log file\n"
+           "\n"
+           "      --memonly         Utilize memory buffer as device\n"
+           "      --memsize         Size of the memory buffer in bytes\n"
+           "\n"
+           "      --format          Format device before mounting\n"
+           "  -c, --clustersize=N   Use a clusterblock size of N bytes (default:4KiB)\n"
+           "  -e, --erasesize=N     Use a eraseblock size of N bytes (default:4MiB)\n"
+           "  -i, --open-ino=N      Support caching of N dirty inodes at a time (default:128)\n"
+           "  -o, --open-eb=N       Support N open erase blocks at a time (default:5)\n"
+           "  -r, --reserve-eb=N    Reserve N erase blocks for internal use (default:3)\n"
+           "  -w, --write-eb=N      Perform garbage collection after N erase blocks have been written (default:5)\n"
+           "\n"
+           "  -v                    WARNING log level verbosity\n"
+           "  -vv                   INFO log level verbosity\n"
+           "  -vvv                  DEBUG log level verbosity\n"
+           "  -vvvv                 TRACE log level verbosity\n"
+           "\n"
+           "  -h, --help            Display this help message and exit\n"
+           "  -V, --version         Print version and exit\n"
+           , progname);
 }
 
 static void show_version(const char* progname)
@@ -461,20 +507,25 @@ static void show_version(const char* progname)
                                                    ffsp::FFSP_VERSION_PATCH);
 }
 
-struct mount_arguments
+struct ffsp_mount_arguments
 {
+    int verbosity{0};
+    char* logfile{nullptr};
+
     std::string device;
 
     bool in_memory{false};
     size_t memsize{0};
 
     bool format{false};
-    uint32_t clustersize{0};
-    uint32_t erasesize{0};
-    uint32_t ninoopen{0};
-    uint32_t neraseopen{0};
-    uint32_t nerasereserve{0};
-    uint32_t nerasewrites{0};
+    uint32_t clustersize{1024 * 32};
+    uint32_t erasesize{1024 * 1024 * 4};
+    uint32_t ninoopen{128};
+    uint32_t neraseopen{5};
+    uint32_t nerasereserve{3};
+    uint32_t nerasewrites{5};
+
+    ~ffsp_mount_arguments() { free(logfile); }
 };
 
 enum
@@ -483,9 +534,15 @@ enum
     KEY_VERSION,
 };
 
-#define FFSP_MOUNT_OPT(t, p, v) { t, offsetof(mount_arguments, p), v }
+#define FFSP_MOUNT_OPT(t, p, v) { t, offsetof(ffsp_mount_arguments, p), v }
 
 static fuse_opt ffsp_opt[] = {
+    FFSP_MOUNT_OPT("-v", verbosity, 1),
+    FFSP_MOUNT_OPT("-vv", verbosity, 2),
+    FFSP_MOUNT_OPT("-vvv", verbosity, 3),
+    FFSP_MOUNT_OPT("-vvvv", verbosity, 4),
+    FFSP_MOUNT_OPT("--logfile=%s", logfile, 0),
+
     FFSP_MOUNT_OPT("--memonly", in_memory, 1),
 #ifdef _WIN32
     FFSP_MOUNT_OPT("--memsize=%Iu", memsize, 0),
@@ -514,9 +571,11 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
     {
         case FUSE_OPT_KEY_NONOPT:
         {
-            auto* margs = static_cast<mount_arguments*>(data);
+            auto* margs = static_cast<ffsp_mount_arguments*>(data);
             if (margs && margs->device.empty())
             {
+                // Running fuse in background mode changes the cwd. Convert a relative
+                // device path into an absolute path to support background mode.
                 if (arg[0] == '/')
                 {
                     // absolute path
@@ -557,48 +616,48 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
 int main(int argc, char* argv[])
 {
     fuse_args args = FUSE_ARGS_INIT(argc, argv);
-    mount_arguments margs;
-    if (fuse_opt_parse(&args, &margs, ffsp_opt, ffsp_opt_proc) == -1)
+    ffsp_mount_arguments mntargs;
+    if (fuse_opt_parse(&args, &mntargs, ffsp_opt, ffsp_opt_proc) == -1)
     {
-        printf("fuse_opt_parse() failed!\n");
+        fprintf(stderr, "fuse_opt_parse() failed!\n");
         return EXIT_FAILURE;
     }
 
-    if (margs.device.empty() && !margs.in_memory)
+    if (mntargs.device.empty() && !mntargs.in_memory)
     {
-        printf("device argument missing\n");
+        fprintf(stderr, "device argument missing\n");
         return EXIT_FAILURE;
     }
 
-    if (margs.in_memory)
+    if (mntargs.in_memory)
     {
         ffsp::fuse::set_options(
-            margs.memsize, {margs.clustersize, margs.erasesize,
-                            margs.ninoopen, margs.neraseopen,
-                            margs.nerasereserve, margs.nerasewrites});
+            mntargs.memsize, {mntargs.clustersize, mntargs.erasesize,
+                              mntargs.ninoopen, mntargs.neraseopen,
+                              mntargs.nerasereserve, mntargs.nerasewrites});
     }
     else
     {
-        if (!margs.format)
-            ffsp::fuse::set_options(margs.device);
+        if (!mntargs.format)
+            ffsp::fuse::set_options(mntargs.device.c_str());
         else
             ffsp::fuse::set_options(
-                margs.device, {margs.clustersize, margs.erasesize,
-                               margs.ninoopen, margs.neraseopen,
-                               margs.nerasereserve, margs.nerasewrites});
+                mntargs.device.c_str(), {mntargs.clustersize, mntargs.erasesize,
+                                         mntargs.ninoopen, mntargs.neraseopen,
+                                         mntargs.nerasereserve, mntargs.nerasewrites});
     }
 
     if (fuse_opt_add_arg(&args, "-odefault_permissions") == -1)
     {
-        printf("fuse_opt_add_arg() failed!\n");
+        fprintf(stderr, "fuse_opt_add_arg(-odefault_permissions) failed!\n");
         return EXIT_FAILURE;
     }
 
-    fuse_ffsp_operations ffsp_oper;
+    fuse_ffsp_operations ffsp_oper{mntargs.verbosity, mntargs.logfile};
     int rc = fuse_main(args.argc, args.argv, &ffsp_oper.ops_, nullptr);
     if (rc != 0)
     {
-        printf("fuse_main() failed with code %d!\n", rc);
+        fprintf(stderr, "fuse_main() failed with code %d!\n", rc);
     }
 
     fuse_opt_free_args(&args);

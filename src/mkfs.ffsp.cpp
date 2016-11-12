@@ -32,18 +32,18 @@
 #include <cstdlib>
 #include <getopt.h>
 
-struct mkfs_arguments
+struct ffsp_mkfs_arguments
 {
-    const char* device;
-    uint32_t clustersize;
-    uint32_t erasesize;
-    uint32_t ninoopen;
-    uint32_t neraseopen;
-    uint32_t nerasereserve;
-    uint32_t nerasewrites;
+    const char* device{nullptr};
+    uint32_t clustersize{0};
+    uint32_t erasesize{0};
+    uint32_t ninoopen{0};
+    uint32_t neraseopen{0};
+    uint32_t nerasereserve{0};
+    uint32_t nerasewrites{0};
 };
 
-std::ostream& operator<<(std::ostream& os, const mkfs_arguments& args)
+std::ostream& operator<<(std::ostream& os, const ffsp_mkfs_arguments& args)
 {
     return os << "{"
               << "device=" << args.device
@@ -58,30 +58,33 @@ std::ostream& operator<<(std::ostream& os, const mkfs_arguments& args)
 
 static void show_usage(const char* progname)
 {
-    printf("%s [OPTION] DEVICE\n", progname);
-    printf("create a ffsp file system inside the given file [DEVICE]\n\n");
-    printf("-c, --clustersize=N use a clusterblock size of N (default:4KiB)\n");
-    printf("-e, --erasesize=N use a eraseblock size of N (default:4MiB)\n");
-    printf("-i, --open-ino=N support caching of N dirty inodes at a time (default:100)\n");
-    printf("-o, --open-eb=N support N open erase blocks at a time (default:5)\n");
-    printf("-r, --reserve-eb=N reserve N erase blocks for internal use (default:3)\n");
-    printf("-w, --write-eb=N Perform garbage collection after N erase blocks have been written (default:5)\n");
+    printf("Usage: %s [OPTION] DEVICE\n"
+           "Create a ffsp file system inside the given file [DEVICE]\n"
+           "  -c, --clustersize=N     Use a clusterblock size of N bytes (default:4KiB)\n"
+           "  -e, --erasesize=N       Use a eraseblock size of N bytes (default:4MiB)\n\n"
+           "  -i, --open-ino=N        Support caching of N dirty inodes at a time (default:128)\n"
+           "  -o, --open-eb=N         Support N open erase blocks at a time (default:5)\n"
+           "  -r, --reserve-eb=N      Reserve N erase blocks for internal use (default:3)\n"
+           "  -w, --write-eb=N        Perform garbage collection after N erase blocks have been written (default:5)\n"
+           "\n"
+           "  -h, --help              Display this help message and exit\n"
+           , progname);
 }
 
-static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
+static bool parse_arguments(int argc, char** argv, ffsp_mkfs_arguments& args)
 {
     static const option long_options[] =
     {
-        { "clustersize", 1, NULL, 'c' },
-        { "erasesize", 1, NULL, 'e' },
-        { "open-ino", 1, NULL, 'i' },
-        { "open-eb", 1, NULL, 'o' },
-        { "reserve-eb", 1, NULL, 'r' },
-        { "write-eb", 1, NULL, 'w' },
-        { NULL, 0, NULL, 0 },
+        { "clustersize", required_argument, nullptr, 'c' },
+        { "erasesize", required_argument, nullptr, 'e' },
+        { "open-ino", required_argument, nullptr, 'i' },
+        { "open-eb", required_argument, nullptr, 'o' },
+        { "reserve-eb", required_argument, nullptr, 'r' },
+        { "write-eb", required_argument, nullptr, 'w' },
+        { "help", no_argument, nullptr, 'h' },
+        { 0, 0, 0, 0 },
     };
 
-    args = {};
     // Default size for clusters is 4 KiB
     args.clustersize = 1024 * 32;
     // Default size for erase blocks is 4 MiB
@@ -97,7 +100,7 @@ static bool parse_arguments(int argc, char** argv, mkfs_arguments& args)
 
     while (true)
     {
-        int c = getopt_long(argc, argv, "c:e:i:o:r:w:", long_options, &optind);
+        int c = getopt_long(argc, argv, "c:e:i:o:r:w:h", long_options, &optind);
         if (c == -1)
             break;
 
@@ -142,7 +145,7 @@ int main(int argc, char* argv[])
 {
     ffsp::log_init("ffsp_mkfs", spdlog::level::debug);
 
-    mkfs_arguments args = {};
+    ffsp_mkfs_arguments args;
     if (!parse_arguments(argc, argv, args))
     {
         fprintf(stderr, "%s: failed to parse command line arguments", argv[0]);

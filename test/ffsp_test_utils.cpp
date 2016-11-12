@@ -29,6 +29,8 @@
 
 #include "fuse.h"
 
+#include <string>
+
 #include <cstdio>
 #include <cstdlib>
 #include <sys/types.h>

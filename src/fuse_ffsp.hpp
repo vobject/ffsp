@@ -23,8 +23,6 @@
 
 #include "fuse.h"
 
-#include <string>
-
 #ifndef _WIN32
 #define FUSE_OFF_T off_t
 #endif
@@ -38,8 +36,8 @@ struct mkfs_options;
 namespace fuse
 {
 
-void set_options(const std::string& device);
-void set_options(const std::string& device, const mkfs_options& options);
+void set_options(const char* device);
+void set_options(const char* device, const mkfs_options& options);
 void set_options(size_t memsize, const mkfs_options& options);
 
 void* init(fuse_conn_info* conn);

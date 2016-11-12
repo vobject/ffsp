@@ -62,7 +62,7 @@ static struct mount_options
     std::unique_ptr<std::string> device;
     std::unique_ptr<mkfs_options> mkfs_opts;
     size_t memsize{0};
-} mount_opts;
+} mnt_opts;
 
 
 // Convert from fuse_file_info->fh to ffsp_inode...
@@ -76,34 +76,32 @@ static void set_inode(fuse_file_info* fi, const inode* ino)
     fi->fh = (size_t)ino;
 }
 
-void set_options(const std::string& device)
+void set_options(const char* device)
 {
-    mount_opts.device.reset(new std::string{device});
-    mount_opts.mkfs_opts.reset();
-    mount_opts.memsize = 0;
+    mnt_opts.device.reset(new std::string{device});
+    mnt_opts.mkfs_opts.reset();
+    mnt_opts.memsize = 0;
 }
 
-void set_options(const std::string& device, const mkfs_options& options)
+void set_options(const char* device, const mkfs_options& options)
 {
-    mount_opts.device.reset(new std::string{device});
-    mount_opts.mkfs_opts.reset(new mkfs_options{options});
-    mount_opts.memsize = 0;
+    mnt_opts.device.reset(new std::string{device});
+    mnt_opts.mkfs_opts.reset(new mkfs_options{options});
+    mnt_opts.memsize = 0;
 }
 
 void set_options(size_t memsize, const mkfs_options& options)
 {
-    mount_opts.device.reset();
-    mount_opts.mkfs_opts.reset(new mkfs_options{options});
-    mount_opts.memsize = memsize;
+    mnt_opts.device.reset();
+    mnt_opts.mkfs_opts.reset(new mkfs_options{options});
+    mnt_opts.memsize = memsize;
 }
 
 void* init(fuse_conn_info* conn)
 {
-    log_init("ffsp_api", spdlog::level::debug);
-
-    io_context* io_ctx = mount_opts.device
-        ? ffsp::io_context_init(mount_opts.device->c_str())
-        : ffsp::io_context_init(mount_opts.memsize);
+    io_context* io_ctx = mnt_opts.device
+        ? ffsp::io_context_init(mnt_opts.device->c_str())
+        : ffsp::io_context_init(mnt_opts.memsize);
 
     if (!io_ctx)
     {
@@ -111,7 +109,7 @@ void* init(fuse_conn_info* conn)
         exit(EXIT_FAILURE);
     }
 
-    if (mount_opts.mkfs_opts && !mkfs(*io_ctx, *mount_opts.mkfs_opts))
+    if (mnt_opts.mkfs_opts && !mkfs(*io_ctx, *mnt_opts.mkfs_opts))
     {
         log().error("fuse::init(): mkfs failed");
         exit(EXIT_FAILURE);
@@ -124,7 +122,10 @@ void* init(fuse_conn_info* conn)
         exit(EXIT_FAILURE);
     }
 
-#ifndef _WIN32
+#ifdef _WIN32
+    conn->max_write = fs->clustersize;
+    log().info("Setting max_write to {}", conn->max_write);
+#else
     if (conn->capable & FUSE_CAP_ATOMIC_O_TRUNC)
     {
         conn->want |= FUSE_CAP_ATOMIC_O_TRUNC;
@@ -134,11 +135,8 @@ void* init(fuse_conn_info* conn)
     {
         conn->want |= FUSE_CAP_BIG_WRITES;
         conn->max_write = fs->clustersize;
-        log().debug("Setting max_write to {}", conn->max_write);
+        log().info("Setting max_write to {}", conn->max_write);
     }
-#else
-    conn->max_write = fs->clustersize;
-    ffsp_log().debug("Setting max_write to {}", conn->max_write);
 #endif
 
     // TODO: Would it be ok to read all existing inode + dentry structs
@@ -153,8 +151,6 @@ void destroy(void* user)
 {
     io_context* io_ctx = ffsp::unmount(static_cast<fs_context*>(user));
     ffsp::io_context_uninit(io_ctx);
-
-    log_deinit();
 }
 
 #ifdef _WIN32
@@ -246,7 +242,7 @@ int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
     {
         if (get_be32(dent_buf[i].ino) == FFSP_INVALID_INO_NO)
             continue; // Invalid ffsp_entry
-        if (filler(buf, dent_buf[i].name, NULL, 0))
+        if (filler(buf, dent_buf[i].name, nullptr, 0))
             log().debug("readdir({}): filler full!", path);
     }
     // TODO: Handle directory cache inside ffsp structure.
@@ -280,7 +276,7 @@ int release(fs_context& fs, const char* path, fuse_file_info* fi)
     if (ffsp::is_debug_path(fs, path))
         return ffsp::debug_release(fs, path) ? 0 : -EIO;
 
-    set_inode(fi, NULL);
+    set_inode(fi, nullptr);
     return 0;
 }
 

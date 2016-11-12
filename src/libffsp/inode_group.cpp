@@ -74,7 +74,7 @@ static int get_inode_group(const fs_context& fs, inode** inodes,
         }
         /* move the current inode into the inode group */
         group[group_elem_cnt++] = inodes[i];
-        inodes[i] = NULL;
+        inodes[i] = nullptr;
         group_size += inode_size;
     }
     return group_elem_cnt;
