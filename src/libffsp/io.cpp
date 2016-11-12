@@ -39,18 +39,18 @@ namespace ffsp
 
 struct write_context
 {
-    const char* buf{nullptr};
-    size_t bytes_left{0};
-    uint64_t offset{0};
+    const char* buf{ nullptr };
+    size_t bytes_left{ 0 };
+    uint64_t offset{ 0 };
 
-    inode* ino{nullptr};
-    be32_t* ind_ptr{nullptr};
-    uint64_t old_size{0};
-    uint64_t new_size{0};
-    uint64_t old_ind_size{0};
-    uint64_t new_ind_size{0};
-    uint8_t old_type{0};
-    uint8_t new_type{0};
+    inode* ino{ nullptr };
+    be32_t* ind_ptr{ nullptr };
+    uint64_t old_size{ 0 };
+    uint64_t new_size{ 0 };
+    uint64_t old_ind_size{ 0 };
+    uint64_t new_ind_size{ 0 };
+    uint8_t old_type{ 0 };
+    uint8_t new_type{ 0 };
 };
 
 static bool is_buf_empty(const char* buf, size_t size)
@@ -647,9 +647,9 @@ ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t off
         return -EPERM;
     }
 
-//    TODO: Decide what to do with this.
-//    if (!(fs.flags & FFSP_SUPER_NOATIME))
-//        ffsp_update_atime(cl->ino);
+    //    TODO: Decide what to do with this.
+    //    if (!(fs.flags & FFSP_SUPER_NOATIME))
+    //        ffsp_update_atime(cl->ino);
 
     return rc;
 }

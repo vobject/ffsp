@@ -160,11 +160,15 @@ struct fuse_ffsp_operations
     fuse_ffsp_operations(int verbosity, const char* logfile)
         : ops_()
     {
-        auto v2l = [](int verbosity){
-            if (verbosity == 4) return spdlog::level::trace;
-            if (verbosity == 3) return spdlog::level::debug;
-            if (verbosity == 2) return spdlog::level::info;
-            if (verbosity == 1) return spdlog::level::warn;
+        auto v2l = [](int verbosity) {
+            if (verbosity == 4)
+                return spdlog::level::trace;
+            if (verbosity == 3)
+                return spdlog::level::debug;
+            if (verbosity == 2)
+                return spdlog::level::info;
+            if (verbosity == 1)
+                return spdlog::level::warn;
             return spdlog::level::err;
         };
 
@@ -496,34 +500,34 @@ static void show_usage(const char* progname)
            "  -vvvv                 TRACE log level verbosity\n"
            "\n"
            "  -h, --help            Display this help message and exit\n"
-           "  -V, --version         Print version and exit\n"
-           , progname);
+           "  -V, --version         Print version and exit\n",
+           progname);
 }
 
 static void show_version(const char* progname)
 {
     printf("FUSE %s version %d.%d.%d\n", progname, ffsp::FFSP_VERSION_MAJOR,
-                                                   ffsp::FFSP_VERSION_MINOR,
-                                                   ffsp::FFSP_VERSION_PATCH);
+           ffsp::FFSP_VERSION_MINOR,
+           ffsp::FFSP_VERSION_PATCH);
 }
 
 struct ffsp_mount_arguments
 {
-    int verbosity{0};
-    char* logfile{nullptr};
+    int verbosity{ 0 };
+    char* logfile{ nullptr };
 
     std::string device;
 
-    bool in_memory{false};
-    size_t memsize{0};
+    bool in_memory{ false };
+    size_t memsize{ 0 };
 
-    bool format{false};
-    uint32_t clustersize{1024 * 32};
-    uint32_t erasesize{1024 * 1024 * 4};
-    uint32_t ninoopen{128};
-    uint32_t neraseopen{5};
-    uint32_t nerasereserve{3};
-    uint32_t nerasewrites{5};
+    bool format{ false };
+    uint32_t clustersize{ 1024 * 32 };
+    uint32_t erasesize{ 1024 * 1024 * 4 };
+    uint32_t ninoopen{ 128 };
+    uint32_t neraseopen{ 5 };
+    uint32_t nerasereserve{ 3 };
+    uint32_t nerasewrites{ 5 };
 
     ~ffsp_mount_arguments() { free(logfile); }
 };
@@ -534,7 +538,10 @@ enum
     KEY_VERSION,
 };
 
-#define FFSP_MOUNT_OPT(t, p, v) { t, offsetof(ffsp_mount_arguments, p), v }
+#define FFSP_MOUNT_OPT(t, p, v)                 \
+    {                                           \
+        t, offsetof(ffsp_mount_arguments, p), v \
+    }
 
 static fuse_opt ffsp_opt[] = {
     FFSP_MOUNT_OPT("-v", verbosity, 1),
@@ -632,9 +639,9 @@ int main(int argc, char* argv[])
     if (mntargs.in_memory)
     {
         ffsp::fuse::set_options(
-            mntargs.memsize, {mntargs.clustersize, mntargs.erasesize,
-                              mntargs.ninoopen, mntargs.neraseopen,
-                              mntargs.nerasereserve, mntargs.nerasewrites});
+            mntargs.memsize, { mntargs.clustersize, mntargs.erasesize,
+                               mntargs.ninoopen, mntargs.neraseopen,
+                               mntargs.nerasereserve, mntargs.nerasewrites });
     }
     else
     {
@@ -642,9 +649,9 @@ int main(int argc, char* argv[])
             ffsp::fuse::set_options(mntargs.device.c_str());
         else
             ffsp::fuse::set_options(
-                mntargs.device.c_str(), {mntargs.clustersize, mntargs.erasesize,
-                                         mntargs.ninoopen, mntargs.neraseopen,
-                                         mntargs.nerasereserve, mntargs.nerasewrites});
+                mntargs.device.c_str(), { mntargs.clustersize, mntargs.erasesize,
+                                          mntargs.ninoopen, mntargs.neraseopen,
+                                          mntargs.nerasereserve, mntargs.nerasewrites });
     }
 
     if (fuse_opt_add_arg(&args, "-odefault_permissions") == -1)
@@ -653,7 +660,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    fuse_ffsp_operations ffsp_oper{mntargs.verbosity, mntargs.logfile};
+    fuse_ffsp_operations ffsp_oper{ mntargs.verbosity, mntargs.logfile };
     int rc = fuse_main(args.argc, args.argv, &ffsp_oper.ops_, nullptr);
     if (rc != 0)
     {

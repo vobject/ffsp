@@ -19,9 +19,9 @@
  */
 
 #include "libffsp/ffsp.hpp"
-#include "libffsp/mkfs.hpp"
 #include "libffsp/io_raw.hpp"
 #include "libffsp/log.hpp"
+#include "libffsp/mkfs.hpp"
 
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
@@ -34,13 +34,13 @@
 
 struct ffsp_mkfs_arguments
 {
-    const char* device{nullptr};
-    uint32_t clustersize{0};
-    uint32_t erasesize{0};
-    uint32_t ninoopen{0};
-    uint32_t neraseopen{0};
-    uint32_t nerasereserve{0};
-    uint32_t nerasewrites{0};
+    const char* device{ nullptr };
+    uint32_t clustersize{ 0 };
+    uint32_t erasesize{ 0 };
+    uint32_t ninoopen{ 0 };
+    uint32_t neraseopen{ 0 };
+    uint32_t nerasereserve{ 0 };
+    uint32_t nerasewrites{ 0 };
 };
 
 std::ostream& operator<<(std::ostream& os, const ffsp_mkfs_arguments& args)
@@ -67,23 +67,23 @@ static void show_usage(const char* progname)
            "  -r, --reserve-eb=N      Reserve N erase blocks for internal use (default:3)\n"
            "  -w, --write-eb=N        Perform garbage collection after N erase blocks have been written (default:5)\n"
            "\n"
-           "  -h, --help              Display this help message and exit\n"
-           , progname);
+           "  -h, --help              Display this help message and exit\n",
+           progname);
 }
 
 static bool parse_arguments(int argc, char** argv, ffsp_mkfs_arguments& args)
 {
     static const option long_options[] =
-    {
-        { "clustersize", required_argument, nullptr, 'c' },
-        { "erasesize", required_argument, nullptr, 'e' },
-        { "open-ino", required_argument, nullptr, 'i' },
-        { "open-eb", required_argument, nullptr, 'o' },
-        { "reserve-eb", required_argument, nullptr, 'r' },
-        { "write-eb", required_argument, nullptr, 'w' },
-        { "help", no_argument, nullptr, 'h' },
-        { 0, 0, 0, 0 },
-    };
+        {
+          { "clustersize", required_argument, nullptr, 'c' },
+          { "erasesize", required_argument, nullptr, 'e' },
+          { "open-ino", required_argument, nullptr, 'i' },
+          { "open-eb", required_argument, nullptr, 'o' },
+          { "reserve-eb", required_argument, nullptr, 'r' },
+          { "write-eb", required_argument, nullptr, 'w' },
+          { "help", no_argument, nullptr, 'h' },
+          { 0, 0, 0, 0 },
+        };
 
     // Default size for clusters is 4 KiB
     args.clustersize = 1024 * 32;
@@ -156,12 +156,7 @@ int main(int argc, char* argv[])
 
     auto ret = EXIT_SUCCESS;
     auto* io_ctx = ffsp::io_context_init(args.device);
-    if (!io_ctx || !ffsp::mkfs(*io_ctx, {args.clustersize,
-                                         args.erasesize,
-                                         args.ninoopen,
-                                         args.neraseopen,
-                                         args.nerasereserve,
-                                         args.nerasewrites}))
+    if (!io_ctx || !ffsp::mkfs(*io_ctx, { args.clustersize, args.erasesize, args.ninoopen, args.neraseopen, args.nerasereserve, args.nerasewrites }))
     {
         perror("failed to setup file system");
         ret = EXIT_FAILURE;

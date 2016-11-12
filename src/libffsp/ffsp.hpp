@@ -28,13 +28,13 @@
 namespace ffsp
 {
 
-constexpr uint32_t FFSP_FILE_SYSTEM_ID{0x46465350}; // FFSP
-constexpr int FFSP_VERSION_MAJOR{0};
-constexpr int FFSP_VERSION_MINOR{0};
-constexpr int FFSP_VERSION_PATCH{1};
+constexpr uint32_t FFSP_FILE_SYSTEM_ID{ 0x46465350 }; // FFSP
+constexpr int FFSP_VERSION_MAJOR{ 0 };
+constexpr int FFSP_VERSION_MINOR{ 0 };
+constexpr int FFSP_VERSION_PATCH{ 1 };
 
-constexpr uint32_t FFSP_SUPER_NOATIME{0x01};
-constexpr int FFSP_NAME_MAX{248};
+constexpr uint32_t FFSP_SUPER_NOATIME{ 0x01 };
+constexpr int FFSP_NAME_MAX{ 248 };
 
 struct superblock
 {
@@ -69,20 +69,20 @@ struct timespec
 static_assert(sizeof(timespec) == 12, "timespec: unexpected size");
 
 // Invalid index inside the inode map
-constexpr uint32_t FFSP_INVALID_INO_NO{0};
+constexpr uint32_t FFSP_INVALID_INO_NO{ 0 };
 
 // Cluster ids that the inode map points to
-constexpr uint32_t FFSP_FREE_CL_ID{0x00000000};
-constexpr uint32_t FFSP_RESERVED_CL_ID{0xffffffff};
+constexpr uint32_t FFSP_FREE_CL_ID{ 0x00000000 };
+constexpr uint32_t FFSP_RESERVED_CL_ID{ 0xffffffff };
 
 // erase block ids - 32bit
-constexpr uint32_t FFSP_INVALID_EB_ID{0x00000000};
+constexpr uint32_t FFSP_INVALID_EB_ID{ 0x00000000 };
 
 // inode data format - 8bit
 //constexpr uint8_t FFSP_DATA_SUPER{0x00};
-constexpr uint8_t FFSP_DATA_EMB{0x01};
-constexpr uint8_t FFSP_DATA_CLIN{0x02};
-constexpr uint8_t FFSP_DATA_EBIN{0x04};
+constexpr uint8_t FFSP_DATA_EMB{ 0x01 };
+constexpr uint8_t FFSP_DATA_CLIN{ 0x02 };
+constexpr uint8_t FFSP_DATA_EBIN{ 0x04 };
 //constexpr uint8_t FFSP_DATA_CLEAN{0x08};
 
 struct inode

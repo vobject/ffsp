@@ -395,7 +395,7 @@ static bool is_inode_dirty(const fs_context& fs, const inode& ino)
  */
 static std::vector<inode*> get_dirty_inodes(const fs_context& fs, bool dentries)
 {
-    return inode_cache_get_if(*fs.inode_cache, [&](const inode& ino){
+    return inode_cache_get_if(*fs.inode_cache, [&](const inode& ino) {
         if (is_inode_dirty(fs, ino))
         {
             if (dentries && S_ISDIR(get_be32(ino.i_mode)))
@@ -763,7 +763,7 @@ void mark_dirty(fs_context& fs, inode* ino)
     fs.dirty_ino_cnt++;
 
     log().debug("inode {} is now DIRTY - dirty_ino_cnt={}",
-                     ino_no, fs.dirty_ino_cnt);
+                ino_no, fs.dirty_ino_cnt);
 
     /* decrement the number of valid inodes inside the old inode's
      * cluster (in case it really had one). */
@@ -792,7 +792,7 @@ void reset_dirty(fs_context& fs, inode* ino)
         clear_bit(fs.ino_status_map, ino_no);
         fs.dirty_ino_cnt--;
         log().debug("inode {} is now CLEAN - dirty_ino_cnt={}",
-                         ino_no, fs.dirty_ino_cnt);
+                    ino_no, fs.dirty_ino_cnt);
     }
 }
 

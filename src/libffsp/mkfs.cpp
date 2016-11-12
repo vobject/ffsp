@@ -55,10 +55,10 @@ static uint32_t get_eraseblk_cnt(io_context& ctx, uint32_t eb_size)
 static uint32_t get_inode_cnt(uint32_t eb_size, uint32_t cl_size, uint32_t eb_cnt)
 {
     // Note that the first inode number is always invalid.
-    return (eb_size                             // Only look at the first erase block
-            - cl_size                           // super block aligned to clustersize
+    return (eb_size                          // Only look at the first erase block
+            - cl_size                        // super block aligned to clustersize
             - (eb_cnt * sizeof(eraseblock))) // eb usage
-           / sizeof(uint32_t);                  // inodes are 4 bytes in size
+           / sizeof(uint32_t);               // inodes are 4 bytes in size
 
     // TODO: FFSP_RESERVED_INODE_ID is not taken care of.
     //  But it is highly unlikely that the file system is created with

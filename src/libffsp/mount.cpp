@@ -19,15 +19,15 @@
  */
 
 #include "mount.hpp"
-#include "mkfs.hpp"
-#include "eraseblk.hpp"
 #include "debug.hpp"
+#include "eraseblk.hpp"
 #include "ffsp.hpp"
 #include "gc.hpp"
 #include "inode.hpp"
 #include "inode_cache.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
+#include "mkfs.hpp"
 #include "summary.hpp"
 #include "utils.hpp"
 

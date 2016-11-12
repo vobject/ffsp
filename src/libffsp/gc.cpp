@@ -41,7 +41,7 @@ struct gcinfo
     unsigned int write_cnt;
 };
 
-gcinfo *gcinfo_init(const fs_context& fs)
+gcinfo* gcinfo_init(const fs_context& fs)
 {
     auto* info = new gcinfo[fs.neraseopen - 1];
 
@@ -97,7 +97,7 @@ gcinfo *gcinfo_init(const fs_context& fs)
 
 void gcinfo_uninit(gcinfo* info)
 {
-    delete [] info;
+    delete[] info;
 }
 
 /*
@@ -492,7 +492,7 @@ void gc(fs_context& fs)
     while ((eb_type = find_collectable_eb_type(fs)) != FFSP_EB_INVALID)
     {
         if (eb_type == FFSP_EB_DENTRY_INODE ||
-            eb_type == FFSP_EB_FILE_INODE )
+            eb_type == FFSP_EB_FILE_INODE)
         {
             log().debug("ffsp_gc(): collecting eb_type {}", eb_type);
             collect_inodes(fs, eb_type);

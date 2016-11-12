@@ -30,13 +30,16 @@ namespace ffsp
 
 struct inode_cache
 {
-    explicit inode_cache(size_t size) : buf{size, nullptr} {}
+    explicit inode_cache(size_t size)
+        : buf{ size, nullptr }
+    {
+    }
     std::vector<inode*> buf;
 };
 
 inode_cache* inode_cache_init(const fs_context& fs)
 {
-    return new inode_cache{fs.nino};
+    return new inode_cache{ fs.nino };
 }
 
 void inode_cache_uninit(inode_cache* cache)
@@ -69,7 +72,7 @@ std::vector<inode*> inode_cache_get(const inode_cache& cache)
 }
 
 std::vector<inode*> inode_cache_get_if(const inode_cache& cache,
-                                                 const std::function<bool(const inode&)>& p)
+                                       const std::function<bool(const inode&)>& p)
 {
     std::vector<inode*> ret;
     for (size_t i = 1; i < cache.buf.size(); i++)

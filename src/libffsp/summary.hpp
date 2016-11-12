@@ -40,7 +40,6 @@ bool summary_required(const fs_context& fs, uint32_t eb_id);
 bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id);
 void summary_add_ref(summary* summary, uint16_t cl_idx, uint32_t ino_no);
 
-
 //be32_t* ffsp_summary_list_add(const ffsp_fs& fs, ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
 //void ffsp_summary_list_del(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);
 //be32_t* ffsp_summary_list_find(ffsp_summary_list_node& head, ffsp_eraseblk_type eb_type);

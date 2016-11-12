@@ -30,12 +30,12 @@ struct io_context;
 
 struct mkfs_options
 {
-    uint32_t clustersize{0};
-    uint32_t erasesize{0};
-    uint32_t ninoopen{0};
-    uint32_t neraseopen{0};
-    uint32_t nerasereserve{0};
-    uint32_t nerasewrites{0};
+    uint32_t clustersize{ 0 };
+    uint32_t erasesize{ 0 };
+    uint32_t ninoopen{ 0 };
+    uint32_t neraseopen{ 0 };
+    uint32_t nerasereserve{ 0 };
+    uint32_t nerasewrites{ 0 };
 };
 
 bool mkfs(io_context& ctx, const mkfs_options& options);

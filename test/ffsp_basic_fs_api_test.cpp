@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
 #include "libffsp/debug.hpp"
-#include "libffsp/log.hpp"
 #include "libffsp/io_raw.hpp"
+#include "libffsp/log.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
 
@@ -57,29 +57,29 @@ protected:
 
 TEST_F(BasicFileSystemOperationsApiTest, SmallFiles)
 {
-//    const std::string rootDir{"/"};
+    //    const std::string rootDir{"/"};
 
-//    for (int i = 1;;i++)
-//    {
-//        const std::string testFile{rootDir + std::to_string(i)};
-//        fuse_file_info fi = {};
+    //    for (int i = 1;;i++)
+    //    {
+    //        const std::string testFile{rootDir + std::to_string(i)};
+    //        fuse_file_info fi = {};
 
-//        const mode_t mode = S_IFREG;
-//        const dev_t device = 0;
-//        ASSERT_EQ(0, fuse_ffsp::mknod(fs_, testFile.c_str(), mode, device));
+    //        const mode_t mode = S_IFREG;
+    //        const dev_t device = 0;
+    //        ASSERT_EQ(0, fuse_ffsp::mknod(fs_, testFile.c_str(), mode, device));
 
-//        const size_t write_offset = 0;
-//        const std::vector<char> write_buf(4096, '#');
-//        ASSERT_EQ(0, fuse_ffsp::open(fs_, testFile.c_str(), &fi));
-//        ASSERT_EQ(4096, fuse_ffsp::write(fs_, testFile.c_str(), write_buf.data(), write_buf.size(), write_offset, &fi));
-//        ASSERT_EQ(0, fuse_ffsp::release(fs_, testFile.c_str(), &fi));
+    //        const size_t write_offset = 0;
+    //        const std::vector<char> write_buf(4096, '#');
+    //        ASSERT_EQ(0, fuse_ffsp::open(fs_, testFile.c_str(), &fi));
+    //        ASSERT_EQ(4096, fuse_ffsp::write(fs_, testFile.c_str(), write_buf.data(), write_buf.size(), write_offset, &fi));
+    //        ASSERT_EQ(0, fuse_ffsp::release(fs_, testFile.c_str(), &fi));
 
-//        std::vector<char> read_buf(4096);
-//        const size_t read_offset = 0;
-//        ASSERT_EQ(0, fuse_ffsp::open(fs_, testFile.c_str(), &fi));
-//        ASSERT_EQ(4096, fuse_ffsp::read(fs_, testFile.c_str(), read_buf.data(), read_buf.size(), read_offset, &fi));
-//        ASSERT_EQ(0, fuse_ffsp::release(fs_, testFile.c_str(), &fi));
-//    }
+    //        std::vector<char> read_buf(4096);
+    //        const size_t read_offset = 0;
+    //        ASSERT_EQ(0, fuse_ffsp::open(fs_, testFile.c_str(), &fi));
+    //        ASSERT_EQ(4096, fuse_ffsp::read(fs_, testFile.c_str(), read_buf.data(), read_buf.size(), read_offset, &fi));
+    //        ASSERT_EQ(0, fuse_ffsp::release(fs_, testFile.c_str(), &fi));
+    //    }
 
-//    ffsp_log().info(ffsp_debug_get_info(fs_));
+    //    ffsp_log().info(ffsp_debug_get_info(fs_));
 }

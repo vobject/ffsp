@@ -109,13 +109,34 @@ namespace ffsp
 //    summary[writeops] = put_be32(ino_no);
 //}
 
-
 struct summary
 {
-    explicit summary(size_t size) : buf_{size, put_be32(0)} {}
-    summary* open() { if (open_) { return nullptr; } open_ = true; return this; }
-    summary* get() { if (!open_) { return nullptr; } return this; }
-    void close() { std::fill(buf_.begin(), buf_.end(), put_be32(0)); open_ = false; }
+    explicit summary(size_t size)
+        : buf_{ size, put_be32(0) }
+    {
+    }
+    summary* open()
+    {
+        if (open_)
+        {
+            return nullptr;
+        }
+        open_ = true;
+        return this;
+    }
+    summary* get()
+    {
+        if (!open_)
+        {
+            return nullptr;
+        }
+        return this;
+    }
+    void close()
+    {
+        std::fill(buf_.begin(), buf_.end(), put_be32(0));
+        open_ = false;
+    }
     const void* data() const { return buf_.data(); }
     std::vector<be32_t> buf_;
     bool open_ = false;
@@ -123,7 +144,11 @@ struct summary
 
 struct summary_cache
 {
-    explicit summary_cache(size_t size) : dentry_clin{size}, inode_clin{size} {}
+    explicit summary_cache(size_t size)
+        : dentry_clin{ size }
+        , inode_clin{ size }
+    {
+    }
 
     /* no other erase block types require a summary */
     summary dentry_clin;
@@ -132,7 +157,7 @@ struct summary_cache
 
 summary_cache* summary_cache_init(const fs_context& fs)
 {
-    return new summary_cache{fs.clustersize};
+    return new summary_cache{ fs.clustersize };
 }
 
 void summary_cache_uninit(summary_cache* cache)
@@ -193,7 +218,6 @@ bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id)
     }
     debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(rc));
     return true;
-
 }
 
 void summary_add_ref(summary* summary, uint16_t cl_idx, uint32_t ino_no)

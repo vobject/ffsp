@@ -18,12 +18,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#include "inode.hpp"
-#include "eraseblk.hpp"
-#include "debug.hpp"
-#include "ffsp.hpp"
-#include "inode_cache.hpp"
 #include "inode_group.hpp"
+#include "debug.hpp"
+#include "eraseblk.hpp"
+#include "ffsp.hpp"
+#include "inode.hpp"
+#include "inode_cache.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
 

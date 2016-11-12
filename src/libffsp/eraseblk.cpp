@@ -186,7 +186,7 @@ int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
 }
 
 void commit_write_operation(fs_context& fs, eraseblock_type eb_type,
-                                 uint32_t eb_id, be32_t ino_no)
+                            uint32_t eb_id, be32_t ino_no)
 {
     /* TODO: Error handling missing! */
 

@@ -56,9 +56,8 @@ struct io_context
 struct file_io_context : io_context
 {
     explicit file_io_context(int fd)
-        :fd_{fd}
+        : fd_{ fd }
     {
-
     }
 
     virtual ~file_io_context()
@@ -94,15 +93,14 @@ struct file_io_context : io_context
 struct buffer_io_context : io_context
 {
     explicit buffer_io_context(char* buf, size_t size)
-        : buf_{buf}
-        , size_{size}
+        : buf_{ buf }
+        , size_{ size }
     {
-
     }
 
     virtual ~buffer_io_context()
     {
-        delete [] buf_;
+        delete[] buf_;
     }
 
     uint64_t size() const override
@@ -128,7 +126,7 @@ struct buffer_io_context : io_context
 
 io_context* io_context_init(const char* path)
 {
-    /*
+/*
      * O_DIRECT could also be used if all pwrite() calls get a
      * page-aligned write pointer. But to get that calls to malloc had
      * to be replaced by posix_memalign with 4k alignment.
@@ -141,16 +139,16 @@ io_context* io_context_init(const char* path)
     if (fd == -1)
         return nullptr;
 
-    return new file_io_context{fd};
+    return new file_io_context{ fd };
 }
 
 io_context* io_context_init(size_t size)
 {
-    auto* buf = new(std::nothrow) char[size];
+    auto* buf = new (std::nothrow) char[size];
     if (!buf)
         return nullptr;
 
-    return new buffer_io_context{buf, size};
+    return new buffer_io_context{ buf, size };
 }
 
 void io_context_uninit(io_context* ctx)

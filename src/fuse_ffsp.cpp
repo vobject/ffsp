@@ -61,9 +61,8 @@ static struct mount_options
 {
     std::unique_ptr<std::string> device;
     std::unique_ptr<mkfs_options> mkfs_opts;
-    size_t memsize{0};
+    size_t memsize{ 0 };
 } mnt_opts;
-
 
 // Convert from fuse_file_info->fh to ffsp_inode...
 static inode* get_inode(const fuse_file_info* fi)
@@ -78,30 +77,30 @@ static void set_inode(fuse_file_info* fi, const inode* ino)
 
 void set_options(const char* device)
 {
-    mnt_opts.device.reset(new std::string{device});
+    mnt_opts.device.reset(new std::string{ device });
     mnt_opts.mkfs_opts.reset();
     mnt_opts.memsize = 0;
 }
 
 void set_options(const char* device, const mkfs_options& options)
 {
-    mnt_opts.device.reset(new std::string{device});
-    mnt_opts.mkfs_opts.reset(new mkfs_options{options});
+    mnt_opts.device.reset(new std::string{ device });
+    mnt_opts.mkfs_opts.reset(new mkfs_options{ options });
     mnt_opts.memsize = 0;
 }
 
 void set_options(size_t memsize, const mkfs_options& options)
 {
     mnt_opts.device.reset();
-    mnt_opts.mkfs_opts.reset(new mkfs_options{options});
+    mnt_opts.mkfs_opts.reset(new mkfs_options{ options });
     mnt_opts.memsize = memsize;
 }
 
 void* init(fuse_conn_info* conn)
 {
     io_context* io_ctx = mnt_opts.device
-        ? ffsp::io_context_init(mnt_opts.device->c_str())
-        : ffsp::io_context_init(mnt_opts.memsize);
+                             ? ffsp::io_context_init(mnt_opts.device->c_str())
+                             : ffsp::io_context_init(mnt_opts.memsize);
 
     if (!io_ctx)
     {
