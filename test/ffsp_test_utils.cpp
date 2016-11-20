@@ -34,7 +34,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sys/types.h>
+
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 
 fuse_context* fuse_get_context()
 {
@@ -50,8 +55,14 @@ namespace test
 
 bool create_file(const char* file_path, uint64_t file_size)
 {
-    FILE* fp = fopen(file_path, "w");
-    return fp && (ftruncate(fileno(fp), static_cast<off_t>(file_size)) == 0) && (fclose(fp) == 0);
+    FILE* fp = ::fopen(file_path, "w");
+    return fp &&
+#ifdef _WIN32
+        (::chsize(fileno(fp), static_cast<long>(file_size)) == 0) &&
+#else
+        (::ftruncate(fileno(fp), static_cast<off_t>(file_size)) == 0) &&
+#endif
+        (::fclose(fp) == 0);
 }
 
 bool remove_file(const char* file_path)

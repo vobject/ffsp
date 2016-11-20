@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 
 #ifdef _WIN32
-extern int gettimeofday(struct timeval* tp, struct timezone* tzp);
+extern "C" int gettimeofday(struct timeval* tp, struct timezone* tzp);
 #else
 #include <sys/statvfs.h>
 #include <sys/time.h>

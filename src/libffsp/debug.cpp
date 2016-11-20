@@ -29,8 +29,13 @@
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <vector>
+
+#ifdef _WIN32
+#include <fuse_win.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace ffsp
 {
@@ -45,7 +50,7 @@ static struct ffsp_debug_info
     uint64_t gc_write;
 } debug_info = {};
 
-void debug_update(const fs_context& fs, debug_metric type, unsigned long val)
+void debug_update(const fs_context& fs, debug_metric type, uint64_t val)
 {
     (void)fs;
 
@@ -333,22 +338,42 @@ static DebugElementType get_debug_elem_type(fs_context& fs, const char* path)
     return DebugElementType::Invalid;
 }
 
+#ifdef _WIN32
+static void get_default_dir_stat(struct FUSE_STAT& stbuf)
+#else
 static void get_default_dir_stat(struct ::stat& stbuf)
+#endif
 {
     memset(&stbuf, 0, sizeof(stbuf));
     stbuf.st_nlink = 1;
+#ifdef _WIN32
+    stbuf.st_uid = 0;
+    stbuf.st_gid = 0;
+    stbuf.st_mode = S_IFDIR;
+#else
     stbuf.st_uid = getuid();
     stbuf.st_gid = getgid();
     stbuf.st_mode = S_IFDIR | S_IRUSR | S_IXUSR;
+#endif
 }
 
+#ifdef _WIN32
+static void get_default_file_stat(struct FUSE_STAT& stbuf)
+#else
 static void get_default_file_stat(struct ::stat& stbuf)
+#endif
 {
     memset(&stbuf, 0, sizeof(stbuf));
     stbuf.st_nlink = 1;
+#ifdef _WIN32
+    stbuf.st_uid = 0;
+    stbuf.st_gid = 0;
+    stbuf.st_mode = S_IFREG;
+#else
     stbuf.st_uid = getuid();
     stbuf.st_gid = getgid();
     stbuf.st_mode = S_IFREG | S_IRUSR | S_IXUSR;
+#endif
 }
 
 static uint32_t get_path_id(const char* path, DebugElementType type)
@@ -380,7 +405,11 @@ bool is_debug_path(fs_context& fs, const char* path)
     return strncmp(path, DEBUG_DIR.c_str(), DEBUG_DIR.size()) == 0;
 }
 
+#ifdef _WIN32
+bool debug_getattr(fs_context& fs, const char* path, struct FUSE_STAT& stbuf)
+#else
 bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf)
+#endif
 {
     const auto type = get_debug_elem_type(fs, path);
     uint64_t file_size = 0;

@@ -216,7 +216,7 @@ ssize_t read_raw(io_context& ctx, void* buf, uint64_t nbyte, uint64_t offset)
     ssize_t rc = ctx.read(buf, nbyte, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        auto rc = -errno;
+        rc = -errno;
         log().error("ffsp::read_raw(): pread() failed with errno={}", -rc);
         return rc;
     }
@@ -245,7 +245,7 @@ ssize_t write_raw(io_context& ctx, const void* buf, uint64_t nbyte, uint64_t off
     ssize_t rc = ctx.write(buf, nbyte, static_cast<off_t>(offset));
     if (rc == -1)
     {
-        auto rc = -errno;
+        rc = -errno;
         log().error("ffsp::write_raw(): pwrite() failed with errno={}", -rc);
         return rc;
     }

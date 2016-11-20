@@ -33,6 +33,10 @@
 #include <cstddef>
 
 #ifdef _WIN32
+#include <direct.h>
+#endif
+
+#ifdef _WIN32
 std::ostream& operator<<(std::ostream& os, const struct FUSE_STAT& stat)
 #else
 std::ostream& operator<<(std::ostream& os, const struct stat& stat)
@@ -529,7 +533,12 @@ struct ffsp_mount_arguments
     uint32_t nerasereserve{ 3 };
     uint32_t nerasewrites{ 5 };
 
-    ~ffsp_mount_arguments() { free(logfile); }
+    ~ffsp_mount_arguments()
+    {
+#ifndef _WIN32
+        free(logfile);
+#endif
+    }
 };
 
 enum
@@ -583,7 +592,11 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
             {
                 // Running fuse in background mode changes the cwd. Convert a relative
                 // device path into an absolute path to support background mode.
-                if (arg[0] == '/')
+#ifdef _WIN32
+                if (strlen(arg) >= 4 && arg[1] == ':' && (arg[2] == '\\' || arg[2] == '/'))
+#else
+                if (strlen(arg) >= 2 && arg[0] == '/')
+#endif
                 {
                     // absolute path
                     margs->device = arg;
@@ -591,13 +604,21 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
                 }
 
                 // relative path
+#ifdef _WIN32
+                char* cwd = ::_getcwd(nullptr, 0);
+#else
                 char* cwd = get_current_dir_name();
+#endif
                 if (!cwd)
                 {
                     return -1;
                 }
 
+#ifdef _WIN32
+                if (cwd[1] != ':' && (cwd[2] != '\\' || cwd[2] != '/'))
+#else
                 if (cwd[0] != '/')
+#endif
                 {
                     free(cwd);
                     return -1;

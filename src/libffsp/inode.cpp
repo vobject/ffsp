@@ -40,7 +40,7 @@
 #include <io.h>
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif
-extern char* strndup(const char* s, size_t n);
+extern "C" char* strndup(const char* s, size_t n);
 #endif
 
 namespace ffsp
@@ -414,6 +414,8 @@ int flush_inodes(fs_context& fs, bool force)
 
     /* process dirty dentry inodes */
     std::vector<inode*> inodes = get_dirty_inodes(fs, true);
+    if (inodes.empty())
+        return 0;
     int rc = write_inodes(fs, &inodes[0], inodes.size());
 
     if (rc == 0)

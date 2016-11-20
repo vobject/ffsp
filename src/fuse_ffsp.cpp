@@ -45,6 +45,7 @@
 #ifdef _WIN32
 #ifndef S_ISDIR
 #include <io.h>
+#include <time.h>
 #define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif
 #else
@@ -168,7 +169,7 @@ int getattr(fs_context& fs, const char* path, struct ::stat* stbuf)
 
 #ifdef _WIN32
     struct ::stat stbuf_tmp;
-    ffsp::stat(fs, ino, &stbuf_tmp);
+    ffsp::stat(fs, *ino, stbuf_tmp);
 
     memset(stbuf, 0, sizeof(*stbuf));
     stbuf->st_dev = stbuf_tmp.st_dev;     /* dev_t <- _dev_t */
@@ -180,17 +181,17 @@ int getattr(fs_context& fs, const char* path, struct ::stat* stbuf)
     stbuf->st_rdev = stbuf_tmp.st_rdev;   /* dev_t <- _dev_t */
     stbuf->st_size = stbuf_tmp.st_size;   /* FUSE_OFF_T <- _off_t */
 
-    struct ffsp::timespec atim;
+    timestruc_t atim;
     atim.tv_sec = stbuf_tmp.st_atime;
     atim.tv_nsec = 0;
     stbuf->st_atim = atim; /* timestruc_t <- time_t */
 
-    struct ffsp::timespec mtim;
+    timestruc_t mtim;
     mtim.tv_sec = stbuf_tmp.st_mtime;
     mtim.tv_nsec = 0;
     stbuf->st_mtim = mtim; /* timestruc_t <- time_t */
 
-    struct ffsp::timespec ctim;
+    timestruc_t ctim;
     ctim.tv_sec = stbuf_tmp.st_ctime;
     ctim.tv_nsec = 0;
     stbuf->st_ctim = ctim; /* timestruc_t <- time_t */

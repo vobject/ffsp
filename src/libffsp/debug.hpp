@@ -26,9 +26,15 @@
 #include <string>
 #include <vector>
 
+#ifdef _WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#else
 #include <sys/types.h>
+#endif
 
 struct stat;
+struct FUSE_STAT;
 
 namespace ffsp
 {
@@ -45,10 +51,14 @@ enum class debug_metric
     gc_write,
 };
 
-void debug_update(const fs_context& fs, debug_metric type, unsigned long val);
+void debug_update(const fs_context& fs, debug_metric type, uint64_t val);
 
 bool is_debug_path(fs_context& fs, const char* path);
+#ifdef _WIN32
+bool debug_getattr(fs_context& fs, const char* path, struct FUSE_STAT& stbuf);
+#else
 bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf);
+#endif
 bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs);
 bool debug_open(fs_context& fs, const char* path);
 bool debug_release(fs_context& fs, const char* path);

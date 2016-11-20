@@ -61,7 +61,11 @@ bool unmount_ffsp(const char* program, const char* mountpoint);
     - number of erase blocks = 32
     - number of inodes = (4194304 - 32768 - 32*8 - 4) / 4 = 1040319
 */
+#ifdef _WIN32
+const constexpr char* const default_fs_path{ "test.ffsp_fs" };
+#else
 const constexpr char* const default_fs_path{ "/tmp/test.ffsp_fs" };
+#endif
 const constexpr uint64_t default_fs_size{ 1024 * 1024 * 128 };      // 128 MiB
 const constexpr mkfs_options default_mkfs_options{ 1024 * 32,       // cluster
                                                    1024 * 1024 * 4, // eraseblock

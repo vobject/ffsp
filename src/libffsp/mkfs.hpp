@@ -36,6 +36,14 @@ struct mkfs_options
     uint32_t neraseopen{ 0 };
     uint32_t nerasereserve{ 0 };
     uint32_t nerasewrites{ 0 };
+
+    constexpr mkfs_options(uint32_t c, uint32_t e,
+                           uint32_t i, uint32_t o,
+                           uint32_t r, uint32_t w)
+        : clustersize{ c }, erasesize{ e },
+          ninoopen{ i }, neraseopen{ o },
+          nerasereserve{ r }, nerasewrites{ w }
+    {}
 };
 
 bool mkfs(io_context& ctx, const mkfs_options& options);

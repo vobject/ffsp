@@ -25,7 +25,7 @@ protected:
     void TearDown() override
     {
         ASSERT_TRUE(ffsp::test::default_unmount_fs(fs_));
-        ASSERT_TRUE(ffsp::test::default_remove_file());
+        //ASSERT_TRUE(ffsp::test::default_remove_file());
 
         ffsp::log_deinit();
     }
