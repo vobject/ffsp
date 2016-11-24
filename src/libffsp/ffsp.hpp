@@ -122,11 +122,11 @@ static_assert(sizeof(eraseblock_type) == 1, "eraseblock_type: unexpected size");
 
 struct eraseblock
 {
-    eraseblock_type e_type;
+    eraseblock_type e_type{FFSP_EB_INVALID};
     uint8_t reserved;
-    be16_t e_lastwrite;
-    be16_t e_cvalid;   // valid clusters inside the erase block
-    be16_t e_writeops; // how many writes were performed on this eb
+    be16_t e_lastwrite{0};
+    be16_t e_cvalid{0};   // valid clusters inside the erase block
+    be16_t e_writeops{0}; // how many writes were performed on this eb
 };
 static_assert(sizeof(eraseblock) == 8, "eraseblock: unexpected size");
 

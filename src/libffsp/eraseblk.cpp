@@ -39,6 +39,32 @@
 namespace ffsp
 {
 
+bool eb_is_type(const fs_context& fs, uint32_t eb_id, eraseblock_type type)
+{
+    return fs.eb_usage[eb_id].e_type == type;
+}
+
+/* Check if garbage collection can be performed on the given erase block type. */
+static bool is_collectible_type(eraseblock_type type)
+{
+    switch (type)
+    {
+        case FFSP_EB_DENTRY_INODE:
+        case FFSP_EB_DENTRY_CLIN:
+        case FFSP_EB_FILE_INODE:
+        case FFSP_EB_FILE_CLIN:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool eb_is_freeable(const fs_context& fs, uint32_t eb_id)
+{
+    const eraseblock& eb = fs.eb_usage[eb_id];
+    return is_collectible_type(eb.e_type) && (get_be16(eb.e_cvalid) == 0);
+}
+
 int eb_get_cvalid(const fs_context& fs, uint32_t eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);

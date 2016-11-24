@@ -33,6 +33,8 @@ typedef SSIZE_T ssize_t;
 namespace ffsp
 {
 
+bool eb_is_type(const fs_context& fs, uint32_t eb_id, eraseblock_type type);
+bool eb_is_freeable(const fs_context& fs, uint32_t eb_id);
 int eb_get_cvalid(const fs_context& fs, uint32_t eb_id);
 void eb_inc_cvalid(fs_context& fs, uint32_t eb_id);
 void eb_dec_cvalid(fs_context& fs, uint32_t eb_id);

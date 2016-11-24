@@ -20,6 +20,7 @@
 
 #include "utils.hpp"
 #include "ffsp.hpp"
+#include "eraseblk.hpp"
 #include "inode.hpp"
 
 #include <cstdlib>
@@ -48,14 +49,13 @@ static uint32_t free_cluster_cnt(const fs_context& fs)
 
     for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
     {
-        if (fs.eb_usage[eb_id].e_type & FFSP_EB_EBIN)
+        if (eb_is_type(fs, eb_id, FFSP_EB_EBIN))
             continue;
 
-        if (fs.eb_usage[eb_id].e_type & FFSP_EB_EMPTY)
+        if (eb_is_type(fs, eb_id, FFSP_EB_EMPTY))
             free_cl_cnt += (fs.erasesize / fs.clustersize);
         else
-            free_cl_cnt += (fs.erasesize / fs.clustersize) -
-                           get_be16(fs.eb_usage[eb_id].e_cvalid);
+            free_cl_cnt += (fs.erasesize / fs.clustersize) - get_be16(fs.eb_usage[eb_id].e_cvalid);
     }
     return free_cl_cnt;
 }

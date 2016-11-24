@@ -100,23 +100,6 @@ void gcinfo_uninit(gcinfo* info)
     delete[] info;
 }
 
-/*
- * Checks if garbage collection can be performed on the given erase block type.
- */
-static bool is_eb_type_collectable(eraseblock_type type)
-{
-    switch (type)
-    {
-        case FFSP_EB_DENTRY_INODE:
-        case FFSP_EB_DENTRY_CLIN:
-        case FFSP_EB_FILE_INODE:
-        case FFSP_EB_FILE_CLIN:
-            return true;
-        default:
-            return false;
-    }
-}
-
 static bool is_eb_collectable(const fs_context& fs, unsigned int eb_id)
 {
     int cvalid = eb_get_cvalid(fs, eb_id);
@@ -200,17 +183,12 @@ static void swap_cluster_id(ffsp_fs& fs, unsigned int ino_no,
 static void collect_empty_eraseblks(fs_context& fs)
 {
     /* erase block id "0" is always reserved */
-    for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+    for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
     {
-        if (!is_eb_type_collectable(fs.eb_usage[eb_id].e_type))
-            continue;
-
-        /*
-         * The erase block contains inodes or indirect pointers.
-         * Set it to "free" if it does not contain any valid clusters.
-         */
-        if (!eb_get_cvalid(fs, eb_id))
+        if (eb_is_freeable(fs, eb_id))
         {
+            // The erase block contains inodes or indirect pointers.
+            // Set it to "free" since it does not contain any valid clusters.
             fs.eb_usage[eb_id].e_type = FFSP_EB_EMPTY;
             fs.eb_usage[eb_id].e_lastwrite = put_be16(0);
             fs.eb_usage[eb_id].e_writeops = put_be16(0);
@@ -218,11 +196,11 @@ static void collect_empty_eraseblks(fs_context& fs)
     }
 }
 
-static unsigned int find_empty_eraseblk(const fs_context& fs)
+static uint32_t find_empty_eraseblk(const fs_context& fs)
 {
     /* erase block id "0" is always reserved */
-    for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
-        if (fs.eb_usage[eb_id].e_type == FFSP_EB_EMPTY)
+    for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+        if (eb_is_type(fs, eb_id, FFSP_EB_EMPTY))
             return eb_id;
     return FFSP_INVALID_EB_ID;
 }
@@ -273,7 +251,9 @@ static unsigned int find_collectable_eraseblk(fs_context& fs, eraseblock_type eb
          *  - meets the "collectable" requirements
          *  - contains the least amount of valid clusters
          */
-        if ((cur_type == eb_type) && is_eb_collectable(fs, eb_id) && (cur_valid < least_cvalid))
+        if ((cur_type == eb_type) &&
+            is_eb_collectable(fs, eb_id) &&
+            (cur_valid < least_cvalid))
         {
             least_cvalid = cur_valid;
             least_cvalid_id = eb_id;
