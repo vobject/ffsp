@@ -51,43 +51,43 @@ gcinfo* gcinfo_init(const fs_context& fs)
 
     if (fs.neraseopen == 3)
     {
-        info[0].eb_type = FFSP_EB_DENTRY_INODE;
+        info[0].eb_type = eraseblock_type::dentry_inode;
         info[0].write_time = 0;
         info[0].write_cnt = 0;
 
-        info[1].eb_type = FFSP_EB_DENTRY_CLIN;
+        info[1].eb_type = eraseblock_type::dentry_clin;
         info[1].write_time = 0;
         info[1].write_cnt = 0;
     }
     else if (fs.neraseopen == 4)
     {
-        info[0].eb_type = FFSP_EB_DENTRY_INODE;
+        info[0].eb_type = eraseblock_type::dentry_inode;
         info[0].write_time = 0;
         info[0].write_cnt = 0;
 
-        info[1].eb_type = FFSP_EB_FILE_INODE;
+        info[1].eb_type = eraseblock_type::file_inode;
         info[1].write_time = 0;
         info[1].write_cnt = 0;
 
-        info[2].eb_type = FFSP_EB_DENTRY_CLIN;
+        info[2].eb_type = eraseblock_type::dentry_clin;
         info[2].write_time = 0;
         info[2].write_cnt = 0;
     }
     else if (fs.neraseopen >= 5)
     {
-        info[0].eb_type = FFSP_EB_DENTRY_INODE;
+        info[0].eb_type = eraseblock_type::dentry_inode;
         info[0].write_time = 0;
         info[0].write_cnt = 0;
 
-        info[1].eb_type = FFSP_EB_FILE_INODE;
+        info[1].eb_type = eraseblock_type::file_inode;
         info[1].write_time = 0;
         info[1].write_cnt = 0;
 
-        info[2].eb_type = FFSP_EB_DENTRY_CLIN;
+        info[2].eb_type = eraseblock_type::dentry_clin;
         info[2].write_time = 0;
         info[2].write_cnt = 0;
 
-        info[3].eb_type = FFSP_EB_FILE_CLIN;
+        info[3].eb_type = eraseblock_type::file_clin;
         info[3].write_time = 0;
         info[3].write_cnt = 0;
     }
@@ -189,7 +189,7 @@ static void collect_empty_eraseblks(fs_context& fs)
         {
             // The erase block contains inodes or indirect pointers.
             // Set it to "free" since it does not contain any valid clusters.
-            fs.eb_usage[eb_id].e_type = FFSP_EB_EMPTY;
+            fs.eb_usage[eb_id].e_type = eraseblock_type::empty;
             fs.eb_usage[eb_id].e_lastwrite = put_be16(0);
             fs.eb_usage[eb_id].e_writeops = put_be16(0);
         }
@@ -200,13 +200,13 @@ static uint32_t find_empty_eraseblk(const fs_context& fs)
 {
     /* erase block id "0" is always reserved */
     for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
-        if (eb_is_type(fs, eb_id, FFSP_EB_EMPTY))
+        if (eb_is_type(fs, eb_id, eraseblock_type::empty))
             return eb_id;
     return FFSP_INVALID_EB_ID;
 }
 
 /* get a pointer to the gcinfo structure of a specific erase block type */
-static gcinfo* get_gcinfo(const fs_context& fs, int eb_type)
+static gcinfo* get_gcinfo(const fs_context& fs, eraseblock_type eb_type)
 {
     for (unsigned int i = 0; i < (fs.neraseopen - 1); i++)
         if (fs.gcinfo[i].eb_type == eb_type)
@@ -227,7 +227,7 @@ static eraseblock_type find_collectable_eb_type(const fs_context& fs /*, GC_POLI
     for (unsigned int i = 0; i < (fs.neraseopen - 1); i++)
         if (fs.gcinfo[i].write_cnt >= fs.nerasewrites)
             return fs.gcinfo[i].eb_type;
-    return FFSP_EB_INVALID;
+    return eraseblock_type::invalid;
 }
 
 /*
@@ -469,12 +469,12 @@ void gc(fs_context& fs)
     // FIXME: ebin data is never freed!
 
     eraseblock_type eb_type;
-    while ((eb_type = find_collectable_eb_type(fs)) != FFSP_EB_INVALID)
+    while ((eb_type = find_collectable_eb_type(fs)) != eraseblock_type::invalid)
     {
-        if (eb_type == FFSP_EB_DENTRY_INODE ||
-            eb_type == FFSP_EB_FILE_INODE)
+        if (eb_type == eraseblock_type::dentry_inode ||
+            eb_type == eraseblock_type::file_inode)
         {
-            log().debug("ffsp_gc(): collecting eb_type {}", eb_type);
+            log().debug("ffsp_gc(): collecting eb_type {}", static_cast<int>(eb_type));
             collect_inodes(fs, eb_type);
         }
 

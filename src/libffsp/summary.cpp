@@ -85,9 +85,9 @@ void summary_cache_uninit(summary_cache* cache)
 
 summary* summary_open(summary_cache& cache, eraseblock_type eb_type)
 {
-    if (eb_type == FFSP_EB_DENTRY_CLIN)
+    if (eb_type == eraseblock_type::dentry_clin)
         return cache.dentry_clin.open();
-    else if (eb_type == FFSP_EB_FILE_CLIN)
+    else if (eb_type == eraseblock_type::file_clin)
         return cache.inode_clin.open();
     else
         return nullptr;
@@ -95,9 +95,9 @@ summary* summary_open(summary_cache& cache, eraseblock_type eb_type)
 
 summary* summary_get(summary_cache& cache, eraseblock_type eb_type)
 {
-    if (eb_type == FFSP_EB_DENTRY_CLIN)
+    if (eb_type == eraseblock_type::dentry_clin)
         return cache.dentry_clin.get();
-    else if (eb_type == FFSP_EB_FILE_CLIN)
+    else if (eb_type == eraseblock_type::file_clin)
         return cache.inode_clin.get();
     else
         return nullptr;
@@ -116,8 +116,8 @@ bool summary_required(const fs_context& fs, uint32_t eb_id)
     // Erase blocks containing cluster indirect data have an erase block summary
     // section at the end that cannot be used for data. Its size is one cluster.
     const eraseblock& eb = fs.eb_usage[eb_id];
-    return (eb.e_type == FFSP_EB_DENTRY_CLIN) ||
-           (eb.e_type == FFSP_EB_FILE_CLIN);
+    return (eb.e_type == eraseblock_type::dentry_clin) ||
+           (eb.e_type == eraseblock_type::file_clin);
 }
 
 bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id)

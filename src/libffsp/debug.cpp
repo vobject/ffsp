@@ -186,7 +186,8 @@ static std::string get_cl_info(fs_context& fs, unsigned int cl_id)
     os << "\"cluster\":{";
     os << "\"cl_id\":" << cl_id << ",";
     os << "\"cl_offset\":" << (cl_id * fs.clustersize);
-    if (eb.e_type == FFSP_EB_DENTRY_INODE || eb.e_type == FFSP_EB_FILE_INODE)
+    if (eb.e_type == eraseblock_type::dentry_inode ||
+        eb.e_type == eraseblock_type::file_inode)
     {
         os << ",";
         os << "\"inodes\":[";
@@ -485,7 +486,8 @@ bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& d
             for (uint32_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
             {
                 const eraseblock& eb = fs.eb_usage[eb_id];
-                if (eb.e_type == FFSP_EB_DENTRY_INODE || eb.e_type == FFSP_EB_FILE_INODE)
+                if (eb.e_type == eraseblock_type::dentry_inode ||
+                    eb.e_type == eraseblock_type::file_inode)
                 {
                     for (unsigned int cl_idx = 0; cl_idx < cl_per_eb; cl_idx++)
                     {

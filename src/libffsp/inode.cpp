@@ -84,14 +84,16 @@ unsigned int get_inode_size(const fs_context& fs, const inode* ino)
      */
 
     unsigned int inode_size = sizeof(inode);
-    unsigned int i_flags = get_be32(ino->i_flags);
     unsigned int i_size = get_be64(ino->i_size);
 
-    if (i_flags & FFSP_DATA_EMB)
+    // the lower 8 bit carry the inode data type
+    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
+
+    if (data_type == inode_data_type::emb)
         inode_size += i_size;
-    else if (i_flags & FFSP_DATA_CLIN)
+    else if (data_type == inode_data_type::clin)
         inode_size += (i_size - 1) / fs.clustersize * sizeof(be32_t) + sizeof(be32_t);
-    else if (i_flags & FFSP_DATA_EBIN)
+    else if (data_type == inode_data_type::ebin)
         inode_size += (i_size - 1) / fs.erasesize * sizeof(be32_t) + sizeof(be32_t);
     return inode_size;
 }
@@ -461,7 +463,7 @@ int create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, 
     // initialize a file inode by default
     inode* ino = allocate_inode(fs);
     ino->i_size = put_be64(0);
-    ino->i_flags = put_be32(FFSP_DATA_EMB);
+    ino->i_flags = put_be32(static_cast<uint32_t>(inode_data_type::emb));
     ino->i_no = put_be32(inode_no);
     ino->i_nlink = put_be32(1);
     ino->i_uid = put_be32(uid);
@@ -594,21 +596,21 @@ int unlink(fs_context& fs, const char* path)
         fs.ino_map[inode_no] = put_be32(FFSP_FREE_CL_ID);
 
         uint64_t file_size = get_be64(ino->i_size);
-        unsigned int file_flags = get_be32(ino->i_flags);
+        inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
 
         // Release indirect data if needed.
-        if (!(file_flags & FFSP_DATA_EMB) && file_size)
+        if (data_type != inode_data_type::emb && file_size)
         {
             int ind_size;
-            int ind_type;
-            if (file_flags & FFSP_DATA_CLIN)
+            inode_data_type ind_type;
+            if (data_type == inode_data_type::clin)
             {
-                ind_type = FFSP_DATA_CLIN;
+                ind_type = inode_data_type::clin;
                 ind_size = fs.clustersize;
             }
-            else if (file_flags & FFSP_DATA_EBIN)
+            else if (data_type == inode_data_type::ebin)
             {
-                ind_type = FFSP_DATA_EBIN;
+                ind_type = inode_data_type::ebin;
                 ind_size = fs.erasesize;
             }
             else
@@ -680,21 +682,21 @@ int rmdir(fs_context& fs, const char* path)
     fs.ino_map[inode_no] = put_be32(FFSP_FREE_CL_ID);
 
     uint64_t file_size = get_be64(ino->i_size);
-    unsigned int file_flags = get_be32(ino->i_flags);
+    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
 
     // Release indirect data if needed.
-    if (!(file_flags & FFSP_DATA_EMB))
+    if (data_type != inode_data_type::emb)
     {
-        int ind_type;
         int ind_size;
-        if (file_flags & FFSP_DATA_CLIN)
+        inode_data_type ind_type;
+        if (data_type == inode_data_type::clin)
         {
-            ind_type = FFSP_DATA_CLIN;
+            ind_type = inode_data_type::clin;
             ind_size = fs.clustersize;
         }
-        else if (file_flags & FFSP_DATA_EBIN)
+        else if (data_type == inode_data_type::ebin)
         {
-            ind_type = FFSP_DATA_EBIN;
+            ind_type = inode_data_type::ebin;
             ind_size = fs.erasesize;
         }
         else
@@ -821,7 +823,7 @@ int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dent_cnt)
     return 0;
 }
 
-void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, int ind_type)
+void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, inode_data_type ind_type)
 {
     for (int i = 0; i < cnt; ++i)
     {
@@ -830,7 +832,7 @@ void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, int ind_
         if (!ind_id)
             continue; // File hole, not a real indirect pointer.
 
-        if (ind_type == FFSP_DATA_CLIN)
+        if (ind_type == inode_data_type::clin)
         {
             // Tell the erase block usage information that there is
             //  now one additional cluster invalid in the specified
@@ -839,12 +841,12 @@ void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, int ind_
             eb_dec_cvalid(fs, eb_id);
             //	dec_be16(&fs.eb_usage[eb_id].e_cvalid);
         }
-        else if (ind_type == FFSP_DATA_EBIN)
+        else if (ind_type == inode_data_type::ebin)
         {
             // The erase block type is the only field of importance
             //  in this case. Just set the erase blocks usage
             //  information to EMPTY and we are done.
-            fs.eb_usage[ind_id].e_type = FFSP_EB_EMPTY;
+            fs.eb_usage[ind_id].e_type = eraseblock_type::empty;
         }
     }
 }

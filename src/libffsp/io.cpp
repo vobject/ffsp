@@ -33,6 +33,14 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <sys/stat.h>
+
+#ifdef _WIN32
+#ifndef S_ISDIR
+#include <io.h>
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+#endif
+#endif
 
 namespace ffsp
 {
@@ -49,8 +57,8 @@ struct write_context
     uint64_t new_size{ 0 };
     uint64_t old_ind_size{ 0 };
     uint64_t new_ind_size{ 0 };
-    uint8_t old_type{ 0 };
-    uint8_t new_type{ 0 };
+    inode_data_type old_type{ inode_data_type::emb };
+    inode_data_type new_type{ inode_data_type::emb };
 };
 
 static bool is_buf_empty(const char* buf, size_t size)
@@ -97,27 +105,26 @@ static uint64_t ind_size_from_size(fs_context& fs, uint64_t size)
         return 0; // No indirect data for this file size
 }
 
-static uint8_t data_type_from_size(fs_context& fs, uint64_t size)
+static inode_data_type data_type_from_size(fs_context& fs, uint64_t size)
 {
     if (size > max_clin_size(fs))
-        return FFSP_DATA_EBIN;
+        return inode_data_type::ebin;
     else if (size > max_emb_size(fs))
-        return FFSP_DATA_CLIN;
+        return inode_data_type::clin;
     else
-        return FFSP_DATA_EMB;
+        return inode_data_type::emb;
 }
 
 static ssize_t write_ind(fs_context& fs, write_context& ctx, const char* buf, be32_t* ind_id)
 {
     if (is_buf_empty(buf, ctx.new_ind_size))
     {
-        // Create a file hole because the current indirect chunk
-        //  consists of zeros only.
+        // Create a file hole because the current indirect chunk consists of zeros only.
         *ind_id = put_be32(0);
         return 0;
     }
-    uint32_t mode = get_be32(ctx.ino->i_mode);
-    eraseblock_type eb_type = get_eraseblk_type(fs, ctx.new_type, mode);
+    bool for_dentry = S_ISDIR(get_be32(ctx.ino->i_mode));
+    eraseblock_type eb_type = get_eraseblk_type(fs, ctx.new_type, for_dentry);
 
     // Search for a cluster id or an erase block id to write to.
     uint32_t eb_id;
@@ -213,8 +220,11 @@ static ssize_t trunc_emb2ind(fs_context& fs, write_context& ctx, const char* ind
     for (uint32_t i = 1; i < ind_last; ++i)
         ctx.ind_ptr[i] = put_be32(0);
 
-    ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) & ~ctx.old_type);
-    ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) | ctx.new_type);
+    // clear old data type flag and set the new data type flag
+    uint32_t flags = get_be32(ctx.ino->i_flags);
+    flags = flags & ~static_cast<uint8_t>(ctx.old_type);
+    flags = flags | static_cast<uint8_t>(ctx.new_type);
+    ctx.ino->i_flags = put_be32(flags);
     return 0;
 }
 
@@ -237,8 +247,11 @@ static ssize_t trunc_ind2emb(fs_context& fs, write_context& ctx)
     // Move the previously indirect data into the inode.
     memcpy(ctx.ind_ptr, fs.buf, ctx.new_size);
 
-    ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) & ~ctx.old_type);
-    ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) | ctx.new_type);
+    // clear old data type flag and set the new data type flag
+    uint32_t flags = get_be32(ctx.ino->i_flags);
+    flags = flags & ~static_cast<uint8_t>(ctx.old_type);
+    flags = flags | static_cast<uint8_t>(ctx.new_type);
+    ctx.ino->i_flags = put_be32(flags);
     return 0;
 }
 
@@ -293,8 +306,11 @@ static ssize_t trunc_clin2ebin(fs_context& fs, write_context& ctx)
 
     free(old_ptr);
 
-    ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) & ~FFSP_DATA_CLIN);
-    ctx.ino->i_flags = put_be32(get_be32(ctx.ino->i_flags) | FFSP_DATA_EBIN);
+    // clear old data type flag and set the new data type flag
+    uint32_t flags = get_be32(ctx.ino->i_flags);
+    flags = flags & ~static_cast<uint8_t>(inode_data_type::clin);
+    flags = flags | static_cast<uint8_t>(inode_data_type::ebin);
+    ctx.ino->i_flags = put_be32(flags);
     return 0;
 }
 
@@ -330,9 +346,9 @@ static ssize_t trunc_ind(fs_context& fs, write_context& ctx)
 
 static ssize_t trunc_clin(fs_context& fs, write_context& ctx)
 {
-    if (ctx.new_type == FFSP_DATA_EBIN)
+    if (ctx.new_type == inode_data_type::ebin)
         return trunc_clin2ebin(fs, ctx);
-    else if (ctx.new_type == FFSP_DATA_EMB)
+    else if (ctx.new_type == inode_data_type::emb)
         return trunc_ind2emb(fs, ctx);
     else
         return trunc_ind(fs, ctx);
@@ -340,7 +356,7 @@ static ssize_t trunc_clin(fs_context& fs, write_context& ctx)
 
 static ssize_t trunc_ebin(fs_context& fs, write_context& ctx)
 {
-    if (ctx.new_type == FFSP_DATA_EMB)
+    if (ctx.new_type == inode_data_type::emb)
         return trunc_ind2emb(fs, ctx);
     else
         return trunc_ind(fs, ctx);
@@ -582,22 +598,22 @@ int truncate(fs_context& fs, inode* ino, uint64_t length)
     ctx.new_ind_size = ind_size_from_size(fs, ctx.new_size);
     ctx.new_type = data_type_from_size(fs, ctx.new_size);
 
-    uint32_t i_flags = get_be32(ino->i_flags);
+    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
 
     ssize_t rc;
-    if (i_flags & FFSP_DATA_EMB)
+    if (data_type == inode_data_type::emb)
     {
-        ctx.old_type = FFSP_DATA_EMB;
+        ctx.old_type = inode_data_type::emb;
         rc = write_emb(fs, ctx);
     }
-    else if (i_flags & FFSP_DATA_CLIN)
+    else if (data_type == inode_data_type::clin)
     {
-        ctx.old_type = FFSP_DATA_CLIN;
+        ctx.old_type = inode_data_type::clin;
         rc = trunc_clin(fs, ctx);
     }
-    else if (i_flags & FFSP_DATA_EBIN)
+    else if (data_type == inode_data_type::ebin)
     {
-        ctx.old_type = FFSP_DATA_EBIN;
+        ctx.old_type = inode_data_type::ebin;
         rc = trunc_ebin(fs, ctx);
     }
     else
@@ -632,14 +648,14 @@ ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t off
         log().debug("ffsp::read(offset={}): too big", offset);
         return 0;
     }
-    uint32_t i_flags = get_be32(ino->i_flags);
+    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
 
     ssize_t rc;
-    if (i_flags & FFSP_DATA_EMB)
+    if (data_type == inode_data_type::emb)
         rc = read_emb(fs, ino, buf, nbyte, offset);
-    else if (i_flags & FFSP_DATA_CLIN)
+    else if (data_type == inode_data_type::clin)
         rc = read_ind(fs, ino, buf, nbyte, offset, fs.clustersize);
-    else if (i_flags & FFSP_DATA_EBIN)
+    else if (data_type == inode_data_type::ebin)
         rc = read_ind(fs, ino, buf, nbyte, offset, fs.erasesize);
     else
     {
@@ -674,19 +690,19 @@ ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint6
     if (ctx.new_size > max_ebin_size(fs))
         return -EFBIG;
 
-    uint32_t i_flags = get_be32(ino->i_flags);
+    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
 
     ssize_t rc;
-    if (i_flags & FFSP_DATA_EMB)
+    if (data_type == inode_data_type::emb)
     {
-        ctx.old_type = FFSP_DATA_EMB;
+        ctx.old_type = inode_data_type::emb;
         rc = write_emb(fs, ctx);
     }
-    else if (i_flags & FFSP_DATA_CLIN)
+    else if (data_type == inode_data_type::clin)
     {
-        ctx.old_type = FFSP_DATA_CLIN;
+        ctx.old_type = inode_data_type::clin;
 
-        if (ctx.new_type == FFSP_DATA_EBIN)
+        if (ctx.new_type == inode_data_type::ebin)
         {
             // Handle file type growth while writing.
 
@@ -705,9 +721,9 @@ ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint6
             rc = write_clin(fs, ctx);
         }
     }
-    else if (i_flags & FFSP_DATA_EBIN)
+    else if (data_type == inode_data_type::ebin)
     {
-        ctx.old_type = FFSP_DATA_EBIN;
+        ctx.old_type = inode_data_type::ebin;
 
         if (ctx.new_size > ctx.old_size)
         {

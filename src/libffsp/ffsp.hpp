@@ -33,9 +33,6 @@ constexpr int FFSP_VERSION_MAJOR{ 0 };
 constexpr int FFSP_VERSION_MINOR{ 0 };
 constexpr int FFSP_VERSION_PATCH{ 1 };
 
-constexpr uint32_t FFSP_SUPER_NOATIME{ 0x01 };
-constexpr int FFSP_NAME_MAX{ 248 };
-
 struct superblock
 {
     be32_t s_fsid;          // file system ID
@@ -43,7 +40,7 @@ struct superblock
     be32_t s_neraseblocks;  // number of erase blocks
     be32_t s_nino;          // supported number of files on the drive
     be32_t s_blocksize;     // currently same as clustersize
-    be32_t s_clustersize;   // size of a cluster (aka inode + data) -> 4096
+    be32_t s_clustersize;   // size of a cluster (aka inode + data)
     be32_t s_erasesize;     // size of an erase block (in bytes or clusters?)
     be32_t s_ninoopen;      // dirty inodes to cache before writing to disk
     be32_t s_neraseopen;    // erase blocks to be hold open simultaneously
@@ -68,22 +65,21 @@ struct timespec
 };
 static_assert(sizeof(timespec) == 12, "timespec: unexpected size");
 
-// Invalid index inside the inode map
-constexpr uint32_t FFSP_INVALID_INO_NO{ 0 };
+// inode data format - the lower end 8bit of the inode flags
+enum class inode_data_type : uint8_t
+{
+    // Data embedded in the inode's cluster.
+    // For small files (actual max size depends on the cluster size).
+    emb = 0x01,
 
-// Cluster ids that the inode map points to
-constexpr uint32_t FFSP_FREE_CL_ID{ 0x00000000 };
-constexpr uint32_t FFSP_RESERVED_CL_ID{ 0xffffffff };
+    // The inode's data section contains cluster ids which contain the data
+    // For medium sized files (actual max size depends on the cluster size).
+    clin = 0x02,
 
-// erase block ids - 32bit
-constexpr uint32_t FFSP_INVALID_EB_ID{ 0x00000000 };
-
-// inode data format - 8bit
-//constexpr uint8_t FFSP_DATA_SUPER{0x00};
-constexpr uint8_t FFSP_DATA_EMB{ 0x01 };
-constexpr uint8_t FFSP_DATA_CLIN{ 0x02 };
-constexpr uint8_t FFSP_DATA_EBIN{ 0x04 };
-//constexpr uint8_t FFSP_DATA_CLEAN{0x08};
+    // The inode's data section contains erase block ids which contain the data
+    // For large files (actual max size depends on the cluster size).
+    ebin = 0x04,
+};
 
 struct inode
 {
@@ -104,31 +100,30 @@ struct inode
 };
 static_assert(sizeof(inode) == 128, "inode: unexpected size");
 
-// TODO: Find out if these types are REALLY written to the file system!
-//  Or if they are only necessary at runtime to determine in which erase block
-//  to put data (before it has ever been garbage collected).
-enum eraseblock_type : uint8_t
+enum class eraseblock_type : uint8_t
 {
-    FFSP_EB_SUPER = 0x00,
-    FFSP_EB_DENTRY_INODE = 0x01,
-    FFSP_EB_DENTRY_CLIN = 0x02,
-    FFSP_EB_FILE_INODE = 0x04,
-    FFSP_EB_FILE_CLIN = 0x08,
-    FFSP_EB_EBIN = 0x10,
-    FFSP_EB_EMPTY = 0x20,
-    FFSP_EB_INVALID = 0xFF,
+    super = 0x00,
+    dentry_inode = 0x01,
+    dentry_clin = 0x02,
+    file_inode = 0x04,
+    file_clin = 0x08,
+    ebin = 0x10,
+    empty = 0x20,
+    invalid = 0xff,
 };
 static_assert(sizeof(eraseblock_type) == 1, "eraseblock_type: unexpected size");
 
 struct eraseblock
 {
-    eraseblock_type e_type{FFSP_EB_INVALID};
+    eraseblock_type e_type{eraseblock_type::invalid};
     uint8_t reserved;
     be16_t e_lastwrite{0};
     be16_t e_cvalid{0};   // valid clusters inside the erase block
     be16_t e_writeops{0}; // how many writes were performed on this eb
 };
 static_assert(sizeof(eraseblock) == 8, "eraseblock: unexpected size");
+
+const unsigned int FFSP_NAME_MAX{ 248 };
 
 struct dentry
 {
@@ -139,7 +134,21 @@ struct dentry
 };
 static_assert(sizeof(dentry) == 256, "dentry: unexpected size");
 
-// In-Memory-only structures
+// In-memory-types and data structures
+
+using ino_t = uint32_t;
+using cl_id_t = uint32_t;
+using eb_id_t = uint32_t;
+
+// Invalid index inside the inode map - 32bit
+const ino_t FFSP_INVALID_INO_NO{ 0 };
+
+// Cluster ids that the inode map points to - 32bit
+const cl_id_t FFSP_FREE_CL_ID{ 0x00000000 };
+const cl_id_t FFSP_RESERVED_CL_ID{ 0xffffffff };
+
+// Erase block ids - 32bit
+const eb_id_t FFSP_INVALID_EB_ID{ 0x00000000 };
 
 struct io_context;
 struct inode_cache;
@@ -155,7 +164,7 @@ struct fs_context
     uint32_t neraseblocks;  // number of erase blocks
     uint32_t nino;          // supported number of files on the drive
     uint32_t blocksize;     // currently same as clustersize
-    uint32_t clustersize;   // size of a cluster (aka inode + data) -> 4096
+    uint32_t clustersize;   // size of a cluster (aka inode + data)
     uint32_t erasesize;     // size of an erase block (in bytes or clusters?)
     uint32_t ninoopen;      // dirty inodes to cache before writing to disk
     uint32_t neraseopen;    // erase blocks to be hold open simultaneously

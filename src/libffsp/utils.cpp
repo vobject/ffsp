@@ -49,10 +49,10 @@ static uint32_t free_cluster_cnt(const fs_context& fs)
 
     for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
     {
-        if (eb_is_type(fs, eb_id, FFSP_EB_EBIN))
+        if (eb_is_type(fs, eb_id, eraseblock_type::ebin))
             continue;
 
-        if (eb_is_type(fs, eb_id, FFSP_EB_EMPTY))
+        if (eb_is_type(fs, eb_id, eraseblock_type::empty))
             free_cl_cnt += (fs.erasesize / fs.clustersize);
         else
             free_cl_cnt += (fs.erasesize / fs.clustersize) - get_be16(fs.eb_usage[eb_id].e_cvalid);

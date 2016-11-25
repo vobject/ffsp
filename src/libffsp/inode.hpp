@@ -37,6 +37,7 @@ void delete_inode(inode* ino);
 void* inode_data(inode* ino);
 unsigned int get_inode_size(const fs_context& fs, const inode* ino);
 bool is_inode_valid(const fs_context& fs, unsigned int cl_id, const inode* ino);
+//bool is_inode_data_type(const fs_context& fs, const inode* ino);
 
 int lookup_no(fs_context& fs, inode** ino, uint32_t ino_no);
 int lookup(fs_context& fs, inode** ino, const char* path);
@@ -56,7 +57,7 @@ void reset_dirty(fs_context& fs, inode* ino);
 
 int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dentry_cnt);
 
-void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, int ind_type);
+void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, inode_data_type ind_type);
 
 } // namespace ffsp
 

@@ -40,7 +40,7 @@ void eb_inc_cvalid(fs_context& fs, uint32_t eb_id);
 void eb_dec_cvalid(fs_context& fs, uint32_t eb_id);
 
 unsigned int emtpy_eraseblk_count(const fs_context& fs);
-eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode);
+eraseblock_type get_eraseblk_type(const fs_context& fs, inode_data_type type, bool dentry);
 
 int find_writable_cluster(fs_context& fs, eraseblock_type eb_type, uint32_t& eb_id, uint32_t& cl_id);
 void commit_write_operation(fs_context& fs, eraseblock_type eb_type, uint32_t eb_id, be32_t ino_no);

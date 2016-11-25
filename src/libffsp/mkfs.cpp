@@ -97,7 +97,7 @@ static bool create_super_eb(io_context& ctx, const mkfs_options& options)
 
     // The first EB is for the superblock, erase block usage and inodes ids
     eraseblock eb1 = {};
-    eb1.e_type = FFSP_EB_SUPER;
+    eb1.e_type = eraseblock_type::super;
     eb1.e_lastwrite = put_be16(0);
     eb1.e_cvalid = put_be16(0);
     eb1.e_writeops = put_be16(0);
@@ -106,7 +106,7 @@ static bool create_super_eb(io_context& ctx, const mkfs_options& options)
 
     // The second EB is for directory entries
     eraseblock eb2 = {};
-    eb2.e_type = FFSP_EB_DENTRY_INODE;
+    eb2.e_type = eraseblock_type::dentry_inode;
     eb2.e_lastwrite = put_be16(0);
     eb2.e_cvalid = put_be16(1);              // Only the root directory exists...
     eb2.e_writeops = put_be16(max_writeops); // ...but the eb is closed.
@@ -117,7 +117,7 @@ static bool create_super_eb(io_context& ctx, const mkfs_options& options)
     {
         // The remaining erase blocks are empty
         eraseblock eb = {};
-        eb.e_type = FFSP_EB_EMPTY;
+        eb.e_type = eraseblock_type::empty;
         eb.e_lastwrite = put_be16(0);
         eb.e_cvalid = put_be16(0);
         eb.e_writeops = put_be16(0);
@@ -156,7 +156,7 @@ static bool create_inode_eb(io_context& ctx, const mkfs_options& options)
 
     inode root = {};
     root.i_size = put_be64(sizeof(dentry) * 2);
-    root.i_flags = put_be32(FFSP_DATA_EMB);
+    root.i_flags = put_be32(static_cast<uint32_t>(inode_data_type::emb));
     root.i_no = put_be32(1);
     root.i_nlink = put_be32(2);
 #ifdef _WIN32

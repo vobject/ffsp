@@ -27,14 +27,6 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <sys/stat.h>
-
-#ifdef _WIN32
-#ifndef S_ISDIR
-#include <io.h>
-#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
-#endif
-#endif
 
 namespace ffsp
 {
@@ -49,10 +41,10 @@ static bool is_collectible_type(eraseblock_type type)
 {
     switch (type)
     {
-        case FFSP_EB_DENTRY_INODE:
-        case FFSP_EB_DENTRY_CLIN:
-        case FFSP_EB_FILE_INODE:
-        case FFSP_EB_FILE_CLIN:
+        case eraseblock_type::dentry_inode:
+        case eraseblock_type::dentry_clin:
+        case eraseblock_type::file_inode:
+        case eraseblock_type::file_clin:
             return true;
         default:
             return false;
@@ -86,7 +78,7 @@ uint32_t emtpy_eraseblk_count(const fs_context& fs)
 
     // Erase block id "0" is always reserved.
     for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
-        if (fs.eb_usage[eb_id].e_type == FFSP_EB_EMPTY)
+        if (fs.eb_usage[eb_id].e_type == eraseblock_type::empty)
             ++cnt;
     return cnt;
 }
@@ -99,7 +91,7 @@ static uint32_t find_empty_eraseblk(const fs_context& fs)
     // Erase block id "0" is always reserved.
     for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
     {
-        if (fs.eb_usage[eb_id].e_type == FFSP_EB_EMPTY)
+        if (fs.eb_usage[eb_id].e_type == eraseblock_type::empty)
         {
             fs.eb_usage[eb_id].e_lastwrite = put_be16(0);
             fs.eb_usage[eb_id].e_cvalid = put_be16(0);
@@ -110,7 +102,7 @@ static uint32_t find_empty_eraseblk(const fs_context& fs)
     return FFSP_INVALID_EB_ID;
 }
 
-eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t mode)
+eraseblock_type get_eraseblk_type(const fs_context& fs, inode_data_type type, bool dentry)
 {
     // TODO: Check if it is ok to put all other types (blk, pipe, etc)
     //  apart from dentry into the same "file" erase blocks.
@@ -121,10 +113,10 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t 
         // 2. EB: inodes (dentry and file)
         // 3. EB: cluster indirect data (dentry and file)
 
-        if (data_type == FFSP_DATA_EMB)
-            return FFSP_EB_DENTRY_INODE;
-        else if (data_type == FFSP_DATA_CLIN)
-            return FFSP_EB_DENTRY_CLIN;
+        if (type == inode_data_type::emb)
+            return eraseblock_type::dentry_inode;
+        else if (type == inode_data_type::clin)
+            return eraseblock_type::dentry_clin;
     }
     else if (fs.neraseopen == 4)
     {
@@ -133,12 +125,12 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t 
         // 3. EB: file inodes
         // 4. EB: cluster indirect data (dentry and file)
 
-        if (data_type == FFSP_DATA_EMB && S_ISDIR(mode))
-            return FFSP_EB_DENTRY_INODE;
-        else if (data_type == FFSP_DATA_EMB && !S_ISDIR(mode))
-            return FFSP_EB_FILE_INODE;
-        else if (data_type == FFSP_DATA_CLIN)
-            return FFSP_EB_DENTRY_CLIN;
+        if (type == inode_data_type::emb && dentry)
+            return eraseblock_type::dentry_inode;
+        else if (type == inode_data_type::emb && !dentry)
+            return eraseblock_type::file_inode;
+        else if (type == inode_data_type::clin)
+            return eraseblock_type::dentry_clin;
     }
     else if (fs.neraseopen >= 5)
     {
@@ -148,28 +140,28 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, int data_type, uint32_t 
         // 4. EB: cluster indirect dentry data
         // 5. EB: cluster indirect file data
 
-        if (S_ISDIR(mode))
+        if (dentry)
         {
-            if (data_type == FFSP_DATA_EMB)
-                return FFSP_EB_DENTRY_INODE;
-            else if (data_type == FFSP_DATA_CLIN)
-                return FFSP_EB_DENTRY_CLIN;
+            if (type == inode_data_type::emb)
+                return eraseblock_type::dentry_inode;
+            else if (type == inode_data_type::clin)
+                return eraseblock_type::dentry_clin;
         }
         else
         {
-            if (data_type == FFSP_DATA_EMB)
-                return FFSP_EB_FILE_INODE;
-            else if (data_type == FFSP_DATA_CLIN)
-                return FFSP_EB_FILE_CLIN;
+            if (type == inode_data_type::emb)
+                return eraseblock_type::file_inode;
+            else if (type == inode_data_type::clin)
+                return eraseblock_type::file_clin;
         }
     }
-    return FFSP_EB_EBIN;
+    return eraseblock_type::ebin;
 }
 
 int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
                           uint32_t& eb_id, uint32_t& cl_id)
 {
-    if (eb_type == FFSP_EB_EBIN)
+    if (eb_type == eraseblock_type::ebin)
     {
         cl_id = eb_id = find_empty_eraseblk(fs);
         return (eb_id == FFSP_INVALID_EB_ID) ? -1 : 0;
@@ -227,7 +219,7 @@ void commit_write_operation(fs_context& fs, eraseblock_type eb_type,
     // To help triggering gc the function will increment fs.eb_written
     //  every time an erase block was finalized.
 
-    if (eb_type == FFSP_EB_EBIN)
+    if (eb_type == eraseblock_type::ebin)
     {
         // Erase block indirect data is easy to handle.
         // It can never be "open" because it is always completely
@@ -302,9 +294,9 @@ void close_eraseblks(fs_context& fs)
 
     for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
     {
-        if (fs.eb_usage[eb_id].e_type & FFSP_EB_EBIN)
+        if (fs.eb_usage[eb_id].e_type == eraseblock_type::ebin)
             continue; /* can never be "open" */
-        if (fs.eb_usage[eb_id].e_type & FFSP_EB_EMPTY)
+        if (fs.eb_usage[eb_id].e_type == eraseblock_type::empty)
             continue; /* can never be "open" */
 
         eraseblock_type eb_type = fs.eb_usage[eb_id].e_type;

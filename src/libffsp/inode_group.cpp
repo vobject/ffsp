@@ -29,6 +29,14 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <sys/stat.h>
+
+#ifdef _WIN32
+#ifndef S_ISDIR
+#include <io.h>
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
+#endif
+#endif
 
 namespace ffsp
 {
@@ -121,7 +129,7 @@ int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
 
     /* Needed to get the correct erase block type.
      * There might be different types for dentries and files */
-    uint32_t mode = get_be32(inodes[0]->i_mode);
+    bool for_dentry = S_ISDIR(get_be32(inodes[0]->i_mode));
 
     /* an inode group can have a max size of ino_cnt elements */
     inode** group = (inode**)malloc(ino_cnt * sizeof(inode*));
@@ -134,7 +142,7 @@ int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
     int group_elem_cnt;
     while ((group_elem_cnt = get_inode_group(fs, inodes, ino_cnt, group)))
     {
-        eraseblock_type eb_type = get_eraseblk_type(fs, FFSP_DATA_EMB, mode);
+        eraseblock_type eb_type = get_eraseblk_type(fs, inode_data_type::emb, for_dentry);
 
         /* search for a cluster id to write the inode(s) to */
         unsigned int eb_id;
