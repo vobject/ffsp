@@ -139,7 +139,7 @@ static void read_cl_occupancy(fs_context& fs)
      * are valid in each cluster. */
     for (unsigned int i = 1; i < fs.nino; i++)
     {
-        unsigned int cl_id = get_be32(fs.ino_map[i]);
+        cl_id_t cl_id = get_be32(fs.ino_map[i]);
         if (cl_id)
             fs.cl_occupancy[cl_id]++;
     }

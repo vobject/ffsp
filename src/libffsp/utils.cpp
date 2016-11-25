@@ -47,7 +47,7 @@ static uint32_t free_cluster_cnt(const fs_context& fs)
 {
     uint32_t free_cl_cnt = 0; /* atm clusters and blocks are the same. */
 
-    for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
     {
         if (eb_is_type(fs, eb_id, eraseblock_type::ebin))
             continue;

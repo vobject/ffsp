@@ -133,7 +133,7 @@ static std::string get_metrics_info(fs_context& fs)
     return os.str();
 }
 
-static std::string get_eb_info(fs_context& fs, unsigned int eb_id)
+static std::string get_eb_info(fs_context& fs, eb_id_t eb_id)
 {
     const eraseblock& eb = fs.eb_usage[eb_id];
 
@@ -154,7 +154,7 @@ static std::string get_eb_info(fs_context& fs, unsigned int eb_id)
     const unsigned int cl_per_eb = fs.erasesize / fs.clustersize;
     for (unsigned int i = 0; i < cl_per_eb; i++)
     {
-        const unsigned int cl_id = eb_id * fs.erasesize / fs.clustersize + i;
+        const cl_id_t cl_id = eb_id * fs.erasesize / fs.clustersize + i;
         os << cl_id;
 
         if (i != (cl_per_eb - 1))
@@ -166,13 +166,13 @@ static std::string get_eb_info(fs_context& fs, unsigned int eb_id)
     return os.str();
 }
 
-static std::string get_cl_info(fs_context& fs, unsigned int cl_id)
+static std::string get_cl_info(fs_context& fs, cl_id_t cl_id)
 {
     std::ostringstream os;
 
     os << "{";
 
-    const unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
+    const eb_id_t eb_id = cl_id * fs.clustersize / fs.erasesize;
     const eraseblock& eb = fs.eb_usage[eb_id];
     os << "\"eraseblock\":{";
     os << "\"eb_id\":" << eb_id << ",";
@@ -221,8 +221,8 @@ static std::string get_ino_info(fs_context& fs, uint32_t ino_no)
 
     os << "{";
 
-    const unsigned int cl_id = get_be32(fs.ino_map[ino_no]);
-    const unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
+    const cl_id_t cl_id = get_be32(fs.ino_map[ino_no]);
+    const eb_id_t eb_id = cl_id * fs.clustersize / fs.erasesize;
 
     const eraseblock& eb = fs.eb_usage[eb_id];
     os << "\"eraseblock\":{";
@@ -241,8 +241,7 @@ static std::string get_ino_info(fs_context& fs, uint32_t ino_no)
 
     os << ",";
     os << "\"inode\":{";
-    inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) *
-                                     sizeof(inode*));
+    inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
     int ino_cnt = read_inode_group(fs, cl_id, inodes);
     if (ino_cnt)
     {
@@ -483,7 +482,7 @@ bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& d
         {
             const unsigned int cl_per_eb = fs.erasesize / fs.clustersize;
             inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
-            for (uint32_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
+            for (eb_id_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
             {
                 const eraseblock& eb = fs.eb_usage[eb_id];
                 if (eb.e_type == eraseblock_type::dentry_inode ||
@@ -491,7 +490,7 @@ bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& d
                 {
                     for (unsigned int cl_idx = 0; cl_idx < cl_per_eb; cl_idx++)
                     {
-                        const unsigned int cl_id = eb_id * fs.erasesize / fs.clustersize + cl_idx;
+                        const cl_id_t cl_id = eb_id * fs.erasesize / fs.clustersize + cl_idx;
 
                         int ino_cnt = read_inode_group(fs, cl_id, inodes);
                         if (ino_cnt)

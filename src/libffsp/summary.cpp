@@ -111,7 +111,7 @@ void summary_close(summary_cache& cache, summary* summary)
         cache.inode_clin.close();
 }
 
-bool summary_required(const fs_context& fs, uint32_t eb_id)
+bool summary_required(const fs_context& fs, eb_id_t eb_id)
 {
     // Erase blocks containing cluster indirect data have an erase block summary
     // section at the end that cannot be used for data. Its size is one cluster.
@@ -120,7 +120,7 @@ bool summary_required(const fs_context& fs, uint32_t eb_id)
            (eb.e_type == eraseblock_type::file_clin);
 }
 
-bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id)
+bool summary_write(fs_context& fs, summary* summary, eb_id_t eb_id)
 {
     uint64_t eb_off = eb_id * fs.erasesize;
     uint64_t summary_off = eb_off + (fs.erasesize - fs.clustersize);
@@ -135,7 +135,7 @@ bool summary_write(fs_context& fs, summary* summary, uint32_t eb_id)
     return true;
 }
 
-void summary_add_ref(summary* summary, uint16_t cl_idx, uint32_t ino_no)
+void summary_add_ref(summary* summary, uint16_t cl_idx, ino_t ino_no)
 {
     summary->buf_[cl_idx] = put_be32(ino_no);
 }

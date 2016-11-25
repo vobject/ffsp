@@ -83,25 +83,25 @@ unsigned int get_inode_size(const fs_context& fs, const inode* ino)
      * - erase block indirect: the size of valid eb indirect pointers
      */
 
-    unsigned int inode_size = sizeof(inode);
+    unsigned int ino_size = sizeof(inode);
     unsigned int i_size = get_be64(ino->i_size);
 
     // the lower 8 bit carry the inode data type
     inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
 
     if (data_type == inode_data_type::emb)
-        inode_size += i_size;
+        ino_size += i_size;
     else if (data_type == inode_data_type::clin)
-        inode_size += (i_size - 1) / fs.clustersize * sizeof(be32_t) + sizeof(be32_t);
+        ino_size += (i_size - 1) / fs.clustersize * sizeof(be32_t) + sizeof(be32_t);
     else if (data_type == inode_data_type::ebin)
-        inode_size += (i_size - 1) / fs.erasesize * sizeof(be32_t) + sizeof(be32_t);
-    return inode_size;
+        ino_size += (i_size - 1) / fs.erasesize * sizeof(be32_t) + sizeof(be32_t);
+    return ino_size;
 }
 
 /* Check if a given inode is located at the given cluster id. */
-bool is_inode_valid(const fs_context& fs, unsigned int cl_id, const inode* ino)
+bool is_inode_valid(const fs_context& fs, cl_id_t cl_id, const inode* ino)
 {
-    const unsigned int ino_no = get_be32(ino->i_no);
+    ino_t ino_no = get_be32(ino->i_no);
 
     /*
      * An inode cluster is considered valid if the inode number it
@@ -123,13 +123,13 @@ static void split_path(const char* path, char** parent, char** name)
 
 static unsigned int find_free_inode_no(fs_context& fs)
 {
-    for (unsigned int ino_no = 1; ino_no < fs.nino; ino_no++)
+    for (ino_t ino_no = 1; ino_no < fs.nino; ino_no++)
         if (get_be32(fs.ino_map[ino_no]) == FFSP_FREE_CL_ID)
             return ino_no;
     return FFSP_INVALID_INO_NO;
 }
 
-static void mk_directory(inode* ino, unsigned int parent_no)
+static void mk_directory(inode* ino, ino_t parent_ino_no)
 {
     dentry* dentry_ptr = (dentry*)inode_data(ino);
 
@@ -138,7 +138,7 @@ static void mk_directory(inode* ino, unsigned int parent_no)
     dentry_ptr[0].len = strlen(".");
     strcpy(dentry_ptr[0].name, ".");
 
-    dentry_ptr[1].ino = put_be32(parent_no);
+    dentry_ptr[1].ino = put_be32(parent_ino_no);
     dentry_ptr[1].len = strlen("..");
     strcpy(dentry_ptr[1].name, "..");
 
@@ -147,8 +147,8 @@ static void mk_directory(inode* ino, unsigned int parent_no)
     ino->i_nlink = put_be32(2);
 }
 
-static int add_dentry(fs_context& fs, const char* path, unsigned int inode_no,
-                      mode_t mode, unsigned int* parent_no)
+static int add_dentry(fs_context& fs, const char* path, ino_t ino_no,
+                      mode_t mode, ino_t* parent_ino_no)
 {
     char* name;
     char* parent;
@@ -166,7 +166,7 @@ static int add_dentry(fs_context& fs, const char* path, unsigned int inode_no,
 
     dentry dent;
     memset(&dent, 0, sizeof(dent));
-    dent.ino = put_be32(inode_no);
+    dent.ino = put_be32(ino_no);
     dent.len = strlen(name);
     strcpy(dent.name, name);
     free(name);
@@ -183,15 +183,15 @@ static int add_dentry(fs_context& fs, const char* path, unsigned int inode_no,
         inc_be32(parent_ino->i_nlink);
         mark_dirty(fs, parent_ino);
     }
-    if (parent_no)
+    if (parent_ino_no)
     {
         // Return parents inode_no on success.
-        *parent_no = get_be32(parent_ino->i_no);
+        *parent_ino_no = get_be32(parent_ino->i_no);
     }
     return 0;
 }
 
-static int remove_dentry(fs_context& fs, const char* path, unsigned int inode_no, mode_t mode)
+static int remove_dentry(fs_context& fs, const char* path, ino_t ino_no, mode_t mode)
 {
     char* name;
     char* parent;
@@ -215,9 +215,9 @@ static int remove_dentry(fs_context& fs, const char* path, unsigned int inode_no
 
     for (int i = 0; i < dent_cnt; i++)
     {
-        if (get_be32(dent_buf[i].ino) == inode_no)
+        if (get_be32(dent_buf[i].ino) == ino_no)
         {
-            inode_no = get_be32(dent_buf[i].ino);
+            ino_no = get_be32(dent_buf[i].ino);
             dent_buf[i].ino = put_be32(0);
             dent_buf[i].len = 0;
 
@@ -229,7 +229,7 @@ static int remove_dentry(fs_context& fs, const char* path, unsigned int inode_no
     free(dent_buf);
 
     // Check if the requested name was even found inside the directory.
-    if (inode_no == FFSP_INVALID_INO_NO)
+    if (ino_no == FFSP_INVALID_INO_NO)
         return -ENOENT;
 
     // The link count of the parent directory must be decremented
@@ -295,9 +295,9 @@ static int dentry_is_empty(fs_context& fs, inode* ino)
     return 1; // the directory is empty
 }
 
-int lookup_no(fs_context& fs, inode** ino, uint32_t ino_no)
+int lookup_no(fs_context& fs, inode** ino, ino_t ino_no)
 {
-    *ino = inode_cache_find(*fs.inode_cache, put_be32(ino_no));
+    *ino = inode_cache_find(*fs.inode_cache, ino_no);
     if (*ino)
         return 0;
 
@@ -312,7 +312,7 @@ int lookup_no(fs_context& fs, inode** ino, uint32_t ino_no)
         abort();
     }
 
-    unsigned int cl_id = get_be32(fs.ino_map[ino_no]);
+    cl_id_t cl_id = get_be32(fs.ino_map[ino_no]);
     int ino_cnt = read_inode_group(fs, cl_id, inodes);
     if (ino_cnt < 0)
     {
@@ -329,7 +329,7 @@ int lookup_no(fs_context& fs, inode** ino, uint32_t ino_no)
         inode_cache_insert(*fs.inode_cache, inodes[i]);
 
     /* the requested inode should now be present inside the inode cache */
-    *ino = inode_cache_find(*fs.inode_cache, put_be32(ino_no));
+    *ino = inode_cache_find(*fs.inode_cache, ino_no);
     free(inodes);
     return 0;
 }
@@ -451,12 +451,12 @@ int release_inodes(fs_context& fs)
 
 int create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, dev_t device)
 {
-    unsigned int inode_no = find_free_inode_no(fs);
-    if (inode_no == FFSP_INVALID_INO_NO)
+    ino_t ino_no = find_free_inode_no(fs);
+    if (ino_no == FFSP_INVALID_INO_NO)
         return -ENOSPC; // max number of files in the fs reached
 
-    unsigned int parent_no;
-    int rc = add_dentry(fs, path, inode_no, mode, &parent_no);
+    ino_t parent_ino_no;
+    int rc = add_dentry(fs, path, ino_no, mode, &parent_ino_no);
     if (rc < 0)
         return rc;
 
@@ -464,7 +464,7 @@ int create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, 
     inode* ino = allocate_inode(fs);
     ino->i_size = put_be64(0);
     ino->i_flags = put_be32(static_cast<uint32_t>(inode_data_type::emb));
-    ino->i_no = put_be32(inode_no);
+    ino->i_no = put_be32(ino_no);
     ino->i_nlink = put_be32(1);
     ino->i_uid = put_be32(uid);
     ino->i_gid = put_be32(gid);
@@ -474,12 +474,12 @@ int create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, 
 
     // Handle creation of a directory.
     if (S_ISDIR(mode))
-        mk_directory(ino, parent_no);
+        mk_directory(ino, parent_ino_no);
 
     // HACK: we have to occupy an inode_no inside the inomap.
     //  Otherwise it is still marked as 'free'.
     //  Its content will be updated when the inode is actually written.
-    fs.ino_map[inode_no] = put_be32(FFSP_RESERVED_CL_ID);
+    fs.ino_map[ino_no] = put_be32(FFSP_RESERVED_CL_ID);
 
     inode_cache_insert(*fs.inode_cache, ino);
     mark_dirty(fs, ino);
@@ -555,10 +555,10 @@ int unlink(fs_context& fs, const char* path)
     if (rc < 0)
         return rc;
 
-    unsigned int inode_no = get_be32(ino->i_no);
+    ino_t ino_no = get_be32(ino->i_no);
     mode_t mode = get_be32(ino->i_mode);
 
-    rc = remove_dentry(fs, path, inode_no, mode);
+    rc = remove_dentry(fs, path, ino_no, mode);
     if (rc < 0)
         return rc;
 
@@ -576,7 +576,7 @@ int unlink(fs_context& fs, const char* path)
 
         /* decrement the number of valid inodes inside the old inode's
          * cluster (in case it really had one). */
-        unsigned int cl_id = get_be32(fs.ino_map[inode_no]);
+        cl_id_t cl_id = get_be32(fs.ino_map[ino_no]);
         if (cl_id != FFSP_RESERVED_CL_ID)
         {
             fs.cl_occupancy[cl_id]--;
@@ -586,14 +586,14 @@ int unlink(fs_context& fs, const char* path)
              * does not contain any more valid inodes at all. */
             if (!fs.cl_occupancy[cl_id])
             {
-                unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
+                eb_id_t eb_id = cl_id * fs.clustersize / fs.erasesize;
                 eb_dec_cvalid(fs, eb_id);
                 //	dec_be16(&fs.eb_usage[eb_id].e_cvalid);
             }
         }
 
         /* set the old file's inode number to 'free' */
-        fs.ino_map[inode_no] = put_be32(FFSP_FREE_CL_ID);
+        fs.ino_map[ino_no] = put_be32(FFSP_FREE_CL_ID);
 
         uint64_t file_size = get_be64(ino->i_size);
         inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
@@ -647,12 +647,12 @@ int rmdir(fs_context& fs, const char* path)
     if (dentry_is_empty(fs, ino) == 0)
         return -ENOTEMPTY;
 
-    unsigned int inode_no = get_be32(ino->i_no);
+    ino_t ino_no = get_be32(ino->i_no);
     mode_t mode = get_be32(ino->i_mode);
 
     // Invalidate the dentry inside the parent directory and also
     //  decrement the link count of the parent directory.
-    rc = remove_dentry(fs, path, inode_no, mode);
+    rc = remove_dentry(fs, path, ino_no, mode);
     if (rc < 0)
         return rc;
 
@@ -662,7 +662,7 @@ int rmdir(fs_context& fs, const char* path)
 
     /* decrement the number of valid inodes inside the old inode's
      * cluster (in case it really had one). */
-    unsigned int cl_id = get_be32(fs.ino_map[inode_no]);
+    cl_id_t cl_id = get_be32(fs.ino_map[ino_no]);
     if (cl_id != FFSP_RESERVED_CL_ID)
     {
         fs.cl_occupancy[cl_id]--;
@@ -672,14 +672,14 @@ int rmdir(fs_context& fs, const char* path)
          * does not contain any more valid inodes at all. */
         if (!fs.cl_occupancy[cl_id])
         {
-            unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
+            eb_id_t eb_id = cl_id * fs.clustersize / fs.erasesize;
             eb_dec_cvalid(fs, eb_id);
             //	dec_be16(&fs.eb_usage[eb_id].e_cvalid);
         }
     }
 
     /* set the old file's inode number to 'free' */
-    fs.ino_map[inode_no] = put_be32(FFSP_FREE_CL_ID);
+    fs.ino_map[ino_no] = put_be32(FFSP_FREE_CL_ID);
 
     uint64_t file_size = get_be64(ino->i_size);
     inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
@@ -762,16 +762,15 @@ void mark_dirty(fs_context& fs, inode* ino)
         /* the inode is already dirty */
         return;
 
-    unsigned int ino_no = get_be32(ino->i_no);
+    ino_t ino_no = get_be32(ino->i_no);
     set_bit(fs.ino_status_map, ino_no);
     fs.dirty_ino_cnt++;
 
-    log().debug("inode {} is now DIRTY - dirty_ino_cnt={}",
-                ino_no, fs.dirty_ino_cnt);
+    log().debug("inode {} is now DIRTY - dirty_ino_cnt={}", ino_no, fs.dirty_ino_cnt);
 
     /* decrement the number of valid inodes inside the old inode's
      * cluster (in case it really had one). */
-    unsigned int cl_id = get_be32(fs.ino_map[ino_no]);
+    cl_id_t cl_id = get_be32(fs.ino_map[ino_no]);
     if (cl_id != FFSP_RESERVED_CL_ID)
     {
         fs.cl_occupancy[cl_id]--;
@@ -781,7 +780,7 @@ void mark_dirty(fs_context& fs, inode* ino)
          * not contain any more valid inodes at all. */
         if (!fs.cl_occupancy[cl_id])
         {
-            unsigned int eb_id = cl_id * fs.clustersize / fs.erasesize;
+            eb_id_t eb_id = cl_id * fs.clustersize / fs.erasesize;
             eb_dec_cvalid(fs, eb_id);
             //	dec_be16(&fs.eb_usage[eb_id].e_cvalid);
         }
@@ -792,11 +791,10 @@ void reset_dirty(fs_context& fs, inode* ino)
 {
     if (is_inode_dirty(fs, *ino))
     {
-        unsigned int ino_no = get_be32(ino->i_no);
+        ino_t ino_no = get_be32(ino->i_no);
         clear_bit(fs.ino_status_map, ino_no);
         fs.dirty_ino_cnt--;
-        log().debug("inode {} is now CLEAN - dirty_ino_cnt={}",
-                    ino_no, fs.dirty_ino_cnt);
+        log().debug("inode {} is now CLEAN - dirty_ino_cnt={}", ino_no, fs.dirty_ino_cnt);
     }
 }
 
@@ -812,7 +810,7 @@ int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dent_cnt)
         return -1;
     }
 
-    int rc = read(fs, ino, (char*)(*dent_buf), data_size, 0);
+    ssize_t rc = read(fs, ino, (char*)(*dent_buf), data_size, 0);
     if (rc < 0)
     {
         free(*dent_buf);
@@ -834,19 +832,19 @@ void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, inode_da
 
         if (ind_type == inode_data_type::clin)
         {
-            // Tell the erase block usage information that there is
-            //  now one additional cluster invalid in the specified
-            //  erase block.
-            uint32_t eb_id = ind_id * fs.clustersize / fs.erasesize;
+            // Tell the erase block usage information that there is now
+            // one additional cluster invalid in the specified erase block.
+            cl_id_t cl_id = ind_id;
+            eb_id_t eb_id = cl_id * fs.clustersize / fs.erasesize;
             eb_dec_cvalid(fs, eb_id);
             //	dec_be16(&fs.eb_usage[eb_id].e_cvalid);
         }
         else if (ind_type == inode_data_type::ebin)
         {
-            // The erase block type is the only field of importance
-            //  in this case. Just set the erase blocks usage
-            //  information to EMPTY and we are done.
-            fs.eb_usage[ind_id].e_type = eraseblock_type::empty;
+            // The erase block type is the only field of importance in this case.
+            // Set the erase blocks usage information to EMPTY and we are done.
+            eb_id_t eb_id = ind_id;
+            fs.eb_usage[eb_id].e_type = eraseblock_type::empty;
         }
     }
 }

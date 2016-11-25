@@ -36,10 +36,10 @@ inode* allocate_inode(const fs_context& fs);
 void delete_inode(inode* ino);
 void* inode_data(inode* ino);
 unsigned int get_inode_size(const fs_context& fs, const inode* ino);
-bool is_inode_valid(const fs_context& fs, unsigned int cl_id, const inode* ino);
+bool is_inode_valid(const fs_context& fs, cl_id_t cl_id, const inode* ino);
 //bool is_inode_data_type(const fs_context& fs, const inode* ino);
 
-int lookup_no(fs_context& fs, inode** ino, uint32_t ino_no);
+int lookup_no(fs_context& fs, inode** ino, ino_t ino_no);
 int lookup(fs_context& fs, inode** ino, const char* path);
 int flush_inodes(fs_context& fs, bool force);
 int release_inodes(fs_context& fs);

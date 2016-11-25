@@ -31,7 +31,7 @@
 namespace ffsp
 {
 
-bool eb_is_type(const fs_context& fs, uint32_t eb_id, eraseblock_type type)
+bool eb_is_type(const fs_context& fs, eb_id_t eb_id, eraseblock_type type)
 {
     return fs.eb_usage[eb_id].e_type == type;
 }
@@ -51,45 +51,45 @@ static bool is_collectible_type(eraseblock_type type)
     }
 }
 
-bool eb_is_freeable(const fs_context& fs, uint32_t eb_id)
+bool eb_is_freeable(const fs_context& fs, eb_id_t eb_id)
 {
     const eraseblock& eb = fs.eb_usage[eb_id];
     return is_collectible_type(eb.e_type) && (get_be16(eb.e_cvalid) == 0);
 }
 
-int eb_get_cvalid(const fs_context& fs, uint32_t eb_id)
+int eb_get_cvalid(const fs_context& fs, eb_id_t eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void eb_inc_cvalid(fs_context& fs, uint32_t eb_id)
+void eb_inc_cvalid(fs_context& fs, eb_id_t eb_id)
 {
     inc_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-void eb_dec_cvalid(fs_context& fs, uint32_t eb_id)
+void eb_dec_cvalid(fs_context& fs, eb_id_t eb_id)
 {
     dec_be16(fs.eb_usage[eb_id].e_cvalid);
 }
 
-uint32_t emtpy_eraseblk_count(const fs_context& fs)
+unsigned int emtpy_eraseblk_count(const fs_context& fs)
 {
     unsigned int cnt = 0;
 
     // Erase block id "0" is always reserved.
-    for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
         if (fs.eb_usage[eb_id].e_type == eraseblock_type::empty)
             ++cnt;
     return cnt;
 }
 
-static uint32_t find_empty_eraseblk(const fs_context& fs)
+static eb_id_t find_empty_eraseblk(const fs_context& fs)
 {
     if (emtpy_eraseblk_count(fs) <= fs.nerasereserve)
         return FFSP_INVALID_EB_ID;
 
     // Erase block id "0" is always reserved.
-    for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
     {
         if (fs.eb_usage[eb_id].e_type == eraseblock_type::empty)
         {
@@ -158,20 +158,20 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, inode_data_type type, bo
     return eraseblock_type::ebin;
 }
 
-int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
-                          uint32_t& eb_id, uint32_t& cl_id)
+bool find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
+                           eb_id_t& eb_id, cl_id_t& cl_id)
 {
     if (eb_type == eraseblock_type::ebin)
     {
         cl_id = eb_id = find_empty_eraseblk(fs);
-        return (eb_id == FFSP_INVALID_EB_ID) ? -1 : 0;
+        return eb_id != FFSP_INVALID_EB_ID;
     }
 
     unsigned int max_writeops = fs.erasesize / fs.clustersize;
 
     // Try to find an open erase block that matches the type we are
     //  searching for.
-    for (unsigned int eb = 1; eb < fs.neraseblocks; ++eb)
+    for (eb_id_t eb = 1; eb < fs.neraseblocks; ++eb)
     {
         if (fs.eb_usage[eb].e_type != eb_type)
             continue;
@@ -188,7 +188,7 @@ int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
             // cl_id is the cluster id of the erase block
             //  plus the amount of already written clusters
             cl_id = eb * fs.erasesize / fs.clustersize + cur_writeops;
-            return 0;
+            return true;
         }
     }
 
@@ -196,15 +196,15 @@ int find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
     // Open a new erase block and return it for writing.
     eb_id = find_empty_eraseblk(fs);
     if (eb_id == FFSP_INVALID_EB_ID)
-        return -1;
+        return false;
 
     // The beginning of a new erase block is a valid cluster id, too.
     cl_id = eb_id * fs.erasesize / fs.clustersize;
-    return 0;
+    return true;
 }
 
 void commit_write_operation(fs_context& fs, eraseblock_type eb_type,
-                            uint32_t eb_id, be32_t ino_no)
+                            eb_id_t eb_id, be32_t ino_no)
 {
     /* TODO: Error handling missing! */
 
@@ -292,7 +292,7 @@ void close_eraseblks(fs_context& fs)
 {
     /* TODO: Error handling missing! */
 
-    for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
     {
         if (fs.eb_usage[eb_id].e_type == eraseblock_type::ebin)
             continue; /* can never be "open" */

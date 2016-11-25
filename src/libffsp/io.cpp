@@ -127,10 +127,9 @@ static ssize_t write_ind(fs_context& fs, write_context& ctx, const char* buf, be
     eraseblock_type eb_type = get_eraseblk_type(fs, ctx.new_type, for_dentry);
 
     // Search for a cluster id or an erase block id to write to.
-    uint32_t eb_id;
-    uint32_t cl_id;
-    int rc = find_writable_cluster(fs, eb_type, eb_id, cl_id);
-    if (rc < 0)
+    eb_id_t eb_id;
+    cl_id_t cl_id;
+    if (!find_writable_cluster(fs, eb_type, eb_id, cl_id))
     {
         log().debug("Failed to find writable cluster or erase block");
         return -ENOSPC;
@@ -508,7 +507,7 @@ static ssize_t write_ebin(fs_context& fs, write_context& ctx)
         uint64_t eb_left = std::min(ctx.bytes_left, ctx.new_ind_size - eb_offset);
 
         /* indirect erase block id that is to be written */
-        uint32_t eb_id = get_be32(ctx.ind_ptr[eb_index]);
+        eb_id_t eb_id = get_be32(ctx.ind_ptr[eb_index]);
 
         if ((eb_left < ctx.new_ind_size) && eb_id)
         {

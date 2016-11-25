@@ -72,9 +72,9 @@ static int get_inode_group(const fs_context& fs, inode** inodes,
             continue;
 
         unsigned int free_bytes = fs.clustersize - group_size;
-        unsigned int inode_size = get_inode_size(fs, inodes[i]);
+        unsigned int ino_size = get_inode_size(fs, inodes[i]);
 
-        if (inode_size > free_bytes)
+        if (ino_size > free_bytes)
         {
             /* no more free space inside the cluster for
              * additional inodes */
@@ -83,13 +83,13 @@ static int get_inode_group(const fs_context& fs, inode** inodes,
         /* move the current inode into the inode group */
         group[group_elem_cnt++] = inodes[i];
         inodes[i] = nullptr;
-        group_size += inode_size;
+        group_size += ino_size;
     }
     return group_elem_cnt;
 }
 
 /* Read all valid inodes from the specified cluster. */
-int read_inode_group(fs_context& fs, unsigned int cl_id, inode** inodes)
+int read_inode_group(fs_context& fs, cl_id_t cl_id, inode** inodes)
 {
     uint64_t cl_offset = cl_id * fs.clustersize;
 
@@ -145,10 +145,9 @@ int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
         eraseblock_type eb_type = get_eraseblk_type(fs, inode_data_type::emb, for_dentry);
 
         /* search for a cluster id to write the inode(s) to */
-        unsigned int eb_id;
-        unsigned int cl_id;
-        int rc = find_writable_cluster(fs, eb_type, eb_id, cl_id);
-        if (rc < 0)
+        eb_id_t eb_id;
+        cl_id_t cl_id;
+        if (!find_writable_cluster(fs, eb_type, eb_id, cl_id))
         {
             log().debug("Failed to find writable cluster or erase block");
             free(group);

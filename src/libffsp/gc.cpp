@@ -100,7 +100,7 @@ void gcinfo_uninit(gcinfo* info)
     delete[] info;
 }
 
-static bool is_eb_collectable(const fs_context& fs, unsigned int eb_id)
+static bool is_eb_collectable(const fs_context& fs, eb_id_t eb_id)
 {
     int cvalid = eb_get_cvalid(fs, eb_id);
     int writeops = get_be16(fs.eb_usage[eb_id].e_writeops);
@@ -130,7 +130,7 @@ static bool is_eb_collectable(const fs_context& fs, unsigned int eb_id)
  * Checks if a given inode (specified by its inode number) still contains
  * an indirect cluster pointer to the given cluster id.
  */
-static bool is_clin_valid(ffsp_fs& fs, unsigned int cl_id, unsigned int ino_no)
+static bool is_clin_valid(ffsp_fs& fs, cl_id_t cl_id, unsigned int ino_no)
 {
     if (!ino_no || (ino_no >= fs.nino))
         return false;
@@ -183,7 +183,7 @@ static void swap_cluster_id(ffsp_fs& fs, unsigned int ino_no,
 static void collect_empty_eraseblks(fs_context& fs)
 {
     /* erase block id "0" is always reserved */
-    for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
     {
         if (eb_is_freeable(fs, eb_id))
         {
@@ -196,10 +196,10 @@ static void collect_empty_eraseblks(fs_context& fs)
     }
 }
 
-static uint32_t find_empty_eraseblk(const fs_context& fs)
+static eb_id_t find_empty_eraseblk(const fs_context& fs)
 {
     /* erase block id "0" is always reserved */
-    for (uint32_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
         if (eb_is_type(fs, eb_id, eraseblock_type::empty))
             return eb_id;
     return FFSP_INVALID_EB_ID;
@@ -240,7 +240,7 @@ static unsigned int find_collectable_eraseblk(fs_context& fs, eraseblock_type eb
     unsigned int least_cvalid_id = FFSP_INVALID_EB_ID;
 
     /* erase block id "0" is always reserved */
-    for (unsigned int eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
     {
         eraseblock_type cur_type = fs.eb_usage[eb_id].e_type;
         int cur_valid = eb_get_cvalid(fs, eb_id);
@@ -288,7 +288,7 @@ static unsigned int move_inodes(fs_context& fs, unsigned int src_eb_id,
     {
         uint64_t eb_off = src_eb_id * fs.erasesize;
         uint64_t cl_off = eb_off + (i * fs.clustersize);
-        uint32_t cl_id = static_cast<uint32_t>(cl_off / fs.clustersize);
+        cl_id_t cl_id = static_cast<cl_id_t>(cl_off / fs.clustersize);
 
         int ino_cnt = read_inode_group(fs, cl_id, inodes);
         if (!ino_cnt)
@@ -341,7 +341,7 @@ static void collect_inodes(fs_context& fs, eraseblock_type eb_type)
 
     do
     {
-        unsigned int eb_id = find_collectable_eraseblk(fs, eb_type);
+        eb_id_t eb_id = find_collectable_eraseblk(fs, eb_type);
         if (eb_id == FFSP_INVALID_EB_ID)
             break;
 
@@ -417,7 +417,7 @@ static void collect_clin(ffsp_fs& fs, ffsp_eraseblk_type eb_type)
     be32_t* eb_summary = ffsp_alloc_summary(fs);
     unsigned int free_eb_id = find_empty_eraseblk(fs);
 
-    unsigned int eb_id;
+    eb_id_t eb_id;
     do
     {
         eb_id = find_collectable_eraseblk(fs, eb_type);

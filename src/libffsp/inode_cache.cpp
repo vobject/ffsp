@@ -57,9 +57,9 @@ void inode_cache_remove(inode_cache& cache, inode* ino)
     cache.buf[get_be32(ino->i_no)] = nullptr;
 }
 
-inode* inode_cache_find(const inode_cache& cache, be32_t ino_no)
+inode* inode_cache_find(const inode_cache& cache, ino_t ino_no)
 {
-    return cache.buf[get_be32(ino_no)];
+    return cache.buf[ino_no];
 }
 
 std::vector<inode*> inode_cache_get(const inode_cache& cache)

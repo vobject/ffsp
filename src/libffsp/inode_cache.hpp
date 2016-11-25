@@ -36,7 +36,7 @@ void inode_cache_uninit(inode_cache* cache);
 
 void inode_cache_insert(inode_cache& cache, inode* ino);
 void inode_cache_remove(inode_cache& cache, inode* ino);
-inode* inode_cache_find(const inode_cache& cache, be32_t ino_no);
+inode* inode_cache_find(const inode_cache& cache, ino_t ino_no);
 std::vector<inode*> inode_cache_get(const inode_cache& cache);
 std::vector<inode*> inode_cache_get_if(const inode_cache& cache,
                                        const std::function<bool(const inode&)>& p);
