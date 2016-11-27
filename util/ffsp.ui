@@ -184,7 +184,7 @@
              </property>
             </spacer>
            </item>
-           <item row="4" column="0" colspan="2">
+           <item row="5" column="0" colspan="2">
             <widget class="QPushButton" name="createFsFileBtn">
              <property name="enabled">
               <bool>false</bool>
@@ -220,6 +220,16 @@
              </property>
              <property name="value">
               <number>128</number>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0" colspan="2">
+            <widget class="QPushButton" name="removeFsFileBtn">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Remove File</string>
              </property>
             </widget>
            </item>
@@ -725,7 +735,7 @@
      <x>0</x>
      <y>0</y>
      <width>984</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">

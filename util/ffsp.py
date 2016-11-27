@@ -331,9 +331,11 @@ class MainWindow(QtGui.QMainWindow):
         self.mountIndicatorLbl = QtGui.QLabel()
         self.statusBar().addPermanentWidget(self.mountIndicatorLbl)
 
+        self.initControlsState()
         self.updateControlsState()
 
         self.ui.createFsFileBtn.clicked.connect(self.createFsFile)
+        self.ui.removeFsFileBtn.clicked.connect(self.removeFsFile)
         self.ui.mkFsBtn.clicked.connect(self.mkfs)
         self.ui.mountFsBtn.clicked.connect(self.mount)
         self.ui.unmountFsBtn.clicked.connect(self.unmount)
@@ -344,6 +346,18 @@ class MainWindow(QtGui.QMainWindow):
 
         self.show()
 
+    def initControlsState(self):
+        if sys.platform == "linux":
+            self.fsPathEdit.setText(r"~/Development/ffsp-build/Default/fs")
+            self.mountpointPathEdit.setText(r"~/Development/ffsp-build/Default/mnt")
+            self.mkfsPathEdit.setText(r"~/Development/ffsp-build/Default/mkfs.ffsp")
+            self.mountPathEdit.setText(r"~/Development/ffsp-build/Default/mount.ffsp")
+        elif sys.platform == "win32":
+            self.fsPathEdit.setText(r"D:\Development\fs\ffsp-build\fs")
+            self.mountpointPathEdit.setText(r"D:\Development\fs\ffsp-build\mnt")
+            self.mkfsPathEdit.setText(r"D:\Development\fs\ffsp-build\Debug\mkfs.ffsp.exe")
+            self.mountPathEdit.setText(r"D:\Development\fs\ffsp-build\Debug\mount.ffsp.exe")
+
     def updateControlsState(self):
         self.debug_dir = os.path.join(os.path.expanduser(self.ui.mountpointPathEdit.text()), ".FFSP.d")
 
@@ -351,6 +365,7 @@ class MainWindow(QtGui.QMainWindow):
         fsMounted = os.path.exists(self.debug_dir)
 
         self.ui.createFsFileBtn.setEnabled(not fsMounted)
+        self.ui.removeFsFileBtn.setEnabled(fsFileExists)
         self.ui.mkFsBtn.setEnabled(fsFileExists and not fsMounted)
         self.ui.mountFsBtn.setEnabled(fsFileExists and not fsMounted)
         self.ui.unmountFsBtn.setEnabled(fsMounted)
@@ -360,9 +375,21 @@ class MainWindow(QtGui.QMainWindow):
 
     def createFsFile(self):
         path = os.path.expanduser(self.fsPathEdit.text())
-        size = self.ui.fsFileSizeSpinBox.value() * str2multiplicator(self.fsFileSizeSpinBox.suffix())
-        rc = subprocess.call("dd if=/dev/zero of={} bs={} count=1".format(path, size).split())
-        self.statusBar().showMessage("dd returned {}".format(rc))
+        size = self.ui.fsFileSizeSpinBox.value()
+        mul = str2multiplicator(self.fsFileSizeSpinBox.suffix())
+        with open(path, "wb") as fs:
+            for i in range(0, size):
+                self.statusBar().showMessage("Creating file: {}/{}".format(i * mul, size * mul))
+                fs.write(b'\0' * mul)
+        self.updateControlsState()
+        self.statusBar().showMessage("File system container successfully created")
+
+    def removeFsFile(self):
+        path = os.path.expanduser(self.fsPathEdit.text())
+        if os.path.exists(path):
+            os.remove(path)
+        self.updateControlsState()
+        self.statusBar().showMessage("File system container successfully removed")
 
     def mkfs(self):
         mkfsPath = os.path.expanduser(self.mkfsPathEdit.text())
@@ -406,6 +433,8 @@ class MainWindow(QtGui.QMainWindow):
             cmd.append("-d")
         if self.ui.singleThreadModeCheckBox.isChecked():
             cmd.append("-s")
+        cmd.append("--logfile=ffsp_{}.log".format(datetime.datetime.now().strftime("%Y%m%dT%H%M%S")))
+        cmd.append("-vvvv")
         cmd.append(fsPath)
         cmd.append(moutPointPath)
         subprocess.call(cmd)

@@ -100,7 +100,8 @@ static bool parse_arguments(int argc, char** argv, ffsp_mkfs_arguments& args)
 
     while (true)
     {
-        int c = getopt_long(argc, argv, "c:e:i:o:r:w:h", long_options, &optind);
+        int opt_idx;
+        int c = getopt_long(argc, argv, "c:e:i:o:r:w:h", long_options, &opt_idx);
         if (c == -1)
             break;
 
