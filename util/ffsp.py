@@ -2,6 +2,7 @@ import os
 import sys
 import stat
 import json
+import time
 import datetime
 import collections
 import subprocess
@@ -354,12 +355,12 @@ class MainWindow(QtGui.QMainWindow):
             self.mountPathEdit.setText(r"~/Development/ffsp-build/Default/mount.ffsp")
         elif sys.platform == "win32":
             self.fsPathEdit.setText(r"D:\Development\fs\ffsp-build\fs")
-            self.mountpointPathEdit.setText(r"D:\Development\fs\ffsp-build\mnt")
+            self.mountpointPathEdit.setText(r"M:")
             self.mkfsPathEdit.setText(r"D:\Development\fs\ffsp-build\Debug\mkfs.ffsp.exe")
             self.mountPathEdit.setText(r"D:\Development\fs\ffsp-build\Debug\mount.ffsp.exe")
 
     def updateControlsState(self):
-        self.debug_dir = os.path.join(os.path.expanduser(self.ui.mountpointPathEdit.text()), ".FFSP.d")
+        self.debug_dir = os.path.join(os.path.expanduser(self.ui.mountpointPathEdit.text()), os.sep, ".FFSP.d")
 
         fsFileExists = os.path.exists(os.path.expanduser(self.ui.fsPathEdit.text()))
         fsMounted = os.path.exists(self.debug_dir)
@@ -424,7 +425,7 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         moutPointPath = os.path.expanduser(self.mountpointPathEdit.text())
-        if not os.path.isdir(moutPointPath):
+        if not os.path.isdir(moutPointPath) and sys.platform != "win32":
             self.statusBar().showMessage("Invalid mount point directory")
             return
 
@@ -437,7 +438,10 @@ class MainWindow(QtGui.QMainWindow):
         cmd.append("-vvvv")
         cmd.append(fsPath)
         cmd.append(moutPointPath)
-        subprocess.call(cmd)
+        subprocess.Popen(cmd)
+        
+        # wait for mounting to complete
+        time.sleep(8)
 
         self.updateControlsState()
         self.reload()

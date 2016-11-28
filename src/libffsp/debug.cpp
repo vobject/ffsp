@@ -21,6 +21,7 @@
 #include "debug.hpp"
 #include "inode_group.hpp"
 #include "io_raw.hpp"
+#include "log.hpp"
 
 #include <cerrno>
 #include <cinttypes>
@@ -411,41 +412,50 @@ bool debug_getattr(fs_context& fs, const char* path, struct FUSE_STAT& stbuf)
 bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf)
 #endif
 {
-    const auto type = get_debug_elem_type(fs, path);
-    uint64_t file_size = 0;
-
-    switch (type)
+    try
     {
-        case DebugElementType::Invalid:
-            return false;
+        const auto type = get_debug_elem_type(fs, path);
+        uint64_t file_size = 0;
 
-        case DebugElementType::RootDir:
-        case DebugElementType::EraseblockDir:
-        case DebugElementType::ClusterDir:
-        case DebugElementType::InodeDir:
-            get_default_dir_stat(stbuf);
-            return true;
+        switch (type)
+        {
+            case DebugElementType::Invalid:
+                return false;
 
-        case DebugElementType::SuperFile:
-            file_size = get_super_info(fs).size();
-            break;
-        case DebugElementType::MetricsFile:
-            file_size = get_metrics_info(fs).size();
-            break;
-        case DebugElementType::EraseblockFile:
-            file_size = get_eb_info(fs, get_path_id(path, type)).size();
-            break;
-        case DebugElementType::ClusterFile:
-            file_size = get_cl_info(fs, get_path_id(path, type)).size();
-            break;
-        case DebugElementType::InodeFile:
-            file_size = get_ino_info(fs, get_path_id(path, type)).size();
-            break;
+            case DebugElementType::RootDir:
+            case DebugElementType::EraseblockDir:
+            case DebugElementType::ClusterDir:
+            case DebugElementType::InodeDir:
+                get_default_dir_stat(stbuf);
+                return true;
+
+            case DebugElementType::SuperFile:
+                file_size = get_super_info(fs).size();
+                break;
+            case DebugElementType::MetricsFile:
+                file_size = get_metrics_info(fs).size();
+                break;
+            case DebugElementType::EraseblockFile:
+                file_size = get_eb_info(fs, get_path_id(path, type)).size();
+                break;
+            case DebugElementType::ClusterFile:
+                file_size = get_cl_info(fs, get_path_id(path, type)).size();
+                break;
+            case DebugElementType::InodeFile:
+                file_size = get_ino_info(fs, get_path_id(path, type)).size();
+                break;
+        }
+
+        get_default_file_stat(stbuf);
+        stbuf.st_size = static_cast<off_t>(file_size);
+        return true;
     }
-
-    get_default_file_stat(stbuf);
-    stbuf.st_size = static_cast<off_t>(file_size);
-    return true;
+    catch (const std::exception& e)
+    {
+        get_default_file_stat(stbuf);
+        stbuf.st_size = 0;
+        return false;
+    }
 }
 
 bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& dirs)
@@ -560,15 +570,20 @@ ssize_t debug_read(fs_context& fs, const char* path, char* buf, uint64_t nbyte, 
             break;
     }
 
-    if (offset < str.size())
+    if (nbyte == 0)
+        return 0;
+
+    if (offset >= str.size())
     {
-        size_t read = str.size() - offset;
-        if (read > nbyte)
-            read = nbyte;
-        memcpy(buf, &str[offset], read);
-        return static_cast<ssize_t>(read);
+        log().debug("ffsp::debug_read(offset={}): too big", offset);
+        return 0;
     }
-    return -EOVERFLOW;
+
+    size_t read = str.size() - offset;
+    if (read > nbyte)
+        read = nbyte;
+    memcpy(buf, &str[offset], read);
+    return static_cast<ssize_t>(read);
 }
 
 } // namespace ffsp
