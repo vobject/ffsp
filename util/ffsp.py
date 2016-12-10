@@ -360,7 +360,7 @@ class MainWindow(QtGui.QMainWindow):
             self.mountPathEdit.setText(r"D:\Development\fs\ffsp-build\Debug\mount.ffsp.exe")
 
     def updateControlsState(self):
-        self.debug_dir = os.path.join(os.path.expanduser(self.ui.mountpointPathEdit.text()), os.sep, ".FFSP.d")
+        self.debug_dir = os.path.join(os.path.expanduser(self.ui.mountpointPathEdit.text()), os.sep if sys.platform == "win32" else "", ".FFSP.d")
 
         fsFileExists = os.path.exists(os.path.expanduser(self.ui.fsPathEdit.text()))
         fsMounted = os.path.exists(self.debug_dir)
@@ -439,7 +439,7 @@ class MainWindow(QtGui.QMainWindow):
         cmd.append(fsPath)
         cmd.append(moutPointPath)
         subprocess.Popen(cmd)
-        
+
         # wait for mounting to complete
         time.sleep(8)
 
