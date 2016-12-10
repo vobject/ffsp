@@ -42,14 +42,13 @@ namespace ffsp
 {
 
 /* copy grouped elements into the cluster buffer. */
-static void group_inodes(const fs_context& fs, inode** group,
-                         int group_elem_cnt, char* cl_buf)
+static void group_inodes(const fs_context& fs, std::vector<inode*> group, char* cl_buf)
 {
     unsigned int cl_filling = 0;
-    for (int i = 0; i < group_elem_cnt; i++)
+    for (const auto& inode : group)
     {
-        unsigned int ino_size = get_inode_size(fs, group[i]);
-        memcpy(cl_buf + cl_filling, group[i], ino_size);
+        unsigned int ino_size = get_inode_size(fs, inode);
+        memcpy(cl_buf + cl_filling, inode, ino_size);
         cl_filling += ino_size;
     }
     memset(cl_buf + cl_filling, 0, fs.clustersize - cl_filling);
@@ -58,38 +57,34 @@ static void group_inodes(const fs_context& fs, inode** group,
 /*
  * Search for inodes that would fit into one cluster and save a pointer to
  * those in 'group'. The grouped pointer are invalidated in 'inodes'.
- * Return the number of inodes grouped together.
+ * Return the size of the inode group in bytes.
  */
-static int get_inode_group(const fs_context& fs, inode** inodes,
-                           unsigned int ino_cnt, inode** group)
+static uint64_t get_inode_group(const fs_context& fs, std::vector<inode*>& inodes, std::vector<inode*>& group)
 {
-    unsigned int group_size = 0;
-    int group_elem_cnt = 0;
+    uint64_t free_bytes = fs.clustersize;
 
-    for (unsigned int i = 0; i < ino_cnt; i++)
+    for (auto& inode : inodes)
     {
-        if (!inodes[i])
+        if (!inode)
             continue;
 
-        unsigned int free_bytes = fs.clustersize - group_size;
-        unsigned int ino_size = get_inode_size(fs, inodes[i]);
+        //unsigned int free_bytes = fs.clustersize - group_size;
+        uint64_t ino_size = get_inode_size(fs, inode);
 
         if (ino_size > free_bytes)
         {
-            /* no more free space inside the cluster for
-             * additional inodes */
+            /* no more free space inside the cluster for additional inodes */
             break;
         }
         /* move the current inode into the inode group */
-        group[group_elem_cnt++] = inodes[i];
-        inodes[i] = nullptr;
-        group_size += ino_size;
+        group.push_back(inode);
+        inode = nullptr;
+        free_bytes -= ino_size;
     }
-    return group_elem_cnt;
+    return fs.clustersize - free_bytes;
 }
 
-/* Read all valid inodes from the specified cluster. */
-int read_inode_group(fs_context& fs, cl_id_t cl_id, inode** inodes)
+int read_inode_group(fs_context& fs, cl_id_t cl_id, std::vector<inode*>& inodes)
 {
     uint64_t cl_offset = cl_id * fs.clustersize;
 
@@ -98,70 +93,65 @@ int read_inode_group(fs_context& fs, cl_id_t cl_id, inode** inodes)
         return static_cast<int>(rc);
     debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
 
-    int ino_cnt = 0;
-    char* ino_buf = fs.buf;
+    inodes.clear();
+    // Number of inodes that can fit into one cluster
+    inodes.reserve(fs.clustersize / sizeof(inode));
 
+    char* ino_buf = fs.buf;
     while ((ino_buf - fs.buf) < (ptrdiff_t)fs.clustersize)
     {
         inode* ino = (inode*)ino_buf;
-        unsigned int ino_size = get_inode_size(fs, ino);
+        auto ino_size = get_inode_size(fs, ino);
 
         if (is_inode_valid(fs, cl_id, ino))
         {
             ino = allocate_inode(fs);
             memcpy(ino, ino_buf, ino_size);
-            inodes[ino_cnt] = ino;
-            ino_cnt++;
+            inodes.push_back(ino);
         }
         ino_buf += ino_size;
     }
-    return ino_cnt;
+    return 0;
 }
 
-/*
- * Group as many inodes as possible into one cluster, write the cluster
- * to disk and update all meta data.
- */
-int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
+int write_inodes(fs_context& fs, const std::vector<inode*>& inodes)
 {
-    if (!ino_cnt)
+    if (inodes.empty())
         return 0;
 
     /* Needed to get the correct erase block type.
      * There might be different types for dentries and files */
     bool for_dentry = S_ISDIR(get_be32(inodes[0]->i_mode));
 
-    /* an inode group can have a max size of ino_cnt elements */
-    inode** group = (inode**)malloc(ino_cnt * sizeof(inode*));
-    if (!group)
-    {
-        log().critical("malloc(inode group) failed");
-        abort();
-    }
+    std::vector<inode*> inodes_cpy{inodes};
 
-    int group_elem_cnt;
-    while ((group_elem_cnt = get_inode_group(fs, inodes, ino_cnt, group)))
+    std::vector<inode*> group;
+    group.reserve(inodes.size());
+
+    while (true)
     {
-        eraseblock_type eb_type = get_eraseblk_type(fs, inode_data_type::emb, for_dentry);
+        group.clear();
+        auto group_size = get_inode_group(fs, inodes_cpy, group);
+        if (group.empty())
+            break;
+
+        log().info("Group {} {} inodes taking up {} bytes", group.size(), for_dentry ? "dentry" : "file", group_size);
 
         /* search for a cluster id to write the inode(s) to */
+        eraseblock_type eb_type = get_eraseblk_type(fs, inode_data_type::emb, for_dentry);
         eb_id_t eb_id;
         cl_id_t cl_id;
         if (!find_writable_cluster(fs, eb_type, eb_id, cl_id))
         {
-            log().debug("Failed to find writable cluster or erase block");
-            free(group);
+            log().info("Failed to find writable cluster or erase block");
             return -ENOSPC;
         }
         uint64_t offset = cl_id * fs.clustersize;
 
-        group_inodes(fs, group, group_elem_cnt, fs.buf);
+        group_inodes(fs, group, fs.buf);
         ssize_t write_rc = write_raw(*fs.io_ctx, fs.buf, fs.clustersize, offset);
         if (write_rc < 0)
-        {
-            free(group);
             return static_cast<int>(write_rc);
-        }
         debug_update(fs, debug_metric::write_raw, static_cast<uint64_t>(write_rc));
 
         /* ignore the last parameter - it is only needed if we wrote
@@ -172,14 +162,13 @@ int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt)
         /* assign the new cluster id to all inode map entries, update
          * information about how many inodes reside inside the written
          * cluster, and unmark the written inodes */
-        for (int i = 0; i < group_elem_cnt; i++)
+        for (const auto& inode : group)
         {
-            fs.ino_map[get_be32(group[i]->i_no)] = put_be32(cl_id);
+            fs.ino_map[get_be32(inode->i_no)] = put_be32(cl_id);
             fs.cl_occupancy[cl_id]++;
-            reset_dirty(fs, group[i]);
+            reset_dirty(fs, *inode);
         }
     }
-    free(group);
     return 0;
 }
 

@@ -119,7 +119,7 @@ void utimens(fs_context& fs, inode& ino, const struct ::timespec tv[2])
     ino.i_atime.nsec = put_be32(tv[0].tv_nsec);
     ino.i_mtime.sec = put_be64(tv[1].tv_sec);
     ino.i_mtime.nsec = put_be32(tv[1].tv_nsec);
-    mark_dirty(fs, &ino);
+    mark_dirty(fs, ino);
     flush_inodes(fs, false);
 }
 

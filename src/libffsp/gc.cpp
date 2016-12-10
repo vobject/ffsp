@@ -275,14 +275,6 @@ static unsigned int move_inodes(fs_context& fs, unsigned int src_eb_id,
 {
     /* TODO: Error handling missing! */
 
-    /* How many inodes may fit into one cluster? */
-    inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
-    if (!inodes)
-    {
-        log().critical("malloc(valid inode pointers) failed");
-        abort();
-    }
-
     uint32_t max_cvalid = fs.erasesize / fs.clustersize;
     for (uint32_t i = 0; i < max_cvalid; i++)
     {
@@ -290,8 +282,9 @@ static unsigned int move_inodes(fs_context& fs, unsigned int src_eb_id,
         uint64_t cl_off = eb_off + (i * fs.clustersize);
         cl_id_t cl_id = static_cast<cl_id_t>(cl_off / fs.clustersize);
 
-        int ino_cnt = read_inode_group(fs, cl_id, inodes);
-        if (!ino_cnt)
+        std::vector<inode*> inodes;
+        int rc = read_inode_group(fs, cl_id, inodes);
+        if (!rc)
             continue;
 
         ssize_t read_rc = read_raw(*fs.io_ctx, fs.buf, fs.clustersize, cl_off);
@@ -309,10 +302,10 @@ static unsigned int move_inodes(fs_context& fs, unsigned int src_eb_id,
         }
 
         cl_id = static_cast<uint32_t>(cl_off / fs.clustersize);
-        for (int j = 0; j < ino_cnt; j++)
+        for (const auto& inode : inodes)
         {
-            fs.ino_map[get_be32(inodes[j]->i_no)] = put_be32(cl_id);
-            delete_inode(inodes[j]);
+            fs.ino_map[get_be32(inode->i_no)] = put_be32(cl_id);
+            delete_inode(inode);
         }
 
         eb_inc_cvalid(fs, dest_eb_id);
@@ -322,7 +315,6 @@ static unsigned int move_inodes(fs_context& fs, unsigned int src_eb_id,
         if (++dest_moved == max_cvalid)
             break;
     }
-    free(inodes);
     return dest_moved;
 }
 

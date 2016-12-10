@@ -23,11 +23,22 @@
 
 #include "ffsp.hpp"
 
+#include <vector>
+
 namespace ffsp
 {
 
-int read_inode_group(fs_context& fs, cl_id_t cl_id, inode** inodes);
-int write_inodes(fs_context& fs, inode** inodes, unsigned int ino_cnt);
+/*
+ * Read all valid inodes from the specified cluster.
+ */
+int read_inode_group(fs_context& fs, cl_id_t cl_id, std::vector<inode *>& inodes);
+
+/*
+ * Group as many inodes as possible into one cluster, write the cluster to disk
+ * and update all meta data. Continue until all inodes have been processed, no
+ * erase block could be found for the inodes (fs full), or an error occured.
+ */
+int write_inodes(fs_context& fs, const std::vector<inode*>& inodes);
 
 } // namespace ffsp
 

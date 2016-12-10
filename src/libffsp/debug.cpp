@@ -19,6 +19,7 @@
  */
 
 #include "debug.hpp"
+#include "inode.hpp"
 #include "inode_group.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
@@ -192,22 +193,20 @@ static std::string get_cl_info(fs_context& fs, cl_id_t cl_id)
     {
         os << ",";
         os << "\"inodes\":[";
-        inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) *
-                                         sizeof(inode*));
-        int ino_cnt = read_inode_group(fs, cl_id, inodes);
-        if (ino_cnt)
+        std::vector<inode*> inodes;
+        int rc = read_inode_group(fs, cl_id, inodes);
+        if (!(rc < 0))
         {
-            for (int i = 0; i < ino_cnt; i++)
+            for (size_t i = 0; i < inodes.size(); i++)
             {
                 os << get_be32(inodes[i]->i_no);
 
-                if (i != (ino_cnt - 1))
+                if (i != (inodes.size() - 1))
                     os << ",";
 
-                free(inodes[i]);
+                delete_inode(inodes[i]);
             }
         }
-        free(inodes);
         os << "]";
     }
     os << "}";
@@ -242,11 +241,11 @@ static std::string get_ino_info(fs_context& fs, uint32_t ino_no)
 
     os << ",";
     os << "\"inode\":{";
-    inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
-    int ino_cnt = read_inode_group(fs, cl_id, inodes);
-    if (ino_cnt)
+    std::vector<inode*> inodes;
+    int rc = read_inode_group(fs, cl_id, inodes);
+    if (!(rc < 0))
     {
-        for (int i = 0; i < ino_cnt; i++)
+        for (size_t i = 0; i < inodes.size(); i++)
         {
             if (get_be32(inodes[i]->i_no) == ino_no)
             {
@@ -262,10 +261,9 @@ static std::string get_ino_info(fs_context& fs, uint32_t ino_no)
                 os << "\"ctime\":" << get_be64(inodes[i]->i_ctime.sec) << ",";
                 os << "\"mtime\":" << get_be64(inodes[i]->i_mtime.sec);
             }
-            free(inodes[i]);
+            delete_inode(inodes[i]);
         }
     }
-    free(inodes);
     os << "}";
 
     os << "}";
@@ -491,7 +489,6 @@ bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& d
         case DebugElementType::InodeDir:
         {
             const unsigned int cl_per_eb = fs.erasesize / fs.clustersize;
-            inode** inodes = (inode**)malloc((fs.clustersize / sizeof(inode)) * sizeof(inode*));
             for (eb_id_t eb_id = 0; eb_id < fs.neraseblocks; eb_id++)
             {
                 const eraseblock& eb = fs.eb_usage[eb_id];
@@ -502,19 +499,19 @@ bool debug_readdir(fs_context& fs, const char* path, std::vector<std::string>& d
                     {
                         const cl_id_t cl_id = eb_id * fs.erasesize / fs.clustersize + cl_idx;
 
-                        int ino_cnt = read_inode_group(fs, cl_id, inodes);
-                        if (ino_cnt)
+                        std::vector<inode*> inodes;
+                        int rc = read_inode_group(fs, cl_id, inodes);
+                        if (!(rc < 0))
                         {
-                            for (int ino_idx = 0; ino_idx < ino_cnt; ino_idx++)
+                            for (size_t ino_idx = 0; ino_idx < inodes.size(); ino_idx++)
                             {
                                 dirs.push_back(std::to_string(get_be32(inodes[ino_idx]->i_no)));
-                                free(inodes[ino_idx]);
+                                delete_inode(inodes[ino_idx]);
                             }
                         }
                     }
                 }
             }
-            free(inodes);
         }
         break;
     }

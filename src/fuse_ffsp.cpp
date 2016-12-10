@@ -447,7 +447,7 @@ int chmod(fs_context& fs, const char* path, mode_t mode)
         return rc;
 
     ino->i_mode = put_be32(mode);
-    mark_dirty(fs, ino);
+    mark_dirty(fs, *ino);
     flush_inodes(fs, false);
     return 0;
 }
@@ -464,7 +464,7 @@ int chown(fs_context& fs, const char* path, uid_t uid, gid_t gid)
 
     ino->i_uid = put_be32(uid);
     ino->i_gid = put_be32(gid);
-    mark_dirty(fs, ino);
+    mark_dirty(fs, *ino);
     flush_inodes(fs, false);
     return 0;
 }

@@ -52,8 +52,8 @@ int unlink(fs_context& fs, const char* path);
 int rmdir(fs_context& fs, const char* path);
 int rename(fs_context& fs, const char* oldpath, const char* newpath);
 
-void mark_dirty(fs_context& fs, inode* ino);
-void reset_dirty(fs_context& fs, inode* ino);
+void mark_dirty(fs_context& fs, const inode& ino);
+void reset_dirty(fs_context& fs, const inode& ino);
 
 int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dentry_cnt);
 

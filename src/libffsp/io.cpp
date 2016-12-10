@@ -626,7 +626,7 @@ int truncate(fs_context& fs, inode* ino, uint64_t length)
         ino->i_size = put_be64(length);
         update_time(ino->i_ctime);
         update_time(ino->i_mtime);
-        mark_dirty(fs, ino);
+        mark_dirty(fs, *ino);
         flush_inodes(fs, false);
 
         // The recent call to mark the current inode dirty might have
@@ -742,7 +742,7 @@ ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint6
     {
         ino->i_size = put_be64(ctx.new_size);
         update_time(ino->i_mtime);
-        mark_dirty(fs, ino);
+        mark_dirty(fs, *ino);
         flush_inodes(fs, false);
 
         // The recent call to mark the current inode dirty might have
