@@ -91,6 +91,14 @@ bool default_mkfs_ffsp();
 bool default_mount_ffsp();
 bool default_unmount_ffsp();
 
+namespace os
+{
+
+bool exists(const char* path);
+bool mkdir(const char* dir_path);
+
+} // namespace os
+
 } // namespace test
 
 } // namespace ffsp

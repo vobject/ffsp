@@ -30,6 +30,7 @@
 #include "fuse.h"
 
 #include <string>
+#include <experimental/filesystem>
 
 #include <cstdio>
 #include <cstdlib>
@@ -161,6 +162,9 @@ bool default_mkfs_ffsp()
 
 bool default_mount_ffsp()
 {
+    if (!os::exists(default_dir_mountpoint))
+        os::mkdir(default_dir_mountpoint);
+
     return mount_ffsp(default_bin_mount, default_fs_path, default_dir_mountpoint);
 }
 
@@ -168,6 +172,23 @@ bool default_unmount_ffsp()
 {
     return unmount_ffsp(default_bin_unmount, default_dir_mountpoint);
 }
+
+namespace os
+{
+
+bool exists(const char* path)
+{
+    namespace fs = std::experimental::filesystem;
+    return fs::exists(path);
+}
+
+bool mkdir(const char* dir_path)
+{
+    namespace fs = std::experimental::filesystem;
+    return fs::create_directory(dir_path);
+}
+
+} // namespace os
 
 } // namespace test
 

@@ -69,7 +69,7 @@ IF(FFSP_BUILD_TESTS)
     INCLUDE_DIRECTORIES(src ${GTEST_ROOT}/include ${GTEST_ROOT})
 
     ADD_EXECUTABLE(${TEST_BINARY} ${TESTS_SRC})
-    TARGET_LINK_LIBRARIES(${TEST_BINARY} ${FFSP_LIB} gtest gtest_main)
+    TARGET_LINK_LIBRARIES(${TEST_BINARY} ${FFSP_LIB} gtest gtest_main stdc++fs)
 
     ADD_TEST(NAME that-test-I-made COMMAND ${TEST_BINARY})
     ADD_TEST(that-other-test-I-made ${TEST_BINARY})
