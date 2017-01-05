@@ -28,7 +28,7 @@
 namespace ffsp
 {
 
-constexpr uint32_t FFSP_FILE_SYSTEM_ID{ 0x46465350 }; // FFSP
+constexpr uint32_t FFSP_FILE_SYSTEM_ID{ 0x46465350 }; // "FFSP"
 constexpr int FFSP_VERSION_MAJOR{ 0 };
 constexpr int FFSP_VERSION_MINOR{ 0 };
 constexpr int FFSP_VERSION_PATCH{ 1 };

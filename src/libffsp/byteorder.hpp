@@ -25,15 +25,21 @@
 
 #ifdef _WIN32
 #include <intrin.h>
-#define __BIG_ENDIAN 0
-#define __LITTLE_ENDIAN 1
-#define __BYTE_ORDER __LITTLE_ENDIAN
-#define bswap_16 _byteswap_ushort
-#define bswap_32 _byteswap_ulong
-#define bswap_64 _byteswap_uint64
+#define FFSP_BIG_ENDIAN 0
+#define FFSP_LITTLE_ENDIAN 1
+#define FFSP_BYTE_ORDER FFSP_LITTLE_ENDIAN
+static const auto& ffsp_bswap_16 = _byteswap_ushort;
+static const auto& ffsp_bswap_32 = _byteswap_ulong;
+static const auto& ffsp_bswap_64 = _byteswap_uint64;
 #else
 #include <byteswap.h>
 #include <endian.h>
+#define FFSP_BIG_ENDIAN __BIG_ENDIAN
+#define FFSP_LITTLE_ENDIAN __LITTLE_ENDIAN
+#define FFSP_BYTE_ORDER __BYTE_ORDER
+static const auto& ffsp_bswap_16 = bswap_16;
+static const auto& ffsp_bswap_32 = bswap_32;
+static const auto& ffsp_bswap_64 = bswap_64;
 #endif
 
 struct be16_t
@@ -53,36 +59,36 @@ struct be64_t
 
 static inline uint16_t be16_to_cpu(be16_t b)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    return bswap_16(b.v);
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#if FFSP_BYTE_ORDER == FFSP_LITTLE_ENDIAN
+    return ffsp_bswap_16(b.v);
+#elif FFSP_BYTE_ORDER == FFSP_BIG_ENDIAN
     return b.v;
 #endif
 }
 
 static inline uint32_t be32_to_cpu(be32_t b)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    return bswap_32(b.v);
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#if FFSP_BYTE_ORDER == FFSP_LITTLE_ENDIAN
+    return ffsp_bswap_32(b.v);
+#elif FFSP_BYTE_ORDER == FFSP_BIG_ENDIAN
     return b.v;
 #endif
 }
 
 static inline uint64_t be64_to_cpu(be64_t b)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    return bswap_64(b.v);
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#if FFSP_BYTE_ORDER == FFSP_LITTLE_ENDIAN
+    return ffsp_bswap_64(b.v);
+#elif FFSP_BYTE_ORDER == FFSP_BIG_ENDIAN
     return b.v;
 #endif
 }
 
 static inline be16_t cpu_to_be16(uint16_t v)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    const be16_t b = { bswap_16(v) };
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#if FFSP_BYTE_ORDER == FFSP_LITTLE_ENDIAN
+    const be16_t b = { ffsp_bswap_16(v) };
+#elif FFSP_BYTE_ORDER == FFSP_BIG_ENDIAN
     const be16_t b = { v };
 #endif
     return b;
@@ -90,9 +96,9 @@ static inline be16_t cpu_to_be16(uint16_t v)
 
 static inline be32_t cpu_to_be32(uint32_t v)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    const be32_t b = { bswap_32(v) };
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#if FFSP_BYTE_ORDER == FFSP_LITTLE_ENDIAN
+    const be32_t b = { ffsp_bswap_32(v) };
+#elif FFSP_BYTE_ORDER == FFSP_BIG_ENDIAN
     const be32_t b = { v };
 #endif
     return b;
@@ -100,9 +106,9 @@ static inline be32_t cpu_to_be32(uint32_t v)
 
 static inline be64_t cpu_to_be64(uint64_t v)
 {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    const be64_t b = { bswap_64(v) };
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#if FFSP_BYTE_ORDER == FFSP_LITTLE_ENDIAN
+    const be64_t b = { ffsp_bswap_64(v) };
+#elif FFSP_BYTE_ORDER == FFSP_BIG_ENDIAN
     const be64_t b = { v };
 #endif
     return b;

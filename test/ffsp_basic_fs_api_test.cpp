@@ -17,7 +17,7 @@ protected:
     {
         ffsp::log_init("ffsp_test", spdlog::level::debug);
 
-        ASSERT_TRUE(ffsp::test::default_create_file());
+        ASSERT_TRUE(ffsp::test::default_open_io_backend(true));
         ASSERT_TRUE(ffsp::test::default_make_fs());
         ASSERT_TRUE(ffsp::test::default_mount_fs(&fs_));
     }
@@ -25,35 +25,35 @@ protected:
     void TearDown() override
     {
         ASSERT_TRUE(ffsp::test::default_unmount_fs(fs_));
-        //ASSERT_TRUE(ffsp::test::default_remove_file());
+        ASSERT_TRUE(ffsp::test::default_close_io_backend());
 
         ffsp::log_deinit();
     }
 
-    ffsp::fs_context* fs_;
+    ffsp::fs_context* fs_{ nullptr };
 };
 
-//TEST_F(BasicFileSystemOperationsTest, SmallFile)
-//{
-//    const char* const file_path = "/SmallFileTest";
-//    fuse_file_info fi = {};
+TEST_F(BasicFileSystemOperationsApiTest, SmallFile)
+{
+    const char* const file_path = "/SmallFileTest";
+    fuse_file_info fi = {};
 
-//    const mode_t mode = S_IFREG;
-//    const dev_t device = 0;
-//    ASSERT_EQ(0, fuse_ffsp::mknod(fs_, file_path, mode, device));
+    const mode_t mode = S_IFREG;
+    const dev_t device = 0;
+    ASSERT_EQ(0, ffsp::fuse::mknod(*fs_, file_path, mode, device));
 
-//    const std::vector<char> write_buf(4096, '#');
-//    const size_t write_offset = 0;
-//    ASSERT_EQ(0, fuse_ffsp::open(fs_, file_path, &fi));
-//    ASSERT_EQ(4096, fuse_ffsp::write(fs_, file_path, write_buf.data(), write_buf.size(), write_offset, &fi));
-//    ASSERT_EQ(0, fuse_ffsp::release(fs_, file_path, &fi));
+    const std::vector<char> write_buf(4096, '#');
+    const size_t write_offset = 0;
+    ASSERT_EQ(0, ffsp::fuse::open(*fs_, file_path, &fi));
+    ASSERT_EQ(4096, ffsp::fuse::write(*fs_, file_path, write_buf.data(), write_buf.size(), write_offset, &fi));
+    ASSERT_EQ(0, ffsp::fuse::release(*fs_, file_path, &fi));
 
-//    std::vector<char> read_buf(4096);
-//    const size_t read_offset = 0;
-//    ASSERT_EQ(0, fuse_ffsp::open(fs_, file_path, &fi));
-//    ASSERT_EQ(4096, fuse_ffsp::read(fs_, file_path, read_buf.data(), read_buf.size(), read_offset, &fi));
-//    ASSERT_EQ(0, fuse_ffsp::release(fs_, file_path, &fi));
-//}
+    std::vector<char> read_buf(4096);
+    const size_t read_offset = 0;
+    ASSERT_EQ(0, ffsp::fuse::open(*fs_, file_path, &fi));
+    ASSERT_EQ(4096, ffsp::fuse::read(*fs_, file_path, read_buf.data(), read_buf.size(), read_offset, &fi));
+    ASSERT_EQ(0, ffsp::fuse::release(*fs_, file_path, &fi));
+}
 
 TEST_F(BasicFileSystemOperationsApiTest, SmallFiles)
 {

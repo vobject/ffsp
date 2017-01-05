@@ -23,17 +23,19 @@
 
 #include <cstdint>
 
+/* Test if the bit at position n in data is set. */
 static inline int test_bit(uint32_t* data, uint32_t n)
 {
-    return ((1 << (n % sizeof(uint32_t))) &
-            (data[n / sizeof(uint32_t)])) != 0;
+    return ((1 << (n % sizeof(uint32_t))) & (data[n / sizeof(uint32_t)])) != 0;
 }
 
+/* Set the bit at position n in data. */
 static inline void set_bit(uint32_t* data, uint32_t n)
 {
     data[n / sizeof(uint32_t)] |= 1 << (n % sizeof(uint32_t));
 }
 
+/* Clear the bit at position n in data. */
 static inline void clear_bit(uint32_t* data, uint32_t n)
 {
     data[n / sizeof(uint32_t)] &= ~(1 << (n % sizeof(uint32_t)));

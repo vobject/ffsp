@@ -1,23 +1,3 @@
-/*
- * Copyright (C) 2011-2012 IBM Corporation
- *
- * Author: Volker Schneider <volker.schneider@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
-
 #ifndef FFSP_TEST_UTILS_HPP
 #define FFSP_TEST_UTILS_HPP
 
@@ -26,13 +6,15 @@
 namespace ffsp
 {
 
+struct io_context;
+
 namespace test
 {
 
 bool create_file(const char* file_path, uint64_t file_size);
 bool remove_file(const char* file_path);
 
-bool make_fs(const char* file_path, const mkfs_options& opts);
+bool make_fs(io_context* io_ctx, const mkfs_options& opts);
 
 bool mount_fs(fs_context** fs, const char* file_path);
 bool unmount_fs(fs_context* fs);
@@ -61,6 +43,7 @@ bool unmount_ffsp(const char* program, const char* mountpoint);
     - number of erase blocks = 32
     - number of inodes = (4194304 - 32768 - 32*8 - 4) / 4 = 1040319
 */
+extern io_context* default_io_ctx;
 #ifdef _WIN32
 const constexpr char* const default_fs_path{ "test.ffsp_fs" };
 #else
@@ -81,6 +64,9 @@ const constexpr char* const default_dir_mountpoint{ "mnt" };
 
 bool default_create_file();
 bool default_remove_file();
+
+bool default_open_io_backend(bool in_memory);
+bool default_close_io_backend();
 
 bool default_make_fs();
 

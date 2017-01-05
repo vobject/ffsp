@@ -33,9 +33,7 @@
 #include <sys/stat.h>
 #include <vector>
 
-#ifdef _WIN32
-#include <fuse_win.h>
-#else
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 
@@ -450,6 +448,8 @@ bool debug_getattr(fs_context& fs, const char* path, struct ::stat& stbuf)
     }
     catch (const std::exception& e)
     {
+        (void)e;
+
         get_default_file_stat(stbuf);
         stbuf.st_size = 0;
         return false;

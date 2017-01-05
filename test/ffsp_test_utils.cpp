@@ -1,23 +1,3 @@
-/*
- * Copyright (C) 2011-2012 IBM Corporation
- *
- * Author: Volker Schneider <volker.schneider@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
-
 #include "ffsp_test_utils.hpp"
 
 #include "libffsp/ffsp.hpp"
@@ -54,6 +34,8 @@ namespace ffsp
 namespace test
 {
 
+io_context* default_io_ctx{ nullptr };
+
 bool create_file(const char* file_path, uint64_t file_size)
 {
     FILE* fp = ::fopen(file_path, "w");
@@ -68,26 +50,23 @@ bool create_file(const char* file_path, uint64_t file_size)
 
 bool remove_file(const char* file_path)
 {
-    return (remove(file_path) == 0);
+    return (::remove(file_path) == 0);
 }
 
-bool make_fs(const char* file_path, const mkfs_options& opts)
+bool make_fs(io_context* io_ctx, const mkfs_options& opts)
 {
-    auto* io_ctx = ffsp::io_context_init(file_path);
-    return io_ctx && ffsp::mkfs(*io_ctx, opts) && (ffsp::io_context_uninit(io_ctx), true);
+    return io_ctx && ffsp::mkfs(*io_ctx, opts);
 }
 
-bool mount_fs(fs_context** fs, const char* file_path)
+bool mount_fs(io_context* io_ctx, fs_context** fs)
 {
-    auto* io_ctx = ffsp::io_context_init(file_path);
-    *fs = ffsp::mount(io_ctx);
-    return *fs;
+    return io_ctx && ((*fs = ffsp::mount(io_ctx)) != nullptr);
 }
 
 bool unmount_fs(fs_context* fs)
 {
     auto* io_ctx = ffsp::unmount(fs);
-    return io_ctx && (ffsp::io_context_uninit(io_ctx), true);
+    return io_ctx != nullptr;
 }
 
 bool mkfs_ffsp(const char* program,
@@ -133,14 +112,35 @@ bool default_remove_file()
     return remove_file(default_fs_path);
 }
 
+bool default_open_io_backend(bool in_memory)
+{
+    if (in_memory)
+    {
+        default_io_ctx = io_context_init(default_fs_size);
+    }
+    else
+    {
+        default_io_ctx = create_file(default_fs_path, default_fs_size)
+                            ? io_context_init(default_fs_path)
+                            : nullptr;
+    }
+    return default_io_ctx != nullptr;
+}
+
+bool default_close_io_backend()
+{
+    io_context_uninit(default_io_ctx);
+    return os::exists(default_fs_path) ? remove_file(default_fs_path) : true;
+}
+
 bool default_make_fs()
 {
-    return make_fs(default_fs_path, default_mkfs_options);
+    return make_fs(default_io_ctx, default_mkfs_options);
 }
 
 bool default_mount_fs(fs_context** fs)
 {
-    return mount_fs(fs, default_fs_path);
+    return mount_fs(default_io_ctx, fs);
 }
 
 bool default_unmount_fs(fs_context* fs)

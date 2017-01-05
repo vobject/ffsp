@@ -2,6 +2,8 @@
 
 #include "ffsp_test_utils.hpp"
 
+#if !defined(_WIN32)
+
 class BasicFileSystemOperationsTest : public testing::Test
 {
 protected:
@@ -67,3 +69,5 @@ TEST_F(BasicFileSystemOperationsTest, ManySmallFilesInRoot)
         ASSERT_TRUE(std::system(command.c_str()) == 0);
     }
 }
+
+#endif // _WIN32

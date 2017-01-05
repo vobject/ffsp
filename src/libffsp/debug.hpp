@@ -27,6 +27,7 @@
 #include <vector>
 
 #ifdef _WIN32
+#include <fuse_win.h>
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
 #else
@@ -34,12 +35,9 @@ typedef SSIZE_T ssize_t;
 #endif
 
 struct stat;
-struct FUSE_STAT;
 
 namespace ffsp
 {
-
-union io_return;
 
 enum class debug_metric
 {
