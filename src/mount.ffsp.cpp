@@ -21,8 +21,7 @@
 #include "libffsp/ffsp.hpp"
 #include "libffsp/log.hpp"
 #include "libffsp/mkfs.hpp"
-
-#include "fuse_ffsp.hpp"
+#include "libffsp-fuse/fuse_ffsp.hpp"
 
 #include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"

@@ -37,9 +37,9 @@ static const auto& ffsp_bswap_64 = _byteswap_uint64;
 #define FFSP_BIG_ENDIAN __BIG_ENDIAN
 #define FFSP_LITTLE_ENDIAN __LITTLE_ENDIAN
 #define FFSP_BYTE_ORDER __BYTE_ORDER
-static const auto& ffsp_bswap_16 = bswap_16;
-static const auto& ffsp_bswap_32 = bswap_32;
-static const auto& ffsp_bswap_64 = bswap_64;
+#define ffsp_bswap_16 bswap_16
+#define ffsp_bswap_32 bswap_32
+#define ffsp_bswap_64 bswap_64
 #endif
 
 struct be16_t

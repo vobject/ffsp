@@ -5,10 +5,9 @@
 #include "libffsp/log.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
+#include "libffsp-fuse/fuse_ffsp.hpp"
 
 #include "ffsp_test_utils.hpp"
-
-#include "fuse_ffsp.hpp"
 
 class BasicFileSystemOperationsApiTest : public testing::Test
 {

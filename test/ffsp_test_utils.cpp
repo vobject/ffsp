@@ -4,8 +4,7 @@
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
 #include "libffsp/io_raw.hpp"
-
-#include "fuse_ffsp.hpp"
+#include "libffsp-fuse/fuse_ffsp.hpp"
 
 #include "fuse.h"
 
@@ -21,12 +20,6 @@
 #else
 #include <unistd.h>
 #endif
-
-fuse_context* fuse_get_context()
-{
-    static fuse_context dummy_ctx = {};
-    return &dummy_ctx;
-}
 
 namespace ffsp
 {
