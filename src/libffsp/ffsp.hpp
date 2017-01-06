@@ -150,14 +150,14 @@ const cl_id_t FFSP_RESERVED_CL_ID{ 0xffffffff };
 // Erase block ids - 32bit
 const eb_id_t FFSP_INVALID_EB_ID{ 0x00000000 };
 
-struct io_context;
+struct io_backend;
 struct inode_cache;
 struct summary_cache;
 struct gcinfo;
 
 struct fs_context
 {
-    io_context* io_ctx;
+    io_backend* io_ctx;
 
     uint32_t fsid;          // file system ID
     uint32_t flags;         // mount flags - TODO: What are these for? -> noatime(?)

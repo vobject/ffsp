@@ -3,7 +3,7 @@
 #include "libffsp/ffsp.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
-#include "libffsp/io_raw.hpp"
+#include "libffsp/io_backend.hpp"
 #include "libffsp-fuse/fuse_ffsp.hpp"
 
 #include "fuse.h"
@@ -27,7 +27,7 @@ namespace ffsp
 namespace test
 {
 
-io_context* default_io_ctx{ nullptr };
+io_backend* default_io_ctx{ nullptr };
 
 bool create_file(const char* file_path, uint64_t file_size)
 {
@@ -46,12 +46,12 @@ bool remove_file(const char* file_path)
     return (::remove(file_path) == 0);
 }
 
-bool make_fs(io_context* io_ctx, const mkfs_options& opts)
+bool make_fs(io_backend* io_ctx, const mkfs_options& opts)
 {
     return io_ctx && ffsp::mkfs(*io_ctx, opts);
 }
 
-bool mount_fs(io_context* io_ctx, fs_context** fs)
+bool mount_fs(io_backend* io_ctx, fs_context** fs)
 {
     return io_ctx && ((*fs = ffsp::mount(io_ctx)) != nullptr);
 }
@@ -109,12 +109,12 @@ bool default_open_io_backend(bool in_memory)
 {
     if (in_memory)
     {
-        default_io_ctx = io_context_init(default_fs_size);
+        default_io_ctx = io_backend_init(default_fs_size);
     }
     else
     {
         default_io_ctx = create_file(default_fs_path, default_fs_size)
-                            ? io_context_init(default_fs_path)
+                            ? io_backend_init(default_fs_path)
                             : nullptr;
     }
     return default_io_ctx != nullptr;
@@ -122,7 +122,7 @@ bool default_open_io_backend(bool in_memory)
 
 bool default_close_io_backend()
 {
-    io_context_uninit(default_io_ctx);
+    io_backend_uninit(default_io_ctx);
     return os::exists(default_fs_path) ? remove_file(default_fs_path) : true;
 }
 

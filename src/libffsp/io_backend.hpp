@@ -18,36 +18,31 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef MKFS_HPP
-#define MKFS_HPP
+#ifndef IO_BACKEND_HPP
+#define IO_BACKEND_HPP
 
-#include "ffsp.hpp"
+#include <cstdint>
+
+#ifdef _WIN32
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#else
+#include <sys/types.h>
+#endif
 
 namespace ffsp
 {
 
 struct io_backend;
 
-struct mkfs_options
-{
-    uint32_t clustersize{ 0 };
-    uint32_t erasesize{ 0 };
-    uint32_t ninoopen{ 0 };
-    uint32_t neraseopen{ 0 };
-    uint32_t nerasereserve{ 0 };
-    uint32_t nerasewrites{ 0 };
+io_backend* io_backend_init(const char* path);
+io_backend* io_backend_init(size_t size);
+void io_backend_uninit(io_backend* ctx);
 
-    constexpr mkfs_options(uint32_t c, uint32_t e,
-                           uint32_t i, uint32_t o,
-                           uint32_t r, uint32_t w)
-        : clustersize{ c }, erasesize{ e },
-          ninoopen{ i }, neraseopen{ o },
-          nerasereserve{ r }, nerasewrites{ w }
-    {}
-};
-
-bool mkfs(io_backend& ctx, const mkfs_options& options);
+uint64_t io_backend_size(const io_backend& ctx);
+ssize_t io_backend_read(io_backend& ctx, void* buf, size_t nbyte, off_t offset);
+ssize_t io_backend_write(io_backend& ctx, const void* buf, size_t nbyte, off_t offset);
 
 } // namespace ffsp
 
-#endif /* MKFS_HPP */
+#endif /* IO_BACKEND_HPP */

@@ -19,6 +19,7 @@
  */
 
 #include "mkfs.hpp"
+#include "io_backend.hpp"
 #include "io_raw.hpp"
 #include "utils.hpp"
 
@@ -41,9 +42,9 @@
 namespace ffsp
 {
 
-static uint32_t get_eraseblk_cnt(io_context& ctx, uint32_t eb_size)
+static uint32_t get_eraseblk_cnt(io_backend& ctx, uint32_t eb_size)
 {
-    off_t size = io_context_size(ctx);
+    off_t size = io_backend_size(ctx);
     if (size == -1)
     {
         perror("lseek() on file system failed\n");
@@ -66,7 +67,7 @@ static uint32_t get_inode_cnt(uint32_t eb_size, uint32_t cl_size, uint32_t eb_cn
     //  to be used as a valid inode_no.
 }
 
-static bool create_super_eb(io_context& ctx, const mkfs_options& options)
+static bool create_super_eb(io_backend& ctx, const mkfs_options& options)
 {
     std::vector<char> eb_buf;
     eb_buf.reserve(options.erasesize);
@@ -148,7 +149,7 @@ static bool create_super_eb(io_context& ctx, const mkfs_options& options)
     return true;
 }
 
-static bool create_inode_eb(io_context& ctx, const mkfs_options& options)
+static bool create_inode_eb(io_backend& ctx, const mkfs_options& options)
 {
     std::vector<char> eb_buf;
     eb_buf.reserve(options.erasesize);
@@ -196,7 +197,7 @@ static bool create_inode_eb(io_context& ctx, const mkfs_options& options)
     return true;
 }
 
-bool mkfs(io_context& ctx, const mkfs_options& options)
+bool mkfs(io_backend& ctx, const mkfs_options& options)
 {
     // Setup the first eraseblock with super, usage and inodemap
     if (!create_super_eb(ctx, options))

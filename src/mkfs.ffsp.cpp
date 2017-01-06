@@ -19,7 +19,7 @@
  */
 
 #include "libffsp/ffsp.hpp"
-#include "libffsp/io_raw.hpp"
+#include "libffsp/io_backend.hpp"
 #include "libffsp/log.hpp"
 #include "libffsp/mkfs.hpp"
 
@@ -156,13 +156,13 @@ int main(int argc, char* argv[])
     ffsp::log().info("Setup file system: {})", args);
 
     auto ret = EXIT_SUCCESS;
-    auto* io_ctx = ffsp::io_context_init(args.device);
+    auto* io_ctx = ffsp::io_backend_init(args.device);
     if (!io_ctx || !ffsp::mkfs(*io_ctx, { args.clustersize, args.erasesize, args.ninoopen, args.neraseopen, args.nerasereserve, args.nerasewrites }))
     {
         perror("failed to setup file system");
         ret = EXIT_FAILURE;
     }
-    ffsp::io_context_uninit(io_ctx);
+    ffsp::io_backend_uninit(io_ctx);
     ffsp::log_deinit();
     return ret;
 }

@@ -25,7 +25,7 @@
 #include "libffsp/ffsp.hpp"
 #include "libffsp/inode.hpp"
 #include "libffsp/io.hpp"
-#include "libffsp/io_raw.hpp"
+#include "libffsp/io_backend.hpp"
 #include "libffsp/log.hpp"
 #include "libffsp/mkfs.hpp"
 #include "libffsp/mount.hpp"
@@ -99,9 +99,9 @@ void set_options(size_t memsize, const mkfs_options& options)
 
 void* init(fuse_conn_info* conn)
 {
-    io_context* io_ctx = mnt_opts.device
-                             ? ffsp::io_context_init(mnt_opts.device->c_str())
-                             : ffsp::io_context_init(mnt_opts.memsize);
+    io_backend* io_ctx = mnt_opts.device
+                             ? ffsp::io_backend_init(mnt_opts.device->c_str())
+                             : ffsp::io_backend_init(mnt_opts.memsize);
 
     if (!io_ctx)
     {
@@ -149,8 +149,8 @@ void* init(fuse_conn_info* conn)
 
 void destroy(void* user)
 {
-    io_context* io_ctx = ffsp::unmount(static_cast<fs_context*>(user));
-    ffsp::io_context_uninit(io_ctx);
+    io_backend* io_ctx = ffsp::unmount(static_cast<fs_context*>(user));
+    ffsp::io_backend_uninit(io_ctx);
 }
 
 #ifdef _WIN32

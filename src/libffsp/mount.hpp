@@ -26,10 +26,10 @@
 namespace ffsp
 {
 
-struct io_context;
+struct io_backend;
 
-fs_context* mount(io_context* ctx);
-io_context* unmount(fs_context* fs);
+fs_context* mount(io_backend* ctx);
+io_backend* unmount(fs_context* fs);
 
 } // namespace ffsp
 

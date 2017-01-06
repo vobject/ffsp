@@ -6,7 +6,7 @@
 namespace ffsp
 {
 
-struct io_context;
+struct io_backend;
 
 namespace test
 {
@@ -14,7 +14,7 @@ namespace test
 bool create_file(const char* file_path, uint64_t file_size);
 bool remove_file(const char* file_path);
 
-bool make_fs(io_context* io_ctx, const mkfs_options& opts);
+bool make_fs(io_backend* io_ctx, const mkfs_options& opts);
 
 bool mount_fs(fs_context** fs, const char* file_path);
 bool unmount_fs(fs_context* fs);
@@ -43,7 +43,7 @@ bool unmount_ffsp(const char* program, const char* mountpoint);
     - number of erase blocks = 32
     - number of inodes = (4194304 - 32768 - 32*8 - 4) / 4 = 1040319
 */
-extern io_context* default_io_ctx;
+extern io_backend* default_io_ctx;
 #ifdef _WIN32
 const constexpr char* const default_fs_path{ "test.ffsp_fs" };
 #else

@@ -25,6 +25,7 @@
 #include "gc.hpp"
 #include "inode.hpp"
 #include "inode_cache.hpp"
+#include "io_backend.hpp"
 #include "io_raw.hpp"
 #include "log.hpp"
 #include "mkfs.hpp"
@@ -119,7 +120,7 @@ static void read_ino_map(fs_context& fs)
 
 static void read_cl_occupancy(fs_context& fs)
 {
-    off_t size = io_context_size(*fs.io_ctx);
+    off_t size = io_backend_size(*fs.io_ctx);
     if (size == -1)
     {
         log().critical("retrieving file size from device failed");
@@ -145,7 +146,7 @@ static void read_cl_occupancy(fs_context& fs)
     }
 }
 
-fs_context* mount(io_context* ctx)
+fs_context* mount(io_backend* ctx)
 {
     auto* fs = new fs_context;
 
@@ -194,7 +195,7 @@ error:
     return nullptr;
 }
 
-io_context* unmount(fs_context* fs)
+io_backend* unmount(fs_context* fs)
 {
     release_inodes(*fs);
     close_eraseblks(*fs);
@@ -210,7 +211,7 @@ io_context* unmount(fs_context* fs)
     free(fs->cl_occupancy);
     free(fs->buf);
 
-    io_context* io_ctx = fs->io_ctx;
+    io_backend* io_ctx = fs->io_ctx;
     delete fs;
     return io_ctx;
 }

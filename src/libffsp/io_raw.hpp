@@ -33,15 +33,10 @@ typedef SSIZE_T ssize_t;
 namespace ffsp
 {
 
-struct io_context;
+struct io_backend;
 
-io_context* io_context_init(const char* path);
-io_context* io_context_init(size_t size);
-void io_context_uninit(io_context* ctx);
-uint64_t io_context_size(const io_context& ctx);
-
-ssize_t read_raw(io_context& ctx, void* buf, uint64_t nbyte, uint64_t offset);
-ssize_t write_raw(io_context& ctx, const void* buf, uint64_t nbyte, uint64_t offset);
+ssize_t read_raw(io_backend& ctx, void* buf, uint64_t nbyte, uint64_t offset);
+ssize_t write_raw(io_backend& ctx, const void* buf, uint64_t nbyte, uint64_t offset);
 
 } // namespace ffsp
 

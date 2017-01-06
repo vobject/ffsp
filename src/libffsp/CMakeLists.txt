@@ -20,6 +20,8 @@ set(SRC_FILES
     inode_group.hpp
     io.cpp
     io.hpp
+    io_backend.hpp
+    io_backend.cpp
     io_raw.cpp
     io_raw.hpp
     log.cpp
