@@ -41,6 +41,7 @@ void log_init(const std::string& logname, spdlog::level::level_enum level, const
 
         spdlog::register_logger(logger);
         s_logname = logname;
+        logger->info("logger {} initialized", logname);
     }
     else
     {
@@ -48,8 +49,9 @@ void log_init(const std::string& logname, spdlog::level::level_enum level, const
     }
 }
 
-void log_deinit()
+void log_uninit()
 {
+    log().info("logger {} about to be uninitialized", s_logname);
     spdlog::drop(s_logname);
 }
 

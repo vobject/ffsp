@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.2)
 project(ffsp)
 
 option(FFSP_BUILD_LIB "Build file system library." ON)
-#option(FFSP_BUILD_FUSELIB "Build fuse operations wrapper." ON)
+option(FFSP_BUILD_FUSELIB "Build fuse operations wrapper." ON)
 option(FFSP_BUILD_MKFS "Build file system creation tool." ON)
 option(FFSP_BUILD_MOUNT "Build file system mount tool." ON)
 option(FFSP_BUILD_BENCHMARKS "Build file system benchmarks." ON)
@@ -81,22 +81,22 @@ if(FFSP_BUILD_LIB)
 endif()
 
 
-#if(FFSP_BUILD_FUSELIB)
-#    set(FUSELIB_LIBRARY "ffsp-fuse")
-#
-#    set(FUSELIB_SRC
-#        ${FFSP_SRC}
-#        ${FFSP_PLATFORM_SRC}
-#        src/libffsp-fuse/fuse_ffsp.hpp
-#        src/libffsp-fuse/fuse_ffsp.cpp
-#        src/libffsp-fuse/fuse_get_context.cpp
-#    )
-#    add_library(${FUSELIB_LIBRARY} SHARED ${FUSELIB_SRC})
-#
-#    target_include_directories(${FUSELIB_LIBRARY} PRIVATE src ${SPDLOG_INCLUDE_DIRS})
-#    target_link_libraries(${FUSELIB_LIBRARY} ${SPDLOG_LIBRARIES})
-#    set_target_properties(${FUSELIB_LIBRARY} PROPERTIES CXX_STANDARD 14)
-#endif()
+if(FFSP_BUILD_FUSELIB)
+    set(FUSELIB_LIBRARY "ffsp-fuse")
+
+    set(FUSELIB_SRC
+        ${FFSP_SRC}
+        ${FFSP_PLATFORM_SRC}
+        src/libffsp-fuse/fuse_ffsp.hpp
+        src/libffsp-fuse/fuse_ffsp.cpp
+        src/libffsp-fuse/fuse_get_context.cpp
+    )
+    add_library(${FUSELIB_LIBRARY} SHARED ${FUSELIB_SRC})
+
+    target_include_directories(${FUSELIB_LIBRARY} PRIVATE src ${SPDLOG_INCLUDE_DIRS})
+    target_link_libraries(${FUSELIB_LIBRARY} ${SPDLOG_LIBRARIES})
+    set_target_properties(${FUSELIB_LIBRARY} PROPERTIES CXX_STANDARD 14)
+endif()
 
 
 if(FFSP_BUILD_MKFS)

@@ -26,7 +26,7 @@ protected:
         ASSERT_TRUE(ffsp::test::default_unmount_fs(fs_));
         ASSERT_TRUE(ffsp::test::default_close_io_backend());
 
-        ffsp::log_deinit();
+        ffsp::log_uninit();
     }
 
     ffsp::fs_context* fs_{ nullptr };

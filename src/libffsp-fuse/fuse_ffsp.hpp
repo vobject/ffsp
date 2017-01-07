@@ -50,8 +50,7 @@ int getattr(fs_context& fs, const char* path, struct FUSE_STAT* stbuf);
 int getattr(fs_context& fs, const char* path, struct ::stat* stbuf);
 #endif
 
-int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
-            FUSE_OFF_T offset, fuse_file_info* fi);
+int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler, FUSE_OFF_T offset, fuse_file_info* fi);
 
 int open(fs_context& fs, const char* path, fuse_file_info* fi);
 
@@ -59,11 +58,9 @@ int release(fs_context& fs, const char* path, fuse_file_info* fi);
 
 int truncate(fs_context& fs, const char* path, FUSE_OFF_T length);
 
-int read(fs_context& fs, const char* path, char* buf, size_t count,
-         FUSE_OFF_T offset, fuse_file_info* fi);
+int read(fs_context& fs, const char* path, char* buf, size_t count, FUSE_OFF_T offset, fuse_file_info* fi);
 
-int write(fs_context& fs, const char* path, const char* buf, size_t count,
-          FUSE_OFF_T offset, fuse_file_info* fi);
+int write(fs_context& fs, const char* path, const char* buf, size_t count, FUSE_OFF_T offset, fuse_file_info* fi);
 
 int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device);
 

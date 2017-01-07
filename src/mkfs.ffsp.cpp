@@ -163,6 +163,6 @@ int main(int argc, char* argv[])
         ret = EXIT_FAILURE;
     }
     ffsp::io_backend_uninit(io_ctx);
-    ffsp::log_deinit();
+    ffsp::log_uninit();
     return ret;
 }

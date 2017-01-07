@@ -29,7 +29,7 @@ namespace ffsp
 {
 
 void log_init(const std::string& logname, spdlog::level::level_enum level, const std::string& logfile = "");
-void log_deinit();
+void log_uninit();
 spdlog::logger& log();
 
 } // namespace ffsp

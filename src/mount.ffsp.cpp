@@ -455,7 +455,7 @@ struct fuse_ffsp_operations
 
     ~fuse_ffsp_operations()
     {
-        ffsp::log_deinit();
+        ffsp::log_uninit();
     }
 
     static ffsp::fs_context& get_fs(fuse_context* ctx)
