@@ -23,6 +23,8 @@
 
 #include "ffsp.hpp"
 
+#include <vector>
+
 #include <sys/types.h>
 
 #ifdef _WIN32
@@ -34,9 +36,9 @@ namespace ffsp
 
 inode* allocate_inode(const fs_context& fs);
 void delete_inode(inode* ino);
-void* inode_data(inode* ino);
-unsigned int get_inode_size(const fs_context& fs, const inode* ino);
-bool is_inode_valid(const fs_context& fs, cl_id_t cl_id, const inode* ino);
+void* inode_data(const inode& ino);
+uint64_t get_inode_size(const fs_context& fs, const inode& ino);
+bool is_inode_valid(const fs_context& fs, cl_id_t cl_id, const inode& ino);
 //bool is_inode_data_type(const fs_context& fs, const inode* ino);
 
 int lookup_no(fs_context& fs, inode** ino, ino_t ino_no);
@@ -55,7 +57,8 @@ int rename(fs_context& fs, const char* oldpath, const char* newpath);
 void mark_dirty(fs_context& fs, const inode& ino);
 void reset_dirty(fs_context& fs, const inode& ino);
 
-int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dentry_cnt);
+//int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dentry_cnt);
+int read_dir(fs_context& fs, const inode& ino, std::vector<dentry>& dentries);
 
 void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, inode_data_type ind_type);
 

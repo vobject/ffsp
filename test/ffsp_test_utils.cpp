@@ -166,6 +166,17 @@ bool default_unmount_ffsp()
     return unmount_ffsp(default_bin_unmount, default_dir_mountpoint);
 }
 
+std::vector<unsigned char> file_content(uint64_t size)
+{
+    unsigned char c{0};
+    std::vector<unsigned char> v(size, c);
+    for (auto& b : v) {
+        b = c;
+        c = (c + 1) % 256;
+    }
+    return v;
+}
+
 namespace os
 {
 
@@ -181,7 +192,9 @@ bool mkdir(const char* dir_path)
     return fs::create_directory(dir_path);
 }
 
-} // namespace os
+}
+
+// namespace os
 
 } // namespace test
 

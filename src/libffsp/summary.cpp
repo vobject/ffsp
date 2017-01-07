@@ -111,13 +111,14 @@ void summary_close(summary_cache& cache, summary* summary)
         cache.inode_clin.close();
 }
 
-bool summary_required(const fs_context& fs, eb_id_t eb_id)
+bool summary_required(const fs_context& fs, eraseblock_type eb_type)
 {
+    (void)fs;
+
     // Erase blocks containing cluster indirect data have an erase block summary
     // section at the end that cannot be used for data. Its size is one cluster.
-    const eraseblock& eb = fs.eb_usage[eb_id];
-    return (eb.e_type == eraseblock_type::dentry_clin) ||
-           (eb.e_type == eraseblock_type::file_clin);
+    return (eb_type == eraseblock_type::dentry_clin) ||
+           (eb_type == eraseblock_type::file_clin);
 }
 
 bool summary_write(fs_context& fs, summary* summary, eb_id_t eb_id)

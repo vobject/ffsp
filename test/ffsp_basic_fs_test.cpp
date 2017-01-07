@@ -25,9 +25,6 @@ TEST_F(BasicFileSystemOperationsTest, SmallFiles)
 {
     std::string command;
 
-    ////    command = std::string("cat ") + ffsp_testing::default_dir_mountpoint + "/.FFSP";
-    ////    ASSERT_TRUE(std::system(command.c_str()) == 0);
-
     command = std::string("cp /etc/lsb-release ") + ffsp::test::default_dir_mountpoint;
     ASSERT_TRUE(std::system(command.c_str()) == 0);
 
@@ -37,37 +34,34 @@ TEST_F(BasicFileSystemOperationsTest, SmallFiles)
     command = std::string("cp ") + ffsp::test::default_dir_mountpoint + "/lsb-release " + ffsp::test::default_dir_mountpoint + "/test.d_0";
     ASSERT_TRUE(std::system(command.c_str()) == 0);
 
-    command = std::string("tree ") + ffsp::test::default_dir_mountpoint;
-    ASSERT_TRUE(std::system(command.c_str()) == 0);
-
-    ////    command = std::string("cat ") + ffsp_testing::default_dir_mountpoint + "/.FFSP";
-    ////    ASSERT_TRUE(std::system(command.c_str()) == 0);
+//    command = std::string("tree ") + ffsp::test::default_dir_mountpoint;
+//    ASSERT_TRUE(std::system(command.c_str()) == 0);
 }
 
-TEST_F(BasicFileSystemOperationsTest, ManySmallFilesInRoot)
-{
-    std::string command;
+//TEST_F(BasicFileSystemOperationsTest, ManySmallFilesInRoot)
+//{
+//    std::string command;
 
-    const std::string mnt{ffsp::test::default_dir_mountpoint};
+//    const std::string mnt{ffsp::test::default_dir_mountpoint};
 
-    const int files{512};
-    const std::string chunk{"\\xde\\xad\\xbe\\xef"};
+//    const int files{512};
+//    const std::string chunk{"\\xde\\xad\\xbe\\xef"};
 
-    std::string content;
-    content.reserve(chunk.size() * files);
+//    std::string content;
+//    content.reserve(chunk.size() * files);
 
-    for (int i = 0; i < files; i++)
-    {
-        content.clear();
-        const auto fpath{mnt + "/" + std::to_string(i)};
-        const auto fsize = i;
+//    for (int i = 0; i < files; i++)
+//    {
+//        content.clear();
+//        const auto fpath{mnt + "/" + std::to_string(i)};
+//        const auto fsize = i;
 
-        for (auto byte_cnt = 0; byte_cnt < fsize; byte_cnt++)
-            content += chunk;
+//        for (auto byte_cnt = 0; byte_cnt < fsize; byte_cnt++)
+//            content += chunk;
 
-        command = "echo -n -e '" + content + "' >> " + fpath;
-        ASSERT_TRUE(std::system(command.c_str()) == 0);
-    }
-}
+//        command = "echo -n -e '" + content + "' >> " + fpath;
+//        ASSERT_EQ(0, std::system(command.c_str()));
+//    }
+//}
 
 #endif // _WIN32

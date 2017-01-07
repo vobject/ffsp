@@ -31,9 +31,6 @@ struct statvfs;
 namespace ffsp
 {
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
 bool update_time(timespec& dest);
 
 void stat(fs_context& fs, const inode& ino, struct ::stat& stbuf);

@@ -108,7 +108,7 @@ static bool is_eb_collectable(const fs_context& fs, eb_id_t eb_id)
     int max_writeops = fs.erasesize / fs.clustersize;
     int max_cvalid = max_writeops;
 
-    if (summary_required(fs, eb_id))
+    if (summary_required(fs, fs.eb_usage[eb_id].e_type))
     {
         /* erase block summary does not count as a valid cluster */
         max_cvalid--;
@@ -450,11 +450,11 @@ unsigned int gcinfo_inc_writecnt(fs_context& fs, eraseblock_type eb_type)
 
 void gc(fs_context& fs)
 {
-    log().debug("ffsp_gc()");
+    log().trace("ffsp::gc()");
 
     if (emtpy_eraseblk_count(fs) < fs.nerasereserve)
     {
-        log().debug("ffsp_gc(): too few free erase blocks present.");
+        log().debug("ffsp::gc(): too few free erase blocks present.");
         return;
     }
 
@@ -466,13 +466,14 @@ void gc(fs_context& fs)
         if (eb_type == eraseblock_type::dentry_inode ||
             eb_type == eraseblock_type::file_inode)
         {
-            log().debug("ffsp_gc(): collecting eb_type {}", static_cast<int>(eb_type));
+            log().debug("ffsp::gc(): collecting eb_type {}", eb_type);
             collect_inodes(fs, eb_type);
         }
-
-#if 0
-        else if (ffsp_summary_required0(eb_type))
+        else if (summary_required(fs, eb_type))
         {
+            log().debug("ffsp::gc(): collecting eb_type {} with summary", eb_type);
+            log().warn("ffsp::gc(): collecting indirect eb_type disabled!");
+#if 0
             /* FIXME: Enable GC of cluster indirect data!
              *  The amount of valid clusters for cluster indirect
              *  erase blocks is not tracked correctly. This can
@@ -480,8 +481,8 @@ void gc(fs_context& fs)
              *  function will be disabled until the bug is fixed.
              */
             collect_clin(fs, eb_type);
-        }
 #endif
+        }
 
         /* TODO: How to handle this correctly? */
         gcinfo* info = get_gcinfo(fs, eb_type);

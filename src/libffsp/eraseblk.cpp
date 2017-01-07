@@ -240,7 +240,7 @@ void commit_write_operation(fs_context& fs, eraseblock_type eb_type,
     int max_writeops = fs.erasesize / fs.clustersize;
     uint16_t writeops = get_be16(fs.eb_usage[eb_id].e_writeops);
 
-    if (!summary_required(fs, eb_id))
+    if (!summary_required(fs, eb_type))
     {
         if (writeops == max_writeops)
         {
@@ -308,7 +308,7 @@ void close_eraseblks(fs_context& fs)
 
         fs.eb_usage[eb_id].e_writeops = put_be16(max_writeops);
 
-        if (!summary_required(fs, eb_id))
+        if (!summary_required(fs, eb_type))
             continue;
 
         summary* eb_summary = summary_get(*fs.summary_cache, eb_type);

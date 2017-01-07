@@ -42,12 +42,12 @@ namespace ffsp
 {
 
 /* copy grouped elements into the cluster buffer. */
-static void group_inodes(const fs_context& fs, std::vector<inode*> group, char* cl_buf)
+static void group_inodes(const fs_context& fs, const std::vector<inode*>& group, char* cl_buf)
 {
     unsigned int cl_filling = 0;
     for (const auto& inode : group)
     {
-        unsigned int ino_size = get_inode_size(fs, inode);
+        auto ino_size = get_inode_size(fs, *inode);
         memcpy(cl_buf + cl_filling, inode, ino_size);
         cl_filling += ino_size;
     }
@@ -68,8 +68,7 @@ static uint64_t get_inode_group(const fs_context& fs, std::vector<inode*>& inode
         if (!inode)
             continue;
 
-        //unsigned int free_bytes = fs.clustersize - group_size;
-        uint64_t ino_size = get_inode_size(fs, inode);
+        auto ino_size = get_inode_size(fs, *inode);
 
         if (ino_size > free_bytes)
         {
@@ -101,9 +100,9 @@ int read_inode_group(fs_context& fs, cl_id_t cl_id, std::vector<inode*>& inodes)
     while ((ino_buf - fs.buf) < (ptrdiff_t)fs.clustersize)
     {
         inode* ino = (inode*)ino_buf;
-        auto ino_size = get_inode_size(fs, ino);
+        auto ino_size = get_inode_size(fs, *ino);
 
-        if (is_inode_valid(fs, cl_id, ino))
+        if (is_inode_valid(fs, cl_id, *ino))
         {
             ino = allocate_inode(fs);
             memcpy(ino, ino_buf, ino_size);

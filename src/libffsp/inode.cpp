@@ -63,18 +63,18 @@ void delete_inode(inode* ino)
     free(ino);
 }
 
-void* inode_data(inode* ino)
+void* inode_data(const inode& ino)
 {
     /*
      * The inodes' embedded data section is located directly behind
      * the ffsp_inode structure data. It is also valid because we
      * always allocate the inode + embedded data together.
      */
-    return ino + 1;
+    return &const_cast<inode&>(ino) + 1;
 }
 
 /* Return the size of an inode (with its data or indirect pointers) in bytes. */
-unsigned int get_inode_size(const fs_context& fs, const inode* ino)
+uint64_t get_inode_size(const fs_context& fs, const inode& ino)
 {
     /*
      * The size of an inode is sizeof(ffsp_inode) plus
@@ -83,11 +83,11 @@ unsigned int get_inode_size(const fs_context& fs, const inode* ino)
      * - erase block indirect: the size of valid eb indirect pointers
      */
 
-    unsigned int ino_size = sizeof(inode);
-    unsigned int i_size = get_be64(ino->i_size);
+    auto ino_size = sizeof(inode);
+    auto i_size = get_be64(ino.i_size);
 
     // the lower 8 bit carry the inode data type
-    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
+    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino.i_flags) & 0xff);
 
     if (data_type == inode_data_type::emb)
         ino_size += i_size;
@@ -99,9 +99,9 @@ unsigned int get_inode_size(const fs_context& fs, const inode* ino)
 }
 
 /* Check if a given inode is located at the given cluster id. */
-bool is_inode_valid(const fs_context& fs, cl_id_t cl_id, const inode* ino)
+bool is_inode_valid(const fs_context& fs, cl_id_t cl_id, const inode& ino)
 {
-    ino_t ino_no = get_be32(ino->i_no);
+    ino_t ino_no = get_be32(ino.i_no);
 
     /*
      * An inode cluster is considered valid if the inode number it
@@ -129,12 +129,12 @@ static unsigned int find_free_inode_no(fs_context& fs)
     return FFSP_INVALID_INO_NO;
 }
 
-static void mk_directory(inode* ino, ino_t parent_ino_no)
+static void mk_directory(inode& ino, ino_t parent_ino_no)
 {
-    dentry* dentry_ptr = (dentry*)inode_data(ino);
+    auto* dentry_ptr = static_cast<dentry*>(inode_data(ino));
 
     // Add "." and ".." to the embedded data section
-    dentry_ptr[0].ino = ino->i_no;
+    dentry_ptr[0].ino = ino.i_no;
     dentry_ptr[0].len = strlen(".");
     strcpy(dentry_ptr[0].name, ".");
 
@@ -143,8 +143,8 @@ static void mk_directory(inode* ino, ino_t parent_ino_no)
     strcpy(dentry_ptr[1].name, "..");
 
     // Meta information about "." and ".."
-    ino->i_size = put_be64(sizeof(dentry) * 2);
-    ino->i_nlink = put_be32(2);
+    ino.i_size = put_be64(sizeof(dentry) * 2);
+    ino.i_nlink = put_be32(2);
 }
 
 static int add_dentry(fs_context& fs, const char* path, ino_t ino_no,
@@ -172,7 +172,7 @@ static int add_dentry(fs_context& fs, const char* path, ino_t ino_no,
     free(name);
 
     // Append the new dentry at the inode's data.
-    rc = write(fs, parent_ino, (char*)(&dent), sizeof(dent), get_be64(parent_ino->i_size));
+    rc = write(fs, *parent_ino, (const char*)(&dent), sizeof(dent), get_be64(parent_ino->i_size));
     if (rc < 0)
         return rc;
 
@@ -207,26 +207,24 @@ static int remove_dentry(fs_context& fs, const char* path, ino_t ino_no, mode_t 
         return rc;
 
     // Now that we have its parent directory inode, find the files dentry.
-    dentry* dent_buf;
-    int dent_cnt;
-    rc = cache_dir(fs, ino, &dent_buf, &dent_cnt);
+    std::vector<dentry> dentries;
+    rc = read_dir(fs, *ino, dentries);
     if (rc < 0)
         return rc;
 
-    for (int i = 0; i < dent_cnt; i++)
+    for (auto& dent : dentries)
     {
-        if (get_be32(dent_buf[i].ino) == ino_no)
+        if (get_be32(dent.ino) == ino_no)
         {
-            ino_no = get_be32(dent_buf[i].ino);
-            dent_buf[i].ino = put_be32(0);
-            dent_buf[i].len = 0;
+            ino_no = get_be32(dent.ino);
+            dent.ino = put_be32(0);
+            dent.len = 0;
 
             // TODO: write only affected cluster.
-            write(fs, ino, (char*)dent_buf, dent_cnt * sizeof(dentry), 0);
+            write(fs, *ino, (char*)dentries.data(), dentries.size() * sizeof(dentry), 0);
             break;
         }
     }
-    free(dent_buf);
 
     // Check if the requested name was even found inside the directory.
     if (ino_no == FFSP_INVALID_INO_NO)
@@ -242,56 +240,50 @@ static int remove_dentry(fs_context& fs, const char* path, ino_t ino_no, mode_t 
     return 0;
 }
 
-static int find_dentry(fs_context& fs, inode* ino, const char* name, dentry* dent)
+static int find_dentry(fs_context& fs, const inode& ino, const char* name, dentry& out_dent)
 {
     // Number of potential ffsp_dentry elements. The exact number is not
     //  tracked. Return value of < 0 indicates an error.
-    dentry* dent_buf;
-    int dent_cnt;
-    int rc = cache_dir(fs, ino, &dent_buf, &dent_cnt);
+    std::vector<dentry> dentries;
+    int rc = read_dir(fs, ino, dentries);
     if (rc < 0)
         return rc;
 
-    for (int i = 0; i < dent_cnt; i++)
+    for (const auto& dent : dentries)
     {
-        if (get_be32(dent_buf[i].ino) == FFSP_INVALID_INO_NO)
+        if (get_be32(dent.ino) == FFSP_INVALID_INO_NO)
             continue; // Invalid ffsp_entry
-        if (!strncmp(dent_buf[i].name, name, FFSP_NAME_MAX))
+        if (!strncmp(dent.name, name, FFSP_NAME_MAX))
         {
-            memcpy(dent, &dent_buf[i], sizeof(*dent));
-            free(dent_buf);
+            out_dent = dent;
             return 0;
         }
     }
     // The requested name was not found.
-    free(dent_buf);
     return -1;
 }
 
-static int dentry_is_empty(fs_context& fs, inode* ino)
+static int dentry_is_empty(fs_context& fs, const inode& ino)
 {
     // Number of potential ffsp_dentry elements. The exact number is not
     //  tracked. Return value of < 0 indicates an error.
-    dentry* dent_buf;
-    int dent_cnt;
-    int rc = cache_dir(fs, ino, &dent_buf, &dent_cnt);
+    std::vector<dentry> dentries;
+    int rc = read_dir(fs, ino, dentries);
     if (rc < 0)
         return rc;
 
-    for (int i = 0; i < dent_cnt; i++)
+    for (const auto& dent : dentries)
     {
-        if (get_be32(dent_buf[i].ino) == FFSP_INVALID_INO_NO)
+        if (get_be32(dent.ino) == FFSP_INVALID_INO_NO)
             continue; // Invalid ffsp_entry
 
-        if (!strncmp(dent_buf[i].name, ".", FFSP_NAME_MAX))
+        if (!strncmp(dent.name, ".", FFSP_NAME_MAX))
             continue;
-        if (!strncmp(dent_buf[i].name, "..", FFSP_NAME_MAX))
+        if (!strncmp(dent.name, "..", FFSP_NAME_MAX))
             continue;
 
-        free(dent_buf);
         return 0; // the directory is not empty
     }
-    free(dent_buf);
     return 1; // the directory is empty
 }
 
@@ -343,7 +335,7 @@ int lookup(fs_context& fs, inode** ino, const char* path)
         }
 
         dentry dentry;
-        int rc = find_dentry(fs, dir_ino, token, &dentry);
+        int rc = find_dentry(fs, *dir_ino, token, dentry);
         if (rc < 0)
         {
             // The name was not found inside the parent folder.
@@ -459,7 +451,7 @@ int create(fs_context& fs, const char* path, mode_t mode, uid_t uid, gid_t gid, 
 
     // Handle creation of a directory.
     if (S_ISDIR(mode))
-        mk_directory(ino, parent_ino_no);
+        mk_directory(*ino, parent_ino_no);
 
     // We have to occupy an inode_no inside the inomap. Otherwise it is still
     // marked as 'free' and there's no control over the max supported amount of
@@ -489,7 +481,7 @@ int symlink(fs_context& fs, const char* oldpath, const char* newpath, uid_t uid,
     if (rc < 0)
         return rc;
 
-    rc = write(fs, ino, oldpath, strlen(oldpath), 0);
+    rc = write(fs, *ino, oldpath, strlen(oldpath), 0);
     if (rc < 0)
         unlink(fs, newpath); // Remove empty file
 
@@ -504,7 +496,7 @@ int readlink(fs_context& fs, const char* path, char* buf, size_t bufsize)
     if (rc < 0)
         return rc;
 
-    rc = read(fs, ino, buf, bufsize - 1, 0);
+    rc = read(fs, *ino, buf, bufsize - 1, 0);
     if (rc < 0)
         return rc;
 
@@ -604,7 +596,7 @@ int unlink(fs_context& fs, const char* path)
                 return -1;
             }
             int ind_cnt = ((file_size - 1) / ind_size) + 1;
-            be32_t* ind_ptr = (be32_t*)inode_data(ino);
+            const auto* ind_ptr = static_cast<const be32_t*>(inode_data(*ino));
             invalidate_ind_ptr(fs, ind_ptr, ind_cnt, ind_type);
         }
         inode_cache_remove(*fs.inode_cache, ino);
@@ -629,7 +621,7 @@ int rmdir(fs_context& fs, const char* path)
     if (rc < 0)
         return rc;
 
-    if (dentry_is_empty(fs, ino) == 0)
+    if (dentry_is_empty(fs, *ino) == 0)
         return -ENOTEMPTY;
 
     ino_t ino_no = get_be32(ino->i_no);
@@ -689,7 +681,7 @@ int rmdir(fs_context& fs, const char* path)
             return -1;
         }
         int ind_cnt = ((file_size - 1) / ind_size) + 1;
-        be32_t* ind_ptr = (be32_t*)inode_data(ino);
+        const auto* ind_ptr = static_cast<const be32_t*>(inode_data(*ino));
         invalidate_ind_ptr(fs, ind_ptr, ind_cnt, ind_type);
     }
     inode_cache_remove(*fs.inode_cache, ino);
@@ -750,7 +742,7 @@ void mark_dirty(fs_context& fs, const inode& ino)
     set_bit(fs.ino_status_map, ino_no);
     fs.dirty_ino_cnt++;
 
-    log().debug("inode {} is now dirty - dirty_ino_cnt={}", ino_no, fs.dirty_ino_cnt);
+    log().debug("inode {} marked as dirty - dirty_ino_cnt={}", ino_no, fs.dirty_ino_cnt);
 
     /* decrement the number of valid inodes inside the old inode's
      * cluster (in case it really had one). */
@@ -777,30 +769,21 @@ void reset_dirty(fs_context& fs, const inode& ino)
         ino_t ino_no = get_be32(ino.i_no);
         clear_bit(fs.ino_status_map, ino_no);
         fs.dirty_ino_cnt--;
-        log().debug("inode {} is now CLEAN - dirty_ino_cnt={}", ino_no, fs.dirty_ino_cnt);
+        log().debug("inode {} marked as clean - dirty_ino_cnt={}", ino_no, fs.dirty_ino_cnt);
     }
 }
 
-int cache_dir(fs_context& fs, inode* ino, dentry** dent_buf, int* dent_cnt)
+int read_dir(fs_context& fs, const inode& ino, std::vector<dentry>& dentries)
 {
     // Number of bytes till the end of the last valid dentry.
-    uint64_t data_size = get_be64(ino->i_size);
+    uint64_t data_size = get_be64(ino.i_size);
 
-    *dent_buf = (dentry*)malloc(data_size);
-    if (!*dent_buf)
-    {
-        log().critical("ffsp_cache_dir(): malloc() failed.");
-        return -1;
-    }
-
-    ssize_t rc = read(fs, ino, (char*)(*dent_buf), data_size, 0);
+    dentries.resize(data_size / sizeof(dentry));
+    ssize_t rc = read(fs, ino, (char*)dentries.data(), data_size, 0);
     if (rc < 0)
     {
-        free(*dent_buf);
-        return rc;
+        return static_cast<int>(rc);
     }
-    // Potential amount of valid ffsp_dentry elements.
-    *dent_cnt = data_size / sizeof(dentry);
     return 0;
 }
 

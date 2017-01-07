@@ -21,6 +21,9 @@
 #ifndef LOG_HPP
 #define LOG_HPP
 
+#include "ffsp.hpp"
+
+#include "spdlog/fmt/ostr.h"
 #include "spdlog/spdlog.h"
 
 #include <string>
@@ -33,5 +36,14 @@ void log_uninit();
 spdlog::logger& log();
 
 } // namespace ffsp
+
+std::ostream& operator<<(std::ostream& os, const ffsp::superblock& sb);
+std::ostream& operator<<(std::ostream& os, const ffsp::timespec& ts);
+std::ostream& operator<<(std::ostream& os, const ffsp::inode& inode);
+std::ostream& operator<<(std::ostream& os, const ffsp::eraseblock& eb);
+std::ostream& operator<<(std::ostream& os, const ffsp::dentry& dent);
+
+std::ostream& operator<<(std::ostream& os, const ffsp::inode_data_type& inode_type);
+std::ostream& operator<<(std::ostream& os, const ffsp::eraseblock_type& eb_type);
 
 #endif /* LOG_HPP */

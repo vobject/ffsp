@@ -33,9 +33,9 @@ typedef SSIZE_T ssize_t;
 namespace ffsp
 {
 
-int truncate(fs_context& fs, inode* ino, uint64_t length);
-ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t count, uint64_t offset);
-ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t count, uint64_t offset);
+int truncate(fs_context& fs, inode& ino, uint64_t length);
+ssize_t read(fs_context& fs, const inode& ino, char* buf, uint64_t count, uint64_t offset);
+ssize_t write(fs_context& fs, inode& ino, const char* buf, uint64_t count, uint64_t offset);
 
 } // namespace ffsp
 

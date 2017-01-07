@@ -3,6 +3,10 @@
 
 #include "libffsp/mkfs.hpp"
 
+#include <vector>
+
+#include <cstdint>
+
 namespace ffsp
 {
 
@@ -16,7 +20,7 @@ bool remove_file(const char* file_path);
 
 bool make_fs(io_backend* io_ctx, const mkfs_options& opts);
 
-bool mount_fs(fs_context** fs, const char* file_path);
+bool mount_fs(io_backend* io_ctx, fs_context** fs);
 bool unmount_fs(fs_context* fs);
 
 bool mkfs_ffsp(const char* program,
@@ -76,6 +80,8 @@ bool default_unmount_fs(fs_context* fs);
 bool default_mkfs_ffsp();
 bool default_mount_ffsp();
 bool default_unmount_ffsp();
+
+std::vector<unsigned char> file_content(uint64_t size);
 
 namespace os
 {

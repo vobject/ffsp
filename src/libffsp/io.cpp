@@ -47,18 +47,19 @@ namespace ffsp
 
 struct write_context
 {
-    const char* buf{ nullptr };
-    size_t bytes_left{ 0 };
-    uint64_t offset{ 0 };
+    const char* buf;
+    size_t bytes_left;
+    uint64_t offset;
 
-    inode* ino{ nullptr };
-    be32_t* ind_ptr{ nullptr };
-    uint64_t old_size{ 0 };
-    uint64_t new_size{ 0 };
-    uint64_t old_ind_size{ 0 };
-    uint64_t new_ind_size{ 0 };
-    inode_data_type old_type{ inode_data_type::emb };
-    inode_data_type new_type{ inode_data_type::emb };
+    inode& ino;
+    be32_t* ind_ptr;
+
+    const uint64_t old_size;
+    const uint64_t new_size;
+    const uint64_t old_ind_size;
+    const uint64_t new_ind_size;
+    const inode_data_type old_type;
+    const inode_data_type new_type;
 };
 
 static bool is_buf_empty(const char* buf, size_t size)
@@ -123,7 +124,7 @@ static ssize_t write_ind(fs_context& fs, write_context& ctx, const char* buf, be
         *ind_id = put_be32(0);
         return 0;
     }
-    bool for_dentry = S_ISDIR(get_be32(ctx.ino->i_mode));
+    bool for_dentry = S_ISDIR(get_be32(ctx.ino.i_mode));
     eraseblock_type eb_type = get_eraseblk_type(fs, ctx.new_type, for_dentry);
 
     // Search for a cluster id or an erase block id to write to.
@@ -143,16 +144,16 @@ static ssize_t write_ind(fs_context& fs, write_context& ctx, const char* buf, be
 
     // This operation may internally finalize erase blocks by
     //  writing their erase block summary.
-    commit_write_operation(fs, eb_type, eb_id, ctx.ino->i_no);
+    commit_write_operation(fs, eb_type, eb_id, ctx.ino.i_no);
     *ind_id = put_be32(cl_id);
     return write_rc;
 }
 
-static ssize_t read_emb(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t offset)
+static ssize_t read_emb(fs_context& fs, const inode& ino, char* buf, uint64_t nbyte, uint64_t offset)
 {
     (void)fs;
-    char* emb_data = (char*)inode_data(ino);
-    const uint64_t i_size = get_be64(ino->i_size);
+    const auto* emb_data = static_cast<const char*>(inode_data(ino));
+    const auto i_size = get_be64(ino.i_size);
 
     if ((offset + nbyte) > i_size)
         nbyte = i_size - offset;
@@ -161,11 +162,11 @@ static ssize_t read_emb(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, u
     return static_cast<ssize_t>(nbyte);
 }
 
-static ssize_t read_ind(fs_context& fs, inode* ino, char* buf,
+static ssize_t read_ind(fs_context& fs, const inode& ino, char* buf,
                         uint64_t nbyte, uint64_t offset, uint64_t ind_size)
 {
     /* indirect cluster ids containing data */
-    be32_t* ind_ptr = (be32_t*)inode_data(ino);
+    const auto* ind_ptr = static_cast<const be32_t*>(inode_data(ino));
 
     /* current cluster id from the embedded data */
     uint32_t ind_index = static_cast<uint32_t>(offset / ind_size);
@@ -174,7 +175,7 @@ static ssize_t read_ind(fs_context& fs, inode* ino, char* buf,
     uint64_t ind_offset = offset % ind_size;
 
     /* never try to read more than there is available */
-    nbyte = std::min(nbyte, get_be64(ino->i_size) - offset);
+    nbyte = std::min(nbyte, get_be64(ino.i_size) - offset);
     uint64_t bytes_left = nbyte;
 
     while (bytes_left)
@@ -220,10 +221,10 @@ static ssize_t trunc_emb2ind(fs_context& fs, write_context& ctx, const char* ind
         ctx.ind_ptr[i] = put_be32(0);
 
     // clear old data type flag and set the new data type flag
-    uint32_t flags = get_be32(ctx.ino->i_flags);
+    uint32_t flags = get_be32(ctx.ino.i_flags);
     flags = flags & ~static_cast<uint8_t>(ctx.old_type);
     flags = flags | static_cast<uint8_t>(ctx.new_type);
-    ctx.ino->i_flags = put_be32(flags);
+    ctx.ino.i_flags = put_be32(flags);
     return 0;
 }
 
@@ -247,10 +248,10 @@ static ssize_t trunc_ind2emb(fs_context& fs, write_context& ctx)
     memcpy(ctx.ind_ptr, fs.buf, ctx.new_size);
 
     // clear old data type flag and set the new data type flag
-    uint32_t flags = get_be32(ctx.ino->i_flags);
+    uint32_t flags = get_be32(ctx.ino.i_flags);
     flags = flags & ~static_cast<uint8_t>(ctx.old_type);
     flags = flags | static_cast<uint8_t>(ctx.new_type);
-    ctx.ino->i_flags = put_be32(flags);
+    ctx.ino.i_flags = put_be32(flags);
     return 0;
 }
 
@@ -306,10 +307,10 @@ static ssize_t trunc_clin2ebin(fs_context& fs, write_context& ctx)
     free(old_ptr);
 
     // clear old data type flag and set the new data type flag
-    uint32_t flags = get_be32(ctx.ino->i_flags);
+    uint32_t flags = get_be32(ctx.ino.i_flags);
     flags = flags & ~static_cast<uint8_t>(inode_data_type::clin);
     flags = flags | static_cast<uint8_t>(inode_data_type::ebin);
-    ctx.ino->i_flags = put_be32(flags);
+    ctx.ino.i_flags = put_be32(flags);
     return 0;
 }
 
@@ -373,8 +374,7 @@ static ssize_t write_emb(fs_context& fs, write_context& ctx)
         // Handle file growth (truncation) inside emb_size boundary
         if (ctx.new_size > ctx.old_size)
         {
-            memset(emb_data + ctx.old_size, 0,
-                   ctx.new_size - ctx.old_size);
+            memset(emb_data + ctx.old_size, 0, ctx.new_size - ctx.old_size);
         }
         memcpy(emb_data + ctx.offset, ctx.buf, ctx.bytes_left);
         return static_cast<ssize_t>(ctx.bytes_left);
@@ -577,44 +577,38 @@ static ssize_t write_ebin(fs_context& fs, write_context& ctx)
     return static_cast<ssize_t>(nbyte - ctx.bytes_left);
 }
 
-int truncate(fs_context& fs, inode* ino, uint64_t length)
+int truncate(fs_context& fs, inode& ino, uint64_t length)
 {
-    if (length > max_ebin_size(fs))
+    auto old_size = get_be64(ino.i_size);
+    auto new_size = length;
+
+    if (new_size > max_ebin_size(fs))
         return -EFBIG;
 
-    if (length == get_be64(ino->i_size))
+    if (new_size == old_size)
         return 0;
 
-    write_context ctx;
-    ctx.buf = nullptr;  // no applicable for truncation
-    ctx.bytes_left = 0; // no applicable for truncation
-    ctx.offset = length;
-    ctx.ino = ino;
-    ctx.ind_ptr = (be32_t*)inode_data(ino);
-    ctx.old_size = get_be64(ino->i_size);
-    ctx.new_size = length;
-    ctx.old_ind_size = ind_size_from_size(fs, ctx.old_size);
-    ctx.new_ind_size = ind_size_from_size(fs, ctx.new_size);
-    ctx.new_type = data_type_from_size(fs, ctx.new_size);
+    auto old_type = static_cast<inode_data_type>(get_be32(ino.i_flags) & 0xff);
+    auto new_type = data_type_from_size(fs, new_size);
 
-    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
+    write_context ctx {
+        nullptr, 0, new_size,
+        ino, static_cast<be32_t*>(inode_data(ino)),
+        old_size,
+        new_size,
+        ind_size_from_size(fs, old_size),
+        ind_size_from_size(fs, new_size),
+        old_type,
+        new_type
+    };
 
     ssize_t rc;
-    if (data_type == inode_data_type::emb)
-    {
-        ctx.old_type = inode_data_type::emb;
+    if (old_type == inode_data_type::emb)
         rc = write_emb(fs, ctx);
-    }
-    else if (data_type == inode_data_type::clin)
-    {
-        ctx.old_type = inode_data_type::clin;
+    else if (old_type == inode_data_type::clin)
         rc = trunc_clin(fs, ctx);
-    }
-    else if (data_type == inode_data_type::ebin)
-    {
-        ctx.old_type = inode_data_type::ebin;
+    else if (old_type == inode_data_type::ebin)
         rc = trunc_ebin(fs, ctx);
-    }
     else
     {
         log().error("ffsp::truncate(): unknown inode type");
@@ -623,10 +617,10 @@ int truncate(fs_context& fs, inode* ino, uint64_t length)
 
     if (!(rc < 0))
     {
-        ino->i_size = put_be64(length);
-        update_time(ino->i_ctime);
-        update_time(ino->i_mtime);
-        mark_dirty(fs, *ino);
+        ino.i_size = put_be64(length);
+        update_time(ino.i_ctime);
+        update_time(ino.i_mtime);
+        mark_dirty(fs, ino);
         flush_inodes(fs, false);
 
         // The recent call to mark the current inode dirty might have
@@ -637,17 +631,17 @@ int truncate(fs_context& fs, inode* ino, uint64_t length)
     return static_cast<int>(rc);
 }
 
-ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t offset)
+ssize_t read(fs_context& fs, const inode& ino, char* buf, uint64_t nbyte, uint64_t offset)
 {
     if (nbyte == 0)
         return 0;
 
-    if (offset >= get_be64(ino->i_size))
+    if (offset >= get_be64(ino.i_size))
     {
         log().debug("ffsp::read(offset={}): too big", offset);
         return 0;
     }
-    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
+    auto data_type = static_cast<inode_data_type>(get_be32(ino.i_flags) & 0xff);
 
     ssize_t rc;
     if (data_type == inode_data_type::emb)
@@ -669,38 +663,38 @@ ssize_t read(fs_context& fs, inode* ino, char* buf, uint64_t nbyte, uint64_t off
     return rc;
 }
 
-ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint64_t offset)
+ssize_t write(fs_context& fs, inode& ino, const char* buf, uint64_t nbyte, uint64_t offset)
 {
+    auto old_size = get_be64(ino.i_size);
+    auto new_size = std::max(get_be64(ino.i_size), offset + nbyte);
+
+    if (new_size > max_ebin_size(fs))
+        return -EFBIG;
+
     if (nbyte == 0)
         return 0;
 
-    write_context ctx;
-    ctx.buf = buf;
-    ctx.bytes_left = nbyte;
-    ctx.offset = offset;
-    ctx.ino = ino;
-    ctx.ind_ptr = (be32_t*)inode_data(ino);
-    ctx.old_size = get_be64(ino->i_size);
-    ctx.new_size = MAX(get_be64(ino->i_size), offset + nbyte);
-    ctx.old_ind_size = ind_size_from_size(fs, ctx.old_size);
-    ctx.new_ind_size = ind_size_from_size(fs, ctx.new_size);
-    ctx.new_type = data_type_from_size(fs, ctx.new_size);
+    auto old_type = static_cast<inode_data_type>(get_be32(ino.i_flags) & 0xff);
+    auto new_type = data_type_from_size(fs, new_size);
 
-    if (ctx.new_size > max_ebin_size(fs))
-        return -EFBIG;
-
-    inode_data_type data_type = static_cast<inode_data_type>(get_be32(ino->i_flags) & 0xff);
+    write_context ctx {
+        buf, nbyte, offset,
+        ino, static_cast<be32_t*>(inode_data(ino)),
+        old_size,
+        new_size,
+        ind_size_from_size(fs, old_size),
+        ind_size_from_size(fs, new_size),
+        old_type,
+        new_type
+    };
 
     ssize_t rc;
-    if (data_type == inode_data_type::emb)
+    if (old_type == inode_data_type::emb)
     {
-        ctx.old_type = inode_data_type::emb;
         rc = write_emb(fs, ctx);
     }
-    else if (data_type == inode_data_type::clin)
+    else if (old_type == inode_data_type::clin)
     {
-        ctx.old_type = inode_data_type::clin;
-
         if (ctx.new_type == inode_data_type::ebin)
         {
             // Handle file type growth while writing.
@@ -720,10 +714,8 @@ ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint6
             rc = write_clin(fs, ctx);
         }
     }
-    else if (data_type == inode_data_type::ebin)
+    else if (old_type == inode_data_type::ebin)
     {
-        ctx.old_type = inode_data_type::ebin;
-
         if (ctx.new_size > ctx.old_size)
         {
             rc = trunc_ind(fs, ctx);
@@ -740,9 +732,9 @@ ssize_t write(fs_context& fs, inode* ino, const char* buf, uint64_t nbyte, uint6
 
     if (!(rc < 0))
     {
-        ino->i_size = put_be64(ctx.new_size);
-        update_time(ino->i_mtime);
-        mark_dirty(fs, *ino);
+        ino.i_size = put_be64(ctx.new_size);
+        update_time(ino.i_mtime);
+        mark_dirty(fs, ino);
         flush_inodes(fs, false);
 
         // The recent call to mark the current inode dirty might have

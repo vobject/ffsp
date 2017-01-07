@@ -235,21 +235,18 @@ int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
 
     // Number of potential ffsp_dentry elements. The exact number is not
     //  tracked. Return value of < 0 indicates an error.
-    dentry* dent_buf;
-    int dent_cnt;
-    rc = cache_dir(fs, ino, &dent_buf, &dent_cnt);
+    std::vector<dentry> dentries;
+    rc = read_dir(fs, *ino, dentries);
     if (rc < 0)
         return rc;
 
-    for (int i = 0; i < dent_cnt; i++)
+    for (const auto& dent : dentries)
     {
-        if (get_be32(dent_buf[i].ino) == FFSP_INVALID_INO_NO)
+        if (get_be32(dent.ino) == FFSP_INVALID_INO_NO)
             continue; // Invalid ffsp_entry
-        if (filler(buf, dent_buf[i].name, nullptr, 0))
+        if (filler(buf, dent.name, nullptr, 0))
             log().debug("readdir({}): filler full!", path);
     }
-    // TODO: Handle directory cache inside ffsp structure.
-    free(dent_buf);
     return 0;
 }
 
@@ -266,7 +263,7 @@ int open(fs_context& fs, const char* path, fuse_file_info* fi)
     // TODO: Comment on why we explicitly made open & trunc atomic
     if (fi->flags & O_TRUNC)
     {
-        rc = ffsp::truncate(fs, ino, 0);
+        rc = ffsp::truncate(fs, *ino, 0);
         if (rc < 0)
             return rc;
     }
@@ -296,7 +293,7 @@ int truncate(fs_context& fs, const char* path, FUSE_OFF_T length)
     if (rc < 0)
         return rc;
 
-    ffsp::truncate(fs, ino, static_cast<uint64_t>(length));
+    ffsp::truncate(fs, *ino, static_cast<uint64_t>(length));
     return 0;
 }
 
@@ -322,7 +319,7 @@ int read(fs_context& fs, const char* path, char* buf, size_t nbyte,
     }
 
     ffsp::debug_update(fs, debug_metric::fuse_read, nbyte);
-    return static_cast<int>(ffsp::read(fs, ino, buf, nbyte, static_cast<uint64_t>(offset)));
+    return static_cast<int>(ffsp::read(fs, *ino, buf, nbyte, static_cast<uint64_t>(offset)));
 }
 
 int write(fs_context& fs, const char* path, const char* buf, size_t nbyte,
@@ -347,7 +344,7 @@ int write(fs_context& fs, const char* path, const char* buf, size_t nbyte,
     }
 
     ffsp::debug_update(fs, debug_metric::fuse_write, nbyte);
-    return static_cast<int>(ffsp::write(fs, ino, buf, nbyte, static_cast<uint64_t>(offset)));
+    return static_cast<int>(ffsp::write(fs, *ino, buf, nbyte, static_cast<uint64_t>(offset)));
 }
 
 int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device)
