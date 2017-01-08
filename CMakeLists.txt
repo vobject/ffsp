@@ -10,26 +10,27 @@ option(FFSP_BUILD_BENCHMARKS "Build file system benchmarks." ON)
 option(FFSP_BUILD_TESTS "Build file system tests." ON)
 
 
+set(SPDLOG_INCLUDE_DIRS "lib/spdlog-0.11.0/include")
+
 if(WIN32)
-    set(FUSE_LIBRARY_DIRS "D:/Development/fs/dokany/x64/Debug")
     set(FUSE_INCLUDE_DIRS "D:/Development/fs/dokany/dokan_fuse/include")
-    set(FUSE_LIBRARIES "dokanfuse1")
+    set(FUSE_LIBRARIES "D:/Development/fs/dokany/x64/Debug/dokanfuse1.lib")
 
     add_definitions(-DFUSE_USE_VERSION=26 -D_WIN32_WINNT=0x0601)
     add_definitions(-DNOMINMAX -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS /W4)
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /MT")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
 else()
+    set(SPDLOG_LIBRARIES "pthread")
+    
     set(FUSE_INCLUDE_DIRS "/usr/include/fuse")
     set(FUSE_LIBRARIES "fuse" "pthread")
 
     add_definitions(-DFUSE_USE_VERSION=26 -D_FILE_OFFSET_BITS=64)
     add_definitions(-Wall -Wextra -pedantic)
 endif()
-
-
-set(SPDLOG_INCLUDE_DIRS "lib/spdlog-0.11.0/include")
-set(SPDLOG_LIBRARIES "pthread")
 
 
 if(FFSP_BUILD_LIB)
@@ -76,7 +77,7 @@ if(FFSP_BUILD_LIB)
     endif()
     add_library(${FFSP_LIBRARY} STATIC ${FFSP_SRC} ${FFSP_PLATFORM_SRC})
 
-    target_include_directories(${FFSP_LIBRARY} PRIVATE ${SPDLOG_INCLUDE_DIRS})
+    target_include_directories(${FFSP_LIBRARY} PRIVATE ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
     set_target_properties(${FFSP_LIBRARY} PROPERTIES CXX_STANDARD 14)
 endif()
 
@@ -93,8 +94,8 @@ if(FFSP_BUILD_FUSELIB)
     )
     add_library(${FUSELIB_LIBRARY} SHARED ${FUSELIB_SRC})
 
-    target_include_directories(${FUSELIB_LIBRARY} PRIVATE src ${SPDLOG_INCLUDE_DIRS})
-    target_link_libraries(${FUSELIB_LIBRARY} ${SPDLOG_LIBRARIES})
+    target_include_directories(${FUSELIB_LIBRARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
+    target_link_libraries(${FUSELIB_LIBRARY} ${FUSE_LIBRARIES} ${SPDLOG_LIBRARIES})
     set_target_properties(${FUSELIB_LIBRARY} PROPERTIES CXX_STANDARD 14)
 endif()
 
@@ -114,7 +115,7 @@ if(FFSP_BUILD_MKFS)
     endif()
     add_executable(${MKFS_BINARY} ${MKFS_SRC} ${MKFS_PLATFORM_SRC})
 
-    target_include_directories(${MKFS_BINARY} PRIVATE src ${MKFS_PLATFORM_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
+    target_include_directories(${MKFS_BINARY} PRIVATE src ${MKFS_PLATFORM_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
     target_link_libraries(${MKFS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES})
     set_target_properties(${MKFS_BINARY} PROPERTIES CXX_STANDARD 14)
 endif()
@@ -130,8 +131,8 @@ if(FFSP_BUILD_MOUNT)
     )
     add_executable(${MOUNT_BINARY} ${MOUNT_SRC})
 
-    target_include_directories(${MOUNT_BINARY} PRIVATE src ${SPDLOG_INCLUDE_DIRS})
-    target_link_libraries(${MOUNT_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${FUSE_LIBRARIES})
+    target_include_directories(${MOUNT_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
+    target_link_libraries(${MOUNT_BINARY} ${FFSP_LIBRARY} ${FUSE_LIBRARIES} ${SPDLOG_LIBRARIES})
     set_target_properties(${MOUNT_BINARY} PROPERTIES CXX_STANDARD 14)
 endif()
 
@@ -153,7 +154,7 @@ if(FFSP_BUILD_BENCHMARKS)
     )
     add_executable(${BENCHMARKS_BINARY} ${BENCHMARKS_SRC})
 
-    target_include_directories(${BENCHMARKS_BINARY} PRIVATE src ${SPDLOG_INCLUDE_DIRS} ${GBENCHMARK_INCLUDE_DIRS})
+    target_include_directories(${BENCHMARKS_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS} ${GBENCHMARK_INCLUDE_DIRS})
     target_link_libraries(${BENCHMARKS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${GBENCHMARK_LIBRARIES})
     set_target_properties(${BENCHMARKS_BINARY} PROPERTIES CXX_STANDARD 14)
 endif()
@@ -180,7 +181,7 @@ if(FFSP_BUILD_TESTS)
     )
     add_executable(${TESTS_BINARY} ${TESTS_SRC})
 
-    target_include_directories(${TESTS_BINARY} PRIVATE src ${SPDLOG_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
+    target_include_directories(${TESTS_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
     if(WIN32)
         target_link_libraries(${TESTS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${GTEST_LIBRARIES})
     else()
