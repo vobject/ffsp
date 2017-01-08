@@ -511,125 +511,162 @@ int fsync(fs_context& fs, const char* path, int datasync, fuse_file_info* fi)
 
 } // namespace ffsp
 
+
 // ffsp fuse "C" wrapper interface
 extern "C" {
 
-void ffsp_fuse_set_options_dev(const char* device)
+// http://stackoverflow.com/questions/2164827/explicitly-exporting-shared-library-functions-in-linux
+#if defined(_MSC_VER)
+#define EXPORT __declspec(dllexport)
+#elif defined(__GNUC__)
+#define EXPORT __attribute__((visibility("default")))
+#else
+#define EXPORT
+#pragma warning Unknown dynamic link import/export semantics.
+#endif
+
+EXPORT void ffsp_fuse_set_options_dev(const char* device)
 {
     ffsp::fuse::set_options(device);
 }
-void ffsp_fuse_set_options_dev_opt(const char* device, uint32_t c, uint32_t e, uint32_t i, uint32_t o, uint32_t r, uint32_t w)
+
+EXPORT void ffsp_fuse_set_options_dev_opt(const char* device, uint32_t c, uint32_t e, uint32_t i, uint32_t o, uint32_t r, uint32_t w)
 {
     ffsp::fuse::set_options(device, { c, e, i, o, r, w });
 }
-void ffsp_fuse_set_options_buf_opt(size_t memsize, uint32_t c, uint32_t e, uint32_t i, uint32_t o, uint32_t r, uint32_t w)
+
+EXPORT void ffsp_fuse_set_options_buf_opt(size_t memsize, uint32_t c, uint32_t e, uint32_t i, uint32_t o, uint32_t r, uint32_t w)
 {
     ffsp::fuse::set_options(memsize, { c, e, i, o, r, w });
 }
-void* ffsp_fuse_init(fuse_conn_info* conn)
+
+EXPORT void* ffsp_fuse_init(fuse_conn_info* conn)
 {
     return ffsp::fuse::init(conn);
 }
-void ffsp_fuse_destroy(void* user)
+
+EXPORT void ffsp_fuse_destroy(void* user)
 {
     return ffsp::fuse::destroy(user);
 }
+
 #ifdef _WIN32
-int ffsp_fuse_getattr(void* fs, const char* path, struct FUSE_STAT* stbuf)
+EXPORT int ffsp_fuse_getattr(void* fs, const char* path, struct FUSE_STAT* stbuf)
 #else
-int ffsp_fuse_getattr(void* fs, const char* path, struct ::stat* stbuf)
+EXPORT int ffsp_fuse_getattr(void* fs, const char* path, struct ::stat* stbuf)
 #endif
 {
     return ffsp::fuse::getattr(*reinterpret_cast<ffsp::fs_context*>(fs), path, stbuf);
 }
-int ffsp_fuse_readdir(void* fs, const char* path, void* buf, fuse_fill_dir_t filler, FUSE_OFF_T offset, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_readdir(void* fs, const char* path, void* buf, fuse_fill_dir_t filler, FUSE_OFF_T offset, fuse_file_info* fi)
 {
     return ffsp::fuse::readdir(*reinterpret_cast<ffsp::fs_context*>(fs), path, buf, filler, offset, fi);
 }
-int ffsp_fuse_open(void* fs, const char* path, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_open(void* fs, const char* path, fuse_file_info* fi)
 {
     return ffsp::fuse::open(*reinterpret_cast<ffsp::fs_context*>(fs), path, fi);
 }
-int ffsp_fuse_release(void* fs, const char* path, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_release(void* fs, const char* path, fuse_file_info* fi)
 {
     return ffsp::fuse::release(*reinterpret_cast<ffsp::fs_context*>(fs), path, fi);
 }
-int ffsp_fuse_truncate(void* fs, const char* path, FUSE_OFF_T length)
+
+EXPORT int ffsp_fuse_truncate(void* fs, const char* path, FUSE_OFF_T length)
 {
     return ffsp::fuse::truncate(*reinterpret_cast<ffsp::fs_context*>(fs), path, length);
 }
-int ffsp_fuse_read(void* fs, const char* path, char* buf, size_t count, FUSE_OFF_T offset, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_read(void* fs, const char* path, char* buf, size_t count, FUSE_OFF_T offset, fuse_file_info* fi)
 {
     return ffsp::fuse::read(*reinterpret_cast<ffsp::fs_context*>(fs), path, buf, count, offset, fi);
 }
-int ffsp_fuse_write(void* fs, const char* path, const char* buf, size_t count, FUSE_OFF_T offset, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_write(void* fs, const char* path, const char* buf, size_t count, FUSE_OFF_T offset, fuse_file_info* fi)
 {
     return ffsp::fuse::write(*reinterpret_cast<ffsp::fs_context*>(fs), path, buf, count, offset, fi);
 }
-int ffsp_fuse_mknod(void* fs, const char* path, mode_t mode, dev_t device)
+
+EXPORT int ffsp_fuse_mknod(void* fs, const char* path, mode_t mode, dev_t device)
 {
     return ffsp::fuse::mknod(*reinterpret_cast<ffsp::fs_context*>(fs), path, mode, device);
 }
-int ffsp_fuse_link(void* fs, const char* oldpath, const char* newpath)
+
+EXPORT int ffsp_fuse_link(void* fs, const char* oldpath, const char* newpath)
 {
     return ffsp::fuse::link(*reinterpret_cast<ffsp::fs_context*>(fs), oldpath, newpath);
 }
-int ffsp_fuse_symlink(void* fs, const char* oldpath, const char* newpath)
+
+EXPORT int ffsp_fuse_symlink(void* fs, const char* oldpath, const char* newpath)
 {
     return ffsp::fuse::symlink(*reinterpret_cast<ffsp::fs_context*>(fs), oldpath, newpath);
 }
-int ffsp_fuse_readlink(void* fs, const char* path, char* buf, size_t bufsize)
+
+EXPORT int ffsp_fuse_readlink(void* fs, const char* path, char* buf, size_t bufsize)
 {
     return ffsp::fuse::readlink(*reinterpret_cast<ffsp::fs_context*>(fs), path, buf, bufsize);
 }
-int ffsp_fuse_mkdir(void* fs, const char* path, mode_t mode)
+
+EXPORT int ffsp_fuse_mkdir(void* fs, const char* path, mode_t mode)
 {
     return ffsp::fuse::mkdir(*reinterpret_cast<ffsp::fs_context*>(fs), path, mode);
 }
-int ffsp_fuse_rmdir(void* fs, const char* path)
+
+EXPORT int ffsp_fuse_rmdir(void* fs, const char* path)
 {
     return ffsp::fuse::rmdir(*reinterpret_cast<ffsp::fs_context*>(fs), path);
 }
-int ffsp_fuse_unlink(void* fs, const char* path)
+
+EXPORT int ffsp_fuse_unlink(void* fs, const char* path)
 {
     return ffsp::fuse::unlink(*reinterpret_cast<ffsp::fs_context*>(fs), path);
 }
-int ffsp_fuse_rename(void* fs, const char* oldpath, const char* newpath)
+
+EXPORT int ffsp_fuse_rename(void* fs, const char* oldpath, const char* newpath)
 {
     return ffsp::fuse::rename(*reinterpret_cast<ffsp::fs_context*>(fs), oldpath, newpath);
 }
-int ffsp_fuse_utimens(void* fs, const char* path, const struct ::timespec tv[2])
+
+EXPORT int ffsp_fuse_utimens(void* fs, const char* path, const struct ::timespec tv[2])
 {
     return ffsp::fuse::utimens(*reinterpret_cast<ffsp::fs_context*>(fs), path, tv);
 }
-int ffsp_fuse_chmod(void* fs, const char* path, mode_t mode)
+
+EXPORT int ffsp_fuse_chmod(void* fs, const char* path, mode_t mode)
 {
     return ffsp::fuse::chmod(*reinterpret_cast<ffsp::fs_context*>(fs), path, mode);
 }
-int ffsp_fuse_chown(void* fs, const char* path, uid_t uid, gid_t gid)
+
+EXPORT int ffsp_fuse_chown(void* fs, const char* path, uid_t uid, gid_t gid)
 {
     return ffsp::fuse::chown(*reinterpret_cast<ffsp::fs_context*>(fs), path, uid, gid);
 }
-int ffsp_fuse_statfs(void* fs, const char* path, struct ::statvfs* sfs)
+
+EXPORT int ffsp_fuse_statfs(void* fs, const char* path, struct ::statvfs* sfs)
 {
     return ffsp::fuse::statfs(*reinterpret_cast<ffsp::fs_context*>(fs), path, sfs);
 }
-int ffsp_fuse_flush(void* fs, const char* path, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_flush(void* fs, const char* path, fuse_file_info* fi)
 {
     return ffsp::fuse::flush(*reinterpret_cast<ffsp::fs_context*>(fs), path, fi);
 }
-int ffsp_fuse_fsync(void* fs, const char* path, int datasync, fuse_file_info* fi)
+
+EXPORT int ffsp_fuse_fsync(void* fs, const char* path, int datasync, fuse_file_info* fi)
 {
     return ffsp::fuse::fsync(*reinterpret_cast<ffsp::fs_context*>(fs), path, datasync, fi);
 }
 
-void ffsp_log_init(const char* logname, int level, const char* logfile)
+EXPORT void ffsp_log_init(const char* logname, int level, const char* logfile)
 {
     ffsp::log_init(logname, static_cast<spdlog::level::level_enum>(level), logfile ? logfile : "");
 }
-void ffsp_log_uninit()
+
+EXPORT void ffsp_log_uninit()
 {
     ffsp::log_uninit();
 }
 
-} //extern "C"
+} // extern "C"
