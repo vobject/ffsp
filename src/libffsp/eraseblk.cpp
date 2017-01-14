@@ -348,7 +348,7 @@ ssize_t write_meta_data(fs_context& fs)
     memcpy(fs.buf, fs.eb_usage.data(), eb_usage_size);
 
     size_t ino_map_size = fs.nino * sizeof(uint32_t);
-    memcpy(fs.buf + eb_usage_size, fs.ino_map, ino_map_size);
+    memcpy(fs.buf + eb_usage_size, fs.ino_map.data(), ino_map_size);
 
     size_t meta_data_size = eb_usage_size + ino_map_size;
     uint64_t offset = fs.clustersize;

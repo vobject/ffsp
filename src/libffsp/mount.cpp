@@ -32,6 +32,9 @@
 #include "summary.hpp"
 #include "utils.hpp"
 
+#include <algorithm>
+#include <memory>
+
 #include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
@@ -46,19 +49,19 @@
 namespace ffsp
 {
 
-static void read_super(fs_context& fs)
+static bool read_super(fs_context& fs)
 {
     superblock sb;
     ssize_t rc = read_raw(*fs.io_ctx, &sb, sizeof(superblock), 0);
     if (rc < 0)
     {
         log().critical("reading super block failed");
-        abort();
+        return false;
     }
     debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
 
     // The super block is only read once and its content is saved
-    //  inside the ffsp structure.
+    // inside the ffsp structure.
     fs.fsid = get_be32(sb.s_fsid);
     fs.flags = get_be32(sb.s_flags);
     fs.neraseblocks = get_be32(sb.s_neraseblocks);
@@ -70,9 +73,10 @@ static void read_super(fs_context& fs)
     fs.neraseopen = get_be32(sb.s_neraseopen);
     fs.nerasereserve = get_be32(sb.s_nerasereserve);
     fs.nerasewrites = get_be32(sb.s_nerasewrites);
+    return true;
 }
 
-static void read_eb_usage(fs_context& fs)
+static bool read_eb_usage(fs_context& fs)
 {
     fs.eb_usage.resize(fs.neraseblocks);
 
@@ -84,108 +88,89 @@ static void read_eb_usage(fs_context& fs)
     if (rc < 0)
     {
         log().critical("reading erase block info failed");
-        abort();
+        return false;
     }
     debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
+    return true;
 }
 
-static void read_ino_map(fs_context& fs)
+static bool read_ino_map(fs_context& fs)
 {
-    // Size of the array in bytes holding the cluster ids.
+    fs.ino_map.resize(fs.nino);
+
+    // size of the array holding the cluster ids in bytes
     uint64_t size = fs.nino * sizeof(uint32_t);
+    uint64_t offset = fs.erasesize - size;
 
-    fs.ino_map = (be32_t*)malloc(size);
-    if (!fs.ino_map)
-    {
-        log().critical("malloc(inode ids - size={}) failed", size);
-        abort();
-    }
-
-    uint64_t offset = fs.erasesize - size; // read the invalid inode, too
-    ssize_t rc = read_raw(*fs.io_ctx, fs.ino_map, size, offset);
+    ssize_t rc = read_raw(*fs.io_ctx, fs.ino_map.data(), size, offset);
     if (rc < 0)
     {
         log().critical("reading cluster ids failed");
-        free(fs.ino_map);
-        abort();
+        return false;
     }
     debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
+    return true;
 }
 
-static void read_cl_occupancy(fs_context& fs)
+static bool read_cl_occupancy(fs_context& fs)
 {
     off_t size = io_backend_size(*fs.io_ctx);
     if (size == -1)
     {
         log().critical("retrieving file size from device failed");
-        exit(EXIT_FAILURE);
+        return false;
     }
 
-    int cl_occ_size = (size / fs.clustersize) * sizeof(int);
-    fs.cl_occupancy = (int*)malloc(cl_occ_size);
-    if (!fs.cl_occupancy)
-    {
-        log().critical("malloc(cluster occupancy array) failed");
-        abort();
-    }
-    memset(fs.cl_occupancy, 0, cl_occ_size);
+    fs.cl_occupancy.resize(size / fs.clustersize);
+    std::fill(fs.cl_occupancy.begin(), fs.cl_occupancy.end(), 0);
 
-    /* Initialize the cluster occupancy array. Check how many inodes
-     * are valid in each cluster. */
+    // Initialize the cluster occupancy array. Check how many inodes
+    // are valid in each cluster.
     for (unsigned int i = 1; i < fs.nino; i++)
     {
         cl_id_t cl_id = get_be32(fs.ino_map[i]);
         if (cl_id)
             fs.cl_occupancy[cl_id]++;
     }
+    return true;
 }
 
 fs_context* mount(io_backend* ctx)
 {
-    auto* fs = new fs_context;
+    if (!ctx)
+    {
+        log().error("ffsp::mount(): invalid io backend");
+        return nullptr;
+    }
 
+    auto fs = std::make_unique<fs_context>();
     fs->io_ctx = ctx;
 
-    read_super(*fs);
-    read_eb_usage(*fs);
-    read_ino_map(*fs);
+    if (   !read_super(*fs)
+        || !read_eb_usage(*fs)
+        || !read_ino_map(*fs))
+    {
+        log().critical("ffsp::mount(): failed to read data from super erase block");
+        return nullptr;
+    }
+
+    if (!read_cl_occupancy(*fs))
+    {
+        log().critical("ffsp::mount(): failed to read cluster occupancy data");
+        return nullptr;
+    }
 
     fs->summary_cache = summary_cache_init(*fs);
-
     fs->inode_cache = inode_cache_init(*fs);
-
-    size_t ino_bitmask_size = fs->nino / sizeof(uint32_t) + 1;
-    fs->ino_status_map = (uint32_t*)malloc(ino_bitmask_size);
-    if (!fs->ino_status_map)
-    {
-        log().critical("malloc(dirty inodes mask) failed");
-        goto error;
-    }
-    memset(fs->ino_status_map, 0, ino_bitmask_size);
-
-    read_cl_occupancy(*fs);
-
-    fs->dirty_ino_cnt = 0;
-
     fs->gcinfo = gcinfo_init(*fs);
 
-    fs->buf = (char*)malloc(fs->erasesize);
-    if (!fs->buf)
-    {
-        log().critical("ffsp::mount(): malloc(erasesize) failed");
-        goto error;
-    }
-    return fs;
+    size_t ino_bitmask_size = fs->nino / 8;
+    fs->ino_status_map = new uint32_t[ino_bitmask_size / sizeof(uint32_t)];
+    memset(fs->ino_status_map, 0, ino_bitmask_size);
 
-error:
-    /* FIXME: will crash if one of the pointer was not yet allocated! */
+    fs->buf = new char[fs->erasesize];
 
-    free(fs->ino_map);
-    free(fs->ino_status_map);
-    free(fs->cl_occupancy);
-    free(fs->gcinfo);
-    free(fs->buf);
-    return nullptr;
+    return fs.release();
 }
 
 io_backend* unmount(fs_context* fs)
@@ -198,10 +183,8 @@ io_backend* unmount(fs_context* fs)
     summary_cache_uninit(fs->summary_cache);
     gcinfo_uninit(fs->gcinfo);
 
-    free(fs->ino_map);
-    free(fs->ino_status_map);
-    free(fs->cl_occupancy);
-    free(fs->buf);
+    delete[] fs->ino_status_map;
+    delete[] fs->buf;
 
     io_backend* io_ctx = fs->io_ctx;
     delete fs;

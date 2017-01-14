@@ -159,19 +159,19 @@ struct gcinfo;
 
 struct fs_context
 {
-    io_backend* io_ctx;
+    io_backend* io_ctx{nullptr};
 
-    uint32_t fsid;          // file system ID
-    uint32_t flags;         // mount flags - TODO: What are these for? -> noatime(?)
-    uint32_t neraseblocks;  // number of erase blocks
-    uint32_t nino;          // supported number of files on the drive
-    uint32_t blocksize;     // currently same as clustersize
-    uint32_t clustersize;   // size of a cluster (aka inode + data)
-    uint32_t erasesize;     // size of an erase block (in bytes or clusters?)
-    uint32_t ninoopen;      // dirty inodes to cache before writing to disk
-    uint32_t neraseopen;    // erase blocks to be hold open simultaneously
-    uint32_t nerasereserve; // number of erase blocks for internal use
-    uint32_t nerasewrites;  // number of erase block to finalize before GC
+    uint32_t fsid{ 0 };          // file system ID
+    uint32_t flags{ 0 };         // mount flags - TODO: What are these for? -> noatime(?)
+    uint32_t neraseblocks{ 0 };  // number of erase blocks
+    uint32_t nino{ 0 };          // supported number of files on the drive
+    uint32_t blocksize{ 0 };     // currently same as clustersize
+    uint32_t clustersize{ 0 };   // size of a cluster (aka inode + data)
+    uint32_t erasesize{ 0 };     // size of an erase block (in bytes or clusters?)
+    uint32_t ninoopen{ 0 };      // dirty inodes to cache before writing to disk
+    uint32_t neraseopen{ 0 };    // erase blocks to be hold open simultaneously
+    uint32_t nerasereserve{ 0 }; // number of erase blocks for internal use
+    uint32_t nerasewrites{ 0 };  // number of erase block to finalize before GC
 
     // Array with information about every erase block
     std::vector<eraseblock> eb_usage;
@@ -181,7 +181,7 @@ struct fs_context
     //  It is read at mount time and is occasionally written back to disk.
     //  It resides inside the first erase block of the file system and NOT
     //  inside the log.
-    be32_t* ino_map;
+    std::vector<be32_t> ino_map;
 
     // Head of a linked list that contains all the erase block summary
     //  to all currently open cluster indirect erase blocks. When a
@@ -191,17 +191,17 @@ struct fs_context
     // There can be only one erase block summary per erase block type at once.
     // This is because there can be only one open erase block per erase block type at once.
     // Therefore each erase block type can exist only once in the summary list at any point in time.
-    ffsp::summary_cache* summary_cache;
+    ffsp::summary_cache* summary_cache{ nullptr };
 
     // A data structure that caches all inodes that have been
     //  looked up from the file system. "ino_status_map" (see below) is
     //  used to determine which of those inodes are dirty.
-    ffsp::inode_cache* inode_cache;
+    ffsp::inode_cache* inode_cache{ nullptr };
 
     // A buffer that represents each (possible) inode with one bit. Its
     //  status indicates whether the (cached) inode was changed (is dirty)
     //  but was not yet written back to the medium.
-    uint32_t* ino_status_map;
+    uint32_t* ino_status_map{ nullptr };
 
     /* TODO: replace this with a real data structure and provide
      * accessory functions for manipulation */
@@ -209,20 +209,20 @@ struct fs_context
     //  It contains information about how many valid inodes are present
     //  inside the concerned cluster.The array is indexed using the
     //  cluster id resp. cluster_offset / cluster_size.
-    int* cl_occupancy;
+    std::vector<int> cl_occupancy;
 
     // A variable that counting the number of dirty inodes cached in
     //  main memory. The dirty inodes should be written back to disk if
     //  this counter reaches fs.ninoopen which is set at mkfs time.
-    unsigned int dirty_ino_cnt;
+    unsigned int dirty_ino_cnt{ 0 };
 
-    ffsp::gcinfo* gcinfo;
+    ffsp::gcinfo* gcinfo{ nullptr };
 
     // Static helper buffer, one erase block large.
     // It is used for moving around clusters or erase blocks.
     // For example when expanding inode embedded data to cluster indirect
     //  or from cluster indirect to erase block indirect.
-    char* buf;
+    char* buf{ nullptr };
 };
 
 } // namespace ffsp

@@ -55,7 +55,10 @@ struct summary
         std::fill(buf_.begin(), buf_.end(), put_be32(0));
         open_ = false;
     }
-    const void* data() const { return buf_.data(); }
+    const void* data() const
+    {
+        return buf_.data();
+    }
     std::vector<be32_t> buf_;
     bool open_ = false;
 };
