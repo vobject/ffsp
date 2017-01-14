@@ -34,16 +34,17 @@ namespace ffsp
 {
 
 bool eb_is_type(const fs_context& fs, eb_id_t eb_id, eraseblock_type type);
-bool eb_is_freeable(const fs_context& fs, eb_id_t eb_id);
 int eb_get_cvalid(const fs_context& fs, eb_id_t eb_id);
 void eb_inc_cvalid(fs_context& fs, eb_id_t eb_id);
 void eb_dec_cvalid(fs_context& fs, eb_id_t eb_id);
 
-unsigned int emtpy_eraseblk_count(const fs_context& fs);
 eraseblock_type get_eraseblk_type(const fs_context& fs, inode_data_type type, bool dentry);
 
-bool find_writable_cluster(fs_context& fs, eraseblock_type eb_type, eb_id_t& eb_id, cl_id_t& cl_id);
+unsigned int emtpy_eraseblk_count(const fs_context& fs);
+eb_id_t find_empty_eraseblk(const fs_context& fs);
+bool find_writable_cluster(const fs_context& fs, eraseblock_type eb_type, eb_id_t& eb_id, cl_id_t& cl_id);
 void commit_write_operation(fs_context& fs, eraseblock_type eb_type, eb_id_t eb_id, be32_t ino_no);
+void free_empty_eraseblks(fs_context& fs);
 void close_eraseblks(fs_context& fs);
 ssize_t write_meta_data(fs_context& fs);
 

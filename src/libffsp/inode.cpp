@@ -808,7 +808,7 @@ void invalidate_ind_ptr(fs_context& fs, const be32_t* ind_ptr, int cnt, inode_da
         else if (ind_type == inode_data_type::ebin)
         {
             // The erase block type is the only field of importance in this case.
-            // Set the erase blocks usage information to EMPTY and we are done.
+            // Set the erase blocks usage information to "free" and we are done.
             eb_id_t eb_id = ind_id;
             fs.eb_usage[eb_id].e_type = eraseblock_type::empty;
         }

@@ -36,27 +36,6 @@ bool eb_is_type(const fs_context& fs, eb_id_t eb_id, eraseblock_type type)
     return fs.eb_usage[eb_id].e_type == type;
 }
 
-/* Check if garbage collection can be performed on the given erase block type. */
-static bool is_collectible_type(eraseblock_type type)
-{
-    switch (type)
-    {
-        case eraseblock_type::dentry_inode:
-        case eraseblock_type::dentry_clin:
-        case eraseblock_type::file_inode:
-        case eraseblock_type::file_clin:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool eb_is_freeable(const fs_context& fs, eb_id_t eb_id)
-{
-    const eraseblock& eb = fs.eb_usage[eb_id];
-    return is_collectible_type(eb.e_type) && (get_be16(eb.e_cvalid) == 0);
-}
-
 int eb_get_cvalid(const fs_context& fs, eb_id_t eb_id)
 {
     return get_be16(fs.eb_usage[eb_id].e_cvalid);
@@ -83,7 +62,7 @@ unsigned int emtpy_eraseblk_count(const fs_context& fs)
     return cnt;
 }
 
-static eb_id_t find_empty_eraseblk(const fs_context& fs)
+eb_id_t find_empty_eraseblk(const fs_context& fs)
 {
     if (emtpy_eraseblk_count(fs) <= fs.nerasereserve)
         return FFSP_INVALID_EB_ID;
@@ -158,7 +137,7 @@ eraseblock_type get_eraseblk_type(const fs_context& fs, inode_data_type type, bo
     return eraseblock_type::ebin;
 }
 
-bool find_writable_cluster(fs_context& fs, eraseblock_type eb_type,
+bool find_writable_cluster(const fs_context& fs, eraseblock_type eb_type,
                            eb_id_t& eb_id, cl_id_t& cl_id)
 {
     if (eb_type == eraseblock_type::ebin)
@@ -285,6 +264,48 @@ void commit_write_operation(fs_context& fs, eraseblock_type eb_type,
         fs.eb_usage[eb_id].e_lastwrite = put_be16(write_time);
         inc_be16(fs.eb_usage[eb_id].e_writeops);
         gcinfo_inc_writecnt(fs, eb_type);
+    }
+}
+
+static bool free_eraseblk(eraseblock& eb)
+{
+    if (   eb.e_type == eraseblock_type::dentry_inode
+        || eb.e_type == eraseblock_type::dentry_clin
+        || eb.e_type == eraseblock_type::file_inode
+        || eb.e_type == eraseblock_type::file_clin)
+    {
+        // The given erase block contains inodes or indirect pointers
+        // and therefore tracks it's valid cluster count.
+        // Set it to "free" if it doesn't contain any valid clusters.
+        if (get_be16(eb.e_cvalid) == 0)
+        {
+            eb.e_type = eraseblock_type::empty;
+            eb.e_lastwrite = put_be16(0);
+            eb.e_writeops = put_be16(0);
+            return true;
+        }
+    }
+    else if (eb.e_type == eraseblock_type::ebin)
+    {
+        // TODO: implement me!
+        log().error("Unable to free ebin erase block {}", eb);
+    }
+    // the given erase block cannot be freed
+    return false;
+}
+
+void free_empty_eraseblks(fs_context& fs)
+{
+    // Searches inside the erase block usage map for erase blocks
+    // containing no valid data and sets them to "free".
+
+    // erase block id "0" is reserved for the super erase block
+    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
+    {
+        if (free_eraseblk(fs.eb_usage[eb_id]))
+        {
+            log().info("Empty erase block {} freed", eb_id);
+        }
     }
 }
 

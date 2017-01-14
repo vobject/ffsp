@@ -176,35 +176,6 @@ static void swap_cluster_id(ffsp_fs& fs, unsigned int ino_no,
 }
 #endif
 
-/*
- * Searches inside the erase block usage map for erase blocks that contain
- * no valid data clusters and sets them to "free".
- */
-static void collect_empty_eraseblks(fs_context& fs)
-{
-    /* erase block id "0" is always reserved */
-    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
-    {
-        if (eb_is_freeable(fs, eb_id))
-        {
-            // The erase block contains inodes or indirect pointers.
-            // Set it to "free" since it does not contain any valid clusters.
-            fs.eb_usage[eb_id].e_type = eraseblock_type::empty;
-            fs.eb_usage[eb_id].e_lastwrite = put_be16(0);
-            fs.eb_usage[eb_id].e_writeops = put_be16(0);
-        }
-    }
-}
-
-static eb_id_t find_empty_eraseblk(const fs_context& fs)
-{
-    /* erase block id "0" is always reserved */
-    for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; eb_id++)
-        if (eb_is_type(fs, eb_id, eraseblock_type::empty))
-            return eb_id;
-    return FFSP_INVALID_EB_ID;
-}
-
 /* get a pointer to the gcinfo structure of a specific erase block type */
 static gcinfo* get_gcinfo(const fs_context& fs, eraseblock_type eb_type)
 {
@@ -454,7 +425,7 @@ void gc(fs_context& fs)
 
     if (emtpy_eraseblk_count(fs) < fs.nerasereserve)
     {
-        log().debug("ffsp::gc(): too few free erase blocks present.");
+        log().error("ffsp::gc(): too few free erase blocks present.");
         return;
     }
 
@@ -472,7 +443,7 @@ void gc(fs_context& fs)
         else if (summary_required(fs, eb_type))
         {
             log().debug("ffsp::gc(): collecting eb_type {} with summary", eb_type);
-            log().warn("ffsp::gc(): collecting indirect eb_type disabled!");
+            log().error("ffsp::gc(): collecting indirect eb_type disabled!");
 #if 0
             /* FIXME: Enable GC of cluster indirect data!
              *  The amount of valid clusters for cluster indirect
@@ -488,7 +459,7 @@ void gc(fs_context& fs)
         gcinfo* info = get_gcinfo(fs, eb_type);
         info->write_cnt = 0;
     }
-    collect_empty_eraseblks(fs);
+    free_empty_eraseblks(fs);
 }
 
 } // namespace ffsp
