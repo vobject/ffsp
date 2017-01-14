@@ -23,6 +23,8 @@
 
 #include "byteorder.hpp"
 
+#include <vector>
+
 #include <cassert>
 
 namespace ffsp
@@ -172,7 +174,7 @@ struct fs_context
     uint32_t nerasewrites;  // number of erase block to finalize before GC
 
     // Array with information about every erase block
-    eraseblock* eb_usage;
+    std::vector<eraseblock> eb_usage;
 
     // This array contains the cluster ids where the specified inode is
     //  located on disk. It is indexed using the inode number (ino->i_no).

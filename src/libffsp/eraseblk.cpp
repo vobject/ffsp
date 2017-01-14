@@ -69,15 +69,8 @@ eb_id_t find_empty_eraseblk(const fs_context& fs)
 
     // Erase block id "0" is always reserved.
     for (eb_id_t eb_id = 1; eb_id < fs.neraseblocks; ++eb_id)
-    {
         if (fs.eb_usage[eb_id].e_type == eraseblock_type::empty)
-        {
-            fs.eb_usage[eb_id].e_lastwrite = put_be16(0);
-            fs.eb_usage[eb_id].e_cvalid = put_be16(0);
-            fs.eb_usage[eb_id].e_writeops = put_be16(0);
             return eb_id;
-        }
-    }
     return FFSP_INVALID_EB_ID;
 }
 
@@ -352,7 +345,7 @@ ssize_t write_meta_data(fs_context& fs)
      */
 
     size_t eb_usage_size = fs.neraseblocks * sizeof(eraseblock);
-    memcpy(fs.buf, fs.eb_usage, eb_usage_size);
+    memcpy(fs.buf, fs.eb_usage.data(), eb_usage_size);
 
     size_t ino_map_size = fs.nino * sizeof(uint32_t);
     memcpy(fs.buf + eb_usage_size, fs.ino_map, ino_map_size);

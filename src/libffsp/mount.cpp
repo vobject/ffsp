@@ -74,22 +74,16 @@ static void read_super(fs_context& fs)
 
 static void read_eb_usage(fs_context& fs)
 {
-    // Size of the array that holds the erase block meta information
+    fs.eb_usage.resize(fs.neraseblocks);
+
+    // size of all erase block meta information in bytes
     uint64_t size = fs.neraseblocks * sizeof(eraseblock);
-
-    fs.eb_usage = (eraseblock*)malloc(size);
-    if (!fs.eb_usage)
-    {
-        log().critical("malloc(erase blocks - size={}) failed", size);
-        abort();
-    }
-
     uint64_t offset = fs.clustersize;
-    ssize_t rc = read_raw(*fs.io_ctx, fs.eb_usage, size, offset);
+
+    ssize_t rc = read_raw(*fs.io_ctx, fs.eb_usage.data(), size, offset);
     if (rc < 0)
     {
         log().critical("reading erase block info failed");
-        free(fs.eb_usage);
         abort();
     }
     debug_update(fs, debug_metric::read_raw, static_cast<uint64_t>(rc));
@@ -186,7 +180,6 @@ fs_context* mount(io_backend* ctx)
 error:
     /* FIXME: will crash if one of the pointer was not yet allocated! */
 
-    free(fs->eb_usage);
     free(fs->ino_map);
     free(fs->ino_status_map);
     free(fs->cl_occupancy);
@@ -205,7 +198,6 @@ io_backend* unmount(fs_context* fs)
     summary_cache_uninit(fs->summary_cache);
     gcinfo_uninit(fs->gcinfo);
 
-    free(fs->eb_usage);
     free(fs->ino_map);
     free(fs->ino_status_map);
     free(fs->cl_occupancy);
