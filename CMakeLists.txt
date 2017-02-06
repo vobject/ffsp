@@ -9,12 +9,11 @@ option(FFSP_BUILD_MOUNT "Build file system mount tool." ON)
 option(FFSP_BUILD_BENCHMARKS "Build file system benchmarks." ON)
 option(FFSP_BUILD_TESTS "Build file system tests." ON)
 
-
 set(SPDLOG_INCLUDE_DIRS "lib/spdlog-0.11.0/include")
 
 if(WIN32)
-    set(FUSE_INCLUDE_DIRS "D:/Development/fs/dokany/dokan_fuse/include")
-    set(FUSE_LIBRARIES "D:/Development/fs/dokany/x64/Debug/dokanfuse1.lib")
+    set(FUSE_INCLUDE_DIRS ${DOKAN_INCLUDE_DIR} ${DOKAN_INCLUDE_DIR}/fuse)
+    set(FUSE_LIBRARIES ${DOKAN_LIB_DIR}/dokanfuse1)
 
     add_definitions(-DFUSE_USE_VERSION=26 -D_WIN32_WINNT=0x0601)
     add_definitions(-DNOMINMAX -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS /W4)
