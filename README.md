@@ -1,5 +1,8 @@
-FFSP - A Flash File System Prototype
-====================================
+# FFSP - A Flash File System Prototype
+
+[![Build status](https://ci.appveyor.com/api/projects/status/n7j070e6e4ketrl5/branch/master?svg=true)](https://ci.appveyor.com/project/vobject/ffsp/branch/master)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 
 FFSP is an experimental file system for consumer-level flash devices with the objective of providing improved write speeds over established file systems such as fat32, ext4, or btrfs. The file system respects how flash drives behave internally in order to achieve better write performance. The base for this is the article [Optimizing Linux with cheap flash drives](https://lwn.net/Articles/428584/) that researched the internal characteristics of memory cards and USB flash drives. FFSP is implemented using FUSE 2.6.
 
