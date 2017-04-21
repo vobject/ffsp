@@ -170,3 +170,16 @@ std::ostream& operator<<(std::ostream& os, const ffsp::eraseblock_type& eb_type)
     }
     return os << "unknown";
 }
+
+std::ostream& operator<<(std::ostream& os, const ffsp::ptr_wrapper<const char*>& wrapper)
+{
+    if (wrapper.ptr_)
+    {
+        os << wrapper.ptr_; // don't dereference const char*
+    }
+    else
+    {
+        os << static_cast<void*>(nullptr);
+    }
+    return os;
+}

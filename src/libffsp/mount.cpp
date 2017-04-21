@@ -30,7 +30,6 @@
 #include "log.hpp"
 #include "mkfs.hpp"
 #include "summary.hpp"
-#include "utils.hpp"
 
 #include <algorithm>
 #include <memory>

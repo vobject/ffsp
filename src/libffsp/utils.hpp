@@ -23,19 +23,10 @@
 
 #include "ffsp.hpp"
 
-#include <ctime>
-
-struct stat;
-struct statvfs;
-
 namespace ffsp
 {
 
 bool update_time(timespec& dest);
-
-void stat(fs_context& fs, const inode& ino, struct ::stat& stbuf);
-void statfs(fs_context& fs, struct ::statvfs& sfs);
-void utimens(fs_context& fs, inode& ino, const struct ::timespec tvi[2]);
 
 } // namespace ffsp
 

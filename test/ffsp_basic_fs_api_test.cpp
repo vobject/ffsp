@@ -18,7 +18,7 @@ class SingleMountFileSystemOperationsApiTest : public testing::Test
 protected:
     void SetUp() override
     {
-        ffsp::log_init("ffsp_test", spdlog::level::debug);
+        ffsp::log_init("ffsp_test", spdlog::level::trace);
 
         ASSERT_TRUE(ffsp::test::default_open_io_backend(true));
         ASSERT_TRUE(ffsp::test::default_make_fs());

@@ -35,6 +35,22 @@ void log_init(const std::string& logname, spdlog::level::level_enum level, const
 void log_uninit();
 spdlog::logger& log();
 
+template <typename T>
+struct ptr_wrapper
+{
+    explicit ptr_wrapper(T p)
+        : ptr_{ p }
+    {
+    }
+    T const ptr_;
+};
+
+template <typename T>
+ptr_wrapper<const T*> deref(const T* ptr)
+{
+    return ptr_wrapper<const T*>{ ptr };
+}
+
 } // namespace ffsp
 
 std::ostream& operator<<(std::ostream& os, const ffsp::superblock& sb);
@@ -45,5 +61,23 @@ std::ostream& operator<<(std::ostream& os, const ffsp::dentry& dent);
 
 std::ostream& operator<<(std::ostream& os, const ffsp::inode_data_type& inode_type);
 std::ostream& operator<<(std::ostream& os, const ffsp::eraseblock_type& eb_type);
+
+std::ostream& operator<<(std::ostream& os, const ffsp::ptr_wrapper<const char*>& wrapper);
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const ffsp::ptr_wrapper<T>& wrapper);
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os, const ffsp::ptr_wrapper<T>& wrapper)
+{
+    if (wrapper.ptr_)
+    {
+        os << *wrapper.ptr_;
+    }
+    else
+    {
+        os << static_cast<void*>(nullptr);
+    }
+    return os;
+}
 
 #endif /* LOG_HPP */

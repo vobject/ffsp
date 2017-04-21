@@ -88,6 +88,10 @@ if(FFSP_BUILD_FUSELIB)
         ${FFSP_PLATFORM_SRC}
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
+        src/libffsp-fuse/fuse_ffsp_log.hpp
+        src/libffsp-fuse/fuse_ffsp_log.cpp
+        src/libffsp-fuse/fuse_ffsp_utils.hpp
+        src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/libffsp-fuse/fuse_get_context.cpp
     )
     add_library(${FUSELIB_LIBRARY} SHARED ${FUSELIB_SRC})
@@ -125,6 +129,10 @@ if(FFSP_BUILD_MOUNT)
     set(MOUNT_SRC
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
+        src/libffsp-fuse/fuse_ffsp_log.hpp
+        src/libffsp-fuse/fuse_ffsp_log.cpp
+        src/libffsp-fuse/fuse_ffsp_utils.hpp
+        src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/mount.ffsp.cpp
     )
     add_executable(${MOUNT_BINARY} ${MOUNT_SRC})
@@ -147,6 +155,10 @@ if(FFSP_BUILD_BENCHMARKS)
     set(BENCHMARKS_SRC
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
+        src/libffsp-fuse/fuse_ffsp_log.hpp
+        src/libffsp-fuse/fuse_ffsp_log.cpp
+        src/libffsp-fuse/fuse_ffsp_utils.hpp
+        src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/libffsp-fuse/fuse_get_context.cpp
         bench/b.cpp
     )
@@ -171,6 +183,10 @@ if(FFSP_BUILD_TESTS)
     set(TESTS_SRC
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
+        src/libffsp-fuse/fuse_ffsp_log.hpp
+        src/libffsp-fuse/fuse_ffsp_log.cpp
+        src/libffsp-fuse/fuse_ffsp_utils.hpp
+        src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/libffsp-fuse/fuse_get_context.cpp
         test/ffsp_test_utils.hpp
         test/ffsp_test_utils.cpp
