@@ -70,7 +70,6 @@ if(FFSP_BUILD_LIB)
     )
     if(WIN32)
         set(FFSP_PLATFORM_SRC
-            src/platform/windows/gettimeofday.c
             src/platform/windows/strndup.c
         )
     endif()

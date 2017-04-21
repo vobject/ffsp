@@ -23,13 +23,13 @@
 #include "eraseblk.hpp"
 #include "inode.hpp"
 
+#include <chrono>
+
 #include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
 
-#ifdef _WIN32
-extern "C" int gettimeofday(struct timeval* tp, struct timezone* tzp);
-#else
+#ifndef _WIN32
 #include <sys/statvfs.h>
 #include <sys/time.h>
 #endif
@@ -72,10 +72,12 @@ static uint32_t inode_cnt(const fs_context& fs)
 
 bool update_time(timespec& dest)
 {
-    struct ::timeval tv;
-    gettimeofday(&tv, nullptr);
-    dest.sec = put_be64(tv.tv_sec);
-    dest.nsec = put_be32(tv.tv_usec * 1000);
+    const auto now = std::chrono::system_clock::now().time_since_epoch();
+    const auto sec = std::chrono::duration_cast<std::chrono::seconds>(now);
+    const auto nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(now-sec);
+
+    dest.sec = put_be64(sec.count());
+    dest.nsec = put_be32(nsec.count());
     return true;
 }
 
