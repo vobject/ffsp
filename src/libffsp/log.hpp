@@ -114,6 +114,33 @@ struct fmt::formatter<ffsp::inode> : fmt::formatter<std::string>
 };
 
 template<>
+struct fmt::formatter<ffsp::eraseblock_type> : fmt::formatter<std::string>
+{
+    auto format(const ffsp::eraseblock_type& eb_type, format_context& ctx) const -> decltype(ctx.out())
+    {
+        switch (eb_type) {
+        case ffsp::eraseblock_type::super:
+            return fmt::format_to(ctx.out(), "super");
+        case ffsp::eraseblock_type::dentry_inode:
+            return fmt::format_to(ctx.out(), "dentry_inode");
+        case ffsp::eraseblock_type::dentry_clin:
+            return fmt::format_to(ctx.out(), "dentry_clin");
+        case ffsp::eraseblock_type::file_inode:
+            return fmt::format_to(ctx.out(), "file_inode");
+        case ffsp::eraseblock_type::file_clin:
+            return fmt::format_to(ctx.out(), "file_clin");
+        case ffsp::eraseblock_type::ebin:
+            return fmt::format_to(ctx.out(), "ebin");
+        case ffsp::eraseblock_type::empty:
+            return fmt::format_to(ctx.out(), "empty");
+        case ffsp::eraseblock_type::invalid:
+            return fmt::format_to(ctx.out(), "invalid");
+        }
+        return fmt::format_to(ctx.out(), "unknown");
+    }
+};
+
+template<>
 struct fmt::formatter<ffsp::eraseblock> : fmt::formatter<std::string>
 {
     auto format(const ffsp::eraseblock& eb, format_context& ctx) const -> decltype(ctx.out())
@@ -156,33 +183,6 @@ struct fmt::formatter<ffsp::inode_data_type> : fmt::formatter<std::string>
             return fmt::format_to(ctx.out(), "clin");
         case ffsp::inode_data_type::ebin:
             return fmt::format_to(ctx.out(), "ebin");
-        }
-        return fmt::format_to(ctx.out(), "unknown");
-    }
-};
-
-template<>
-struct fmt::formatter<ffsp::eraseblock_type> : fmt::formatter<std::string>
-{
-    auto format(ffsp::eraseblock_type eb_type, format_context& ctx) const -> decltype(ctx.out())
-    {
-        switch (eb_type) {
-        case ffsp::eraseblock_type::super:
-            return fmt::format_to(ctx.out(), "super");
-        case ffsp::eraseblock_type::dentry_inode:
-            return fmt::format_to(ctx.out(), "dentry_inode");
-        case ffsp::eraseblock_type::dentry_clin:
-            return fmt::format_to(ctx.out(), "dentry_clin");
-        case ffsp::eraseblock_type::file_inode:
-            return fmt::format_to(ctx.out(), "file_inode");
-        case ffsp::eraseblock_type::file_clin:
-            return fmt::format_to(ctx.out(), "file_clin");
-        case ffsp::eraseblock_type::ebin:
-            return fmt::format_to(ctx.out(), "ebin");
-        case ffsp::eraseblock_type::empty:
-            return fmt::format_to(ctx.out(), "empty");
-        case ffsp::eraseblock_type::invalid:
-            return fmt::format_to(ctx.out(), "invalid");
         }
         return fmt::format_to(ctx.out(), "unknown");
     }

@@ -9,7 +9,7 @@
 #include "fuse.h"
 
 #include <string>
-#include <experimental/filesystem>
+#include <filesystem>
 
 #include <cstdio>
 #include <cstdlib>
@@ -182,13 +182,13 @@ namespace os
 
 bool exists(const char* path)
 {
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
     return fs::exists(path);
 }
 
 bool mkdir(const char* dir_path)
 {
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
     return fs::create_directory(dir_path);
 }
 

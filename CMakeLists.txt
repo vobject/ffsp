@@ -1,14 +1,23 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.20)
 
-project(ffsp)
+project(ffsp LANGUAGES CXX)
 
 option(FFSP_BUILD_LIB "Build file system library." ON)
 option(FFSP_BUILD_FUSELIB "Build fuse operations wrapper." ON)
 option(FFSP_BUILD_MKFS "Build file system creation tool." ON)
 option(FFSP_BUILD_MOUNT "Build file system mount tool." ON)
-option(FFSP_BUILD_TESTS "Build file system tests." OFF)
+option(FFSP_BUILD_TESTS "Build file system tests." ON)
 
-set(SPDLOG_INCLUDE_DIRS "lib/spdlog-1.15.3/include")
+include(FetchContent)
+
+# Fetch spdlog
+set(SPDLOG_BUILD_PIC ON CACHE BOOL "Build spdlog with -fPIC" FORCE)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.15.3
+)
+FetchContent_MakeAvailable(spdlog)
 
 if(WIN32)
     set(FUSE_INCLUDE_DIRS ${DOKAN_INCLUDE_DIR} ${DOKAN_INCLUDE_DIR}/fuse)
@@ -21,8 +30,6 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
 else()
-    set(SPDLOG_LIBRARIES "pthread")
-
     set(FUSE_INCLUDE_DIRS "/usr/include/fuse")
     set(FUSE_LIBRARIES "fuse" "pthread")
 
@@ -74,8 +81,9 @@ if(FFSP_BUILD_LIB)
     endif()
     add_library(${FFSP_LIBRARY} STATIC ${FFSP_SRC} ${FFSP_PLATFORM_SRC})
 
-    target_include_directories(${FFSP_LIBRARY} PRIVATE ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
-    set_target_properties(${FFSP_LIBRARY} PROPERTIES CXX_STANDARD 14)
+    target_include_directories(${FFSP_LIBRARY} PRIVATE ${FUSE_INCLUDE_DIRS})
+    target_link_libraries(${FFSP_LIBRARY} PRIVATE spdlog::spdlog)
+    set_target_properties(${FFSP_LIBRARY} PROPERTIES CXX_STANDARD 20)
 endif()
 
 
@@ -94,9 +102,9 @@ if(FFSP_BUILD_FUSELIB)
     )
     add_library(${FUSELIB_LIBRARY} SHARED ${FUSELIB_SRC})
 
-    target_include_directories(${FUSELIB_LIBRARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
-    target_link_libraries(${FUSELIB_LIBRARY} ${FUSE_LIBRARIES} ${SPDLOG_LIBRARIES})
-    set_target_properties(${FUSELIB_LIBRARY} PROPERTIES CXX_STANDARD 14)
+    target_include_directories(${FUSELIB_LIBRARY} PRIVATE src ${FUSE_INCLUDE_DIRS})
+    target_link_libraries(${FUSELIB_LIBRARY} PRIVATE ${FUSE_LIBRARIES} spdlog::spdlog)
+    set_target_properties(${FUSELIB_LIBRARY} PROPERTIES CXX_STANDARD 20)
 endif()
 
 
@@ -115,9 +123,9 @@ if(FFSP_BUILD_MKFS)
     endif()
     add_executable(${MKFS_BINARY} ${MKFS_SRC} ${MKFS_PLATFORM_SRC})
 
-    target_include_directories(${MKFS_BINARY} PRIVATE src ${MKFS_PLATFORM_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
-    target_link_libraries(${MKFS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES})
-    set_target_properties(${MKFS_BINARY} PROPERTIES CXX_STANDARD 14)
+    target_include_directories(${MKFS_BINARY} PRIVATE src ${MKFS_PLATFORM_INCLUDE_DIRS} ${FUSE_INCLUDE_DIRS})
+    target_link_libraries(${MKFS_BINARY} PRIVATE ${FFSP_LIBRARY} spdlog::spdlog)
+    set_target_properties(${MKFS_BINARY} PROPERTIES CXX_STANDARD 20)
 endif()
 
 
@@ -134,9 +142,9 @@ if(FFSP_BUILD_MOUNT)
     )
     add_executable(${MOUNT_BINARY} ${MOUNT_SRC})
 
-    target_include_directories(${MOUNT_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS})
-    target_link_libraries(${MOUNT_BINARY} ${FFSP_LIBRARY} ${FUSE_LIBRARIES} ${SPDLOG_LIBRARIES})
-    set_target_properties(${MOUNT_BINARY} PROPERTIES CXX_STANDARD 14)
+    target_include_directories(${MOUNT_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS})
+    target_link_libraries(${MOUNT_BINARY} PRIVATE ${FFSP_LIBRARY} ${FUSE_LIBRARIES} spdlog::spdlog)
+    set_target_properties(${MOUNT_BINARY} PROPERTIES CXX_STANDARD 20)
 endif()
 
 
@@ -144,11 +152,13 @@ if(FFSP_BUILD_TESTS)
     enable_testing()
     set(TESTS_BINARY "test.ffsp")
 
-    # Create Google test library
-    set(GTEST_ROOT lib/googletest-release-1.8.0/googletest)
-    set(GTEST_INCLUDE_DIRS ${GTEST_ROOT}/include)
-    set(GTEST_LIBRARIES "gtest" "gtest_main")
-    add_subdirectory(${GTEST_ROOT})
+    # Fetch GoogleTest
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.17.0
+    )
+    FetchContent_MakeAvailable(googletest)
 
     set(TESTS_SRC
         src/libffsp-fuse/fuse_ffsp.hpp
@@ -164,13 +174,9 @@ if(FFSP_BUILD_TESTS)
     )
     add_executable(${TESTS_BINARY} ${TESTS_SRC})
 
-    target_include_directories(${TESTS_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
-    if(WIN32)
-        target_link_libraries(${TESTS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${GTEST_LIBRARIES})
-    else()
-        target_link_libraries(${TESTS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${GTEST_LIBRARIES} stdc++fs)
-    endif()
-    set_target_properties(${TESTS_BINARY} PROPERTIES CXX_STANDARD 14)
+    target_include_directories(${TESTS_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${spdlog_SOURCE_DIR}/include)
+    target_link_libraries(${TESTS_BINARY} PRIVATE ${FFSP_LIBRARY} spdlog::spdlog GTest::gtest GTest::gtest_main)
+    set_target_properties(${TESTS_BINARY} PROPERTIES CXX_STANDARD 20)
 
     add_test(NAME ${TESTS_BINARY} COMMAND ${TESTS_BINARY})
 endif()

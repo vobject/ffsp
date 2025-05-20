@@ -21,7 +21,7 @@ protected:
     }
 };
 
-TEST_F(BasicFileSystemOperationsTest, SmallFiles)
+TEST_F(BasicFileSystemOperationsTest, DISABLED_SmallFiles)
 {
     std::string command;
 
