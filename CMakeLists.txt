@@ -6,7 +6,6 @@ option(FFSP_BUILD_LIB "Build file system library." ON)
 option(FFSP_BUILD_FUSELIB "Build fuse operations wrapper." ON)
 option(FFSP_BUILD_MKFS "Build file system creation tool." ON)
 option(FFSP_BUILD_MOUNT "Build file system mount tool." ON)
-option(FFSP_BUILD_BENCHMARKS "Build file system benchmarks." OFF)
 option(FFSP_BUILD_TESTS "Build file system tests." OFF)
 
 set(SPDLOG_INCLUDE_DIRS "lib/spdlog-1.15.3/include")
@@ -141,32 +140,6 @@ if(FFSP_BUILD_MOUNT)
 endif()
 
 
-if(FFSP_BUILD_BENCHMARKS)
-    set(BENCHMARKS_BINARY "benchmark.ffsp")
-
-    # Create Google benchmark library
-    set(GBENCHMARK_ROOT lib/benchmark-1.1.0)
-    set(GBENCHMARK_INCLUDE_DIRS ${GBENCHMARK_ROOT}/include)
-    set(GBENCHMARK_LIBRARIES "benchmark")
-    add_subdirectory(${GBENCHMARK_ROOT})
-
-    set(BENCHMARKS_SRC
-        src/libffsp-fuse/fuse_ffsp.hpp
-        src/libffsp-fuse/fuse_ffsp.cpp
-        src/libffsp-fuse/fuse_ffsp_log.hpp
-        src/libffsp-fuse/fuse_ffsp_utils.hpp
-        src/libffsp-fuse/fuse_ffsp_utils.cpp
-        src/libffsp-fuse/fuse_get_context.cpp
-        bench/b.cpp
-    )
-    add_executable(${BENCHMARKS_BINARY} ${BENCHMARKS_SRC})
-
-    target_include_directories(${BENCHMARKS_BINARY} PRIVATE src ${FUSE_INCLUDE_DIRS} ${SPDLOG_INCLUDE_DIRS} ${GBENCHMARK_INCLUDE_DIRS})
-    target_link_libraries(${BENCHMARKS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${GBENCHMARK_LIBRARIES})
-    set_target_properties(${BENCHMARKS_BINARY} PROPERTIES CXX_STANDARD 14)
-endif()
-
-
 if(FFSP_BUILD_TESTS)
     enable_testing()
     set(TESTS_BINARY "test.ffsp")
@@ -197,7 +170,7 @@ if(FFSP_BUILD_TESTS)
     else()
         target_link_libraries(${TESTS_BINARY} ${FFSP_LIBRARY} ${SPDLOG_LIBRARIES} ${GTEST_LIBRARIES} stdc++fs)
     endif()
-    set_target_properties(${BENCHMARKS_BINARY} PROPERTIES CXX_STANDARD 14)
+    set_target_properties(${TESTS_BINARY} PROPERTIES CXX_STANDARD 14)
 
     add_test(NAME ${TESTS_BINARY} COMMAND ${TESTS_BINARY})
 endif()
