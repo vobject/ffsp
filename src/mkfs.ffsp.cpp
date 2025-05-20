@@ -43,18 +43,26 @@ struct ffsp_mkfs_arguments
     uint32_t nerasewrites{ 0 };
 };
 
-std::ostream& operator<<(std::ostream& os, const ffsp_mkfs_arguments& args)
-{
-    return os << "{"
-              << "device=" << args.device
-              << ", clustersize=" << args.clustersize
-              << ", erasesize=" << args.erasesize
-              << ", ninoopen=" << args.ninoopen
-              << ", neraseopen=" << args.neraseopen
-              << ", nerasereserve=" << args.nerasereserve
-              << ", nerasewrites=" << args.nerasewrites
-              << "}";
-}
+// std::ostream& operator<<(std::ostream& os, const ffsp_mkfs_arguments& args)
+// {
+//     return os << "{"
+//               << "device=" << args.device
+//               << ", clustersize=" << args.clustersize
+//               << ", erasesize=" << args.erasesize
+//               << ", ninoopen=" << args.ninoopen
+//               << ", neraseopen=" << args.neraseopen
+//               << ", nerasereserve=" << args.nerasereserve
+//               << ", nerasewrites=" << args.nerasewrites
+//               << "}";
+// }
+
+template <>
+struct fmt::formatter<ffsp_mkfs_arguments> : fmt::formatter<std::string> {
+    auto format(const ffsp_mkfs_arguments& args, format_context &ctx) const -> decltype(ctx.out()) {
+        return fmt::format_to(ctx.out(), "{{device={}, clustersize={}, erasesize={}, ninoopen={}, neraseopen={}, nerasereserve={}, nerasewrites={}}}",
+            args.device, args.clustersize, args.erasesize, args.ninoopen, args.neraseopen, args.nerasereserve, args.nerasewrites);
+    }
+};
 
 static void show_usage(const char* progname)
 {

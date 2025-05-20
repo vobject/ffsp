@@ -67,9 +67,9 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} getattr(path={}, stbuf={})", id, deref(path), static_cast<void*>(stbuf));
+            log.trace("> {} getattr(path={}, stbuf={})", id, path, static_cast<void*>(stbuf));
             int rc = ffsp::fuse::getattr(fs, path, stbuf);
-            log.trace("< {} getattr(rc={}, stbuf={})", id, rc, deref(stbuf));
+            log.trace("< {} getattr(rc={}, stbuf={})", id, rc, log_ptr(stbuf));
             return rc;
         };
 
@@ -77,9 +77,9 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} readlink(path={}, buf={}, bufsize={})", id, deref(path), static_cast<void*>(buf), bufsize);
+            log.trace("> {} readlink(path={}, buf={}, bufsize={})", id, path, static_cast<void*>(buf), bufsize);
             int rc = ffsp::fuse::readlink(fs, path, buf, bufsize);
-            log.trace("< {} readlink(rc={}, buf={})", id, rc, deref(buf));
+            log.trace("< {} readlink(rc={}, buf={})", id, rc, buf);
             return rc;
         };
 
@@ -87,7 +87,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} mknod(path={}, mode={:#o}, device={})", id, deref(path), mode, device);
+            log.trace("> {} mknod(path={}, mode={:#o}, device={})", id, path, mode, device);
             int rc = ffsp::fuse::mknod(fs, path, mode, device);
             log.trace("< {} mknod(rc={})", id, rc);
             return rc;
@@ -97,7 +97,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} mkdir(path={}, mode={:#o})", id, deref(path), mode);
+            log.trace("> {} mkdir(path={}, mode={:#o})", id, path, mode);
             int rc = ffsp::fuse::mkdir(fs, path, mode);
             log.trace("< {} mkdir(rc={})", id, rc);
             return rc;
@@ -107,7 +107,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} unlink(path={})", id, deref(path));
+            log.trace("> {} unlink(path={})", id, path);
             int rc = ffsp::fuse::unlink(fs, path);
             log.trace("< {} unlink(rc={})", id, rc);
             return rc;
@@ -117,7 +117,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} rmdir(path={})", id, deref(path));
+            log.trace("> {} rmdir(path={})", id, path);
             int rc = ffsp::fuse::rmdir(fs, path);
             log.trace("< {} rmdir(rc={})", id, rc);
             return rc;
@@ -127,7 +127,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} symlink(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
+            log.trace("> {} symlink(oldpath={}, newpath={})", id, oldpath, newpath);
             int rc = ffsp::fuse::symlink(fs, oldpath, newpath);
             log.trace("< {} symlink(rc={})", id, rc);
             return rc;
@@ -137,7 +137,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} rename(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
+            log.trace("> {} rename(oldpath={}, newpath={})", id, oldpath, newpath);
             int rc = ffsp::fuse::rename(fs, oldpath, newpath);
             log.trace("< {} rename(rc={})", id, rc);
             return rc;
@@ -147,7 +147,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} link(oldpath={}, newpath={})", id, deref(oldpath), deref(newpath));
+            log.trace("> {} link(oldpath={}, newpath={})", id, oldpath, newpath);
             int rc = ffsp::fuse::link(fs, oldpath, newpath);
             log.trace("< {} link(rc={})", id, rc);
             return rc;
@@ -157,7 +157,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} chmod(path={}, mode={:#o})", id, deref(path), mode);
+            log.trace("> {} chmod(path={}, mode={:#o})", id, path, mode);
             int rc = ffsp::fuse::chmod(fs, path, mode);
             log.trace("< {} chmod(rc={})", id, rc);
             return rc;
@@ -167,7 +167,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} chown(path={}, uid={}, gid={})", id, deref(path), uid, gid);
+            log.trace("> {} chown(path={}, uid={}, gid={})", id, path, uid, gid);
             int rc = ffsp::fuse::chown(fs, path, uid, gid);
             log.trace("< {} chown(rc={})", id, rc);
             return rc;
@@ -177,7 +177,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} truncate(path={}, length={})", id, deref(path), length);
+            log.trace("> {} truncate(path={}, length={})", id, path, length);
             int rc = ffsp::fuse::truncate(fs, path, length);
             log.trace("< {} truncate(rc={})", id, rc);
             return rc;
@@ -187,7 +187,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} open(path={}, fi={})", id, deref(path), deref(fi));
+            log.trace("> {} open(path={}, fi={})", id, path, log_ptr(fi));
             int rc = ffsp::fuse::open(fs, path, fi);
             log.trace("< {} open(rc={})", id, rc);
             return rc;
@@ -198,7 +198,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} read(path={}, buf={}, nbyte={}, offset={}, fi={})", id, deref(path), static_cast<void*>(buf), nbyte, offset, deref(fi));
+            log.trace("> {} read(path={}, buf={}, nbyte={}, offset={}, fi={})", id, path, static_cast<void*>(buf), nbyte, offset, log_ptr(fi));
             int rc = ffsp::fuse::read(fs, path, buf, nbyte, offset, fi);
             log.trace("< {} read(rc={})", id, rc);
             return rc;
@@ -209,7 +209,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} write(path={}, buf={}, nbyte={}, offset={}, fi={})", id, deref(path), static_cast<const void*>(buf), nbyte, offset, deref(fi));
+            log.trace("> {} write(path={}, buf={}, nbyte={}, offset={}, fi={})", id, path, static_cast<const void*>(buf), nbyte, offset, log_ptr(fi));
             int rc = ffsp::fuse::write(fs, path, buf, nbyte, offset, fi);
             log.trace("< {} write(rc={})", id, rc);
             return rc;
@@ -219,9 +219,9 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} statfs(path={}, sfs={})", id, deref(path), static_cast<void*>(sfs));
+            log.trace("> {} statfs(path={}, sfs={})", id, path, static_cast<void*>(sfs));
             int rc = ffsp::fuse::statfs(fs, path, sfs);
-            log.trace("< {} statfs(rc={}, sfs={})", id, rc, deref(sfs));
+            log.trace("< {} statfs(rc={}, sfs={})", id, rc, log_ptr(sfs));
             return rc;
         };
 
@@ -229,7 +229,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} flush(path={}, fi={})", id, deref(path), deref(fi));
+            log.trace("> {} flush(path={}, fi={})", id, path, log_ptr(fi));
             int rc = ffsp::fuse::flush(fs, path, fi);
             log.trace("< {} flush(rc={})", id, rc);
             return rc;
@@ -239,7 +239,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} release(path={}, fi={})", id, deref(path), deref(fi));
+            log.trace("> {} release(path={}, fi={})", id, path, log_ptr(fi));
             int rc = ffsp::fuse::release(fs, path, fi);
             log.trace("< {} release(rc={})", id, rc);
             return rc;
@@ -249,7 +249,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} fsync(path={}, datasync={}, fi={})", id, deref(path), datasync, deref(fi));
+            log.trace("> {} fsync(path={}, datasync={}, fi={})", id, path, datasync, log_ptr(fi));
             int rc = ffsp::fuse::fsync(fs, path, datasync, fi);
             log.trace("< {} fsync(rc={})", id, rc);
             return rc;
@@ -261,7 +261,7 @@ struct fuse_ffsp_operations
             auto id = ++op_id_;
             auto& log = get_log();
             auto& fs = get_fs(fuse_get_context());
-            log.trace("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, deref(path), buf, (filler != nullptr), offset, deref(fi));
+            log.trace("> {} readdir(path={}, buf={}, filler={}, offset={}, fi={})", id, path, buf, (filler != nullptr), offset, log_ptr(fi));
             int rc = ffsp::fuse::readdir(fs, path, buf, filler, offset, fi);
             log.trace("< {} readdir(rc={})", id, rc);
             return rc;
@@ -270,9 +270,9 @@ struct fuse_ffsp_operations
         ops_.init = [](fuse_conn_info* conn) {
             auto id = ++op_id_;
             auto& log = get_log();
-            log.trace("> {} init(conn={})", id, deref(conn));
+            log.trace("> {} init(conn={})", id, log_ptr(conn));
             void* private_data = ffsp::fuse::init(conn);
-            log.trace("< {} init(private_data={}, conn={})", id, private_data, deref(conn));
+            log.trace("< {} init(private_data={}, conn={})", id, private_data, log_ptr(conn));
             return private_data;
         };
 

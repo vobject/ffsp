@@ -101,7 +101,7 @@ void set_options(size_t memsize, const mkfs_options& options)
 
 void* init(fuse_conn_info* conn)
 {
-    log().debug("init(conn={})", deref(conn));
+    log().debug("init(conn={})", log_ptr(conn));
 
     io_backend* io_ctx = mnt_opts.device
                              ? ffsp::io_backend_init(mnt_opts.device->c_str())
@@ -168,8 +168,8 @@ int getattr(fs_context& fs, const char* path, struct FUSE_STAT* stbuf)
 int getattr(fs_context& fs, const char* path, struct ::stat* stbuf)
 #endif
 {
-    log().debug("getattr(path={}, stbuf={})", deref(path), static_cast<void*>(stbuf));
-    
+    log().debug("getattr(path={}, stbuf={})", path, static_cast<void*>(stbuf));
+
     if (ffsp::is_debug_path(fs, path))
         return ffsp::debug_getattr(fs, path, *stbuf) ? 0 : -EIO;
 
@@ -216,10 +216,7 @@ int getattr(fs_context& fs, const char* path, struct ::stat* stbuf)
 int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
             FUSE_OFF_T offset, fuse_file_info* fi)
 {
-    (void)offset;
-    (void)fi;
-
-    log().debug("readdir(path={}, buf={}, filler={}, offset={}, fi={})", deref(path), buf, (filler != nullptr), offset, deref(fi));
+    log().debug("readdir(path={}, buf={}, filler_cb={}, offset={}, fi={})", path, buf, (filler != nullptr), offset, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
     {
@@ -262,7 +259,7 @@ int readdir(fs_context& fs, const char* path, void* buf, fuse_fill_dir_t filler,
 
 int open(fs_context& fs, const char* path, fuse_file_info* fi)
 {
-    log().debug("open(path={}, fi={})", deref(path), deref(fi));
+    log().debug("open(path={}, fi={})", path, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
         return ffsp::debug_open(fs, path) ? 0 : -EIO;
@@ -285,7 +282,7 @@ int open(fs_context& fs, const char* path, fuse_file_info* fi)
 
 int release(fs_context& fs, const char* path, fuse_file_info* fi)
 {
-    log().debug("release(path={}, fi={})", deref(path), deref(fi));
+    log().debug("release(path={}, fi={})", path, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
         return ffsp::debug_release(fs, path) ? 0 : -EIO;
@@ -296,7 +293,7 @@ int release(fs_context& fs, const char* path, fuse_file_info* fi)
 
 int truncate(fs_context& fs, const char* path, FUSE_OFF_T length)
 {
-    log().debug("truncate(path={}, length={})", deref(path), length);
+    log().debug("truncate(path={}, length={})", path, length);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -316,7 +313,7 @@ int truncate(fs_context& fs, const char* path, FUSE_OFF_T length)
 int read(fs_context& fs, const char* path, char* buf, size_t nbyte,
          FUSE_OFF_T offset, fuse_file_info* fi)
 {
-    log().debug("read(path={}, buf={}, nbyte={}, offset={}, fi={})", deref(path), static_cast<void*>(buf), nbyte, offset, deref(fi));
+    log().debug("read(path={}, buf={}, nbyte={}, offset={}, fi={})", path, static_cast<void*>(buf), nbyte, offset, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
         return static_cast<int>(ffsp::debug_read(fs, path, buf, nbyte, static_cast<uint64_t>(offset)));
@@ -343,7 +340,7 @@ int read(fs_context& fs, const char* path, char* buf, size_t nbyte,
 int write(fs_context& fs, const char* path, const char* buf, size_t nbyte,
           FUSE_OFF_T offset, fuse_file_info* fi)
 {
-    log().debug("write(path={}, buf={}, nbyte={}, offset={}, fi={})", deref(path), static_cast<const void*>(buf), nbyte, offset, deref(fi));
+    log().debug("write(path={}, buf={}, nbyte={}, offset={}, fi={})", path, static_cast<const void*>(buf), nbyte, offset, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -369,7 +366,7 @@ int write(fs_context& fs, const char* path, const char* buf, size_t nbyte,
 
 int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device)
 {
-    log().debug("mknod(path={}, mode={:#o}, device={})", deref(path), mode, device);
+    log().debug("mknod(path={}, mode={:#o}, device={})", path, mode, device);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -384,7 +381,7 @@ int mknod(fs_context& fs, const char* path, mode_t mode, dev_t device)
 
 int link(fs_context& fs, const char* oldpath, const char* newpath)
 {
-    log().debug("link(oldpath={}, newpath={})", deref(oldpath), deref(newpath));
+    log().debug("link(oldpath={}, newpath={})", oldpath, newpath);
 
     if (ffsp::is_debug_path(fs, oldpath) || ffsp::is_debug_path(fs, newpath))
         return -EPERM;
@@ -394,7 +391,7 @@ int link(fs_context& fs, const char* oldpath, const char* newpath)
 
 int symlink(fs_context& fs, const char* oldpath, const char* newpath)
 {
-    log().debug("symlink(oldpath={}, newpath={})", deref(oldpath), deref(newpath));
+    log().debug("symlink(oldpath={}, newpath={})", oldpath, newpath);
 
     if (ffsp::is_debug_path(fs, oldpath) || ffsp::is_debug_path(fs, newpath))
         return -EPERM;
@@ -407,7 +404,7 @@ int symlink(fs_context& fs, const char* oldpath, const char* newpath)
 
 int readlink(fs_context& fs, const char* path, char* buf, size_t bufsize)
 {
-    log().debug("readlink(path={}, buf={}, bufsize={})", deref(path), static_cast<void*>(buf), bufsize);
+    log().debug("readlink(path={}, buf={}, bufsize={})", path, static_cast<void*>(buf), bufsize);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -417,7 +414,7 @@ int readlink(fs_context& fs, const char* path, char* buf, size_t bufsize)
 
 int mkdir(fs_context& fs, const char* path, mode_t mode)
 {
-    log().debug("mkdir(path={}, mode={:#o})", deref(path), mode);
+    log().debug("mkdir(path={}, mode={:#o})", path, mode);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -430,7 +427,7 @@ int mkdir(fs_context& fs, const char* path, mode_t mode)
 
 int unlink(fs_context& fs, const char* path)
 {
-    log().debug("unlink(path={})", deref(path));
+    log().debug("unlink(path={})", path);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -440,7 +437,7 @@ int unlink(fs_context& fs, const char* path)
 
 int rmdir(fs_context& fs, const char* path)
 {
-    log().debug("rmdir(path={})", deref(path));
+    log().debug("rmdir(path={})", path);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -450,7 +447,7 @@ int rmdir(fs_context& fs, const char* path)
 
 int rename(fs_context& fs, const char* oldpath, const char* newpath)
 {
-    log().debug("rename(oldpath={}, newpath={})", deref(oldpath), deref(newpath));
+    log().debug("rename(oldpath={}, newpath={})", oldpath, newpath);
 
     if (ffsp::is_debug_path(fs, oldpath) || is_debug_path(fs, newpath))
         return -EPERM;
@@ -476,7 +473,7 @@ int utimens(fs_context& fs, const char* path, const struct ::timespec tv[2])
 
 int chmod(fs_context& fs, const char* path, mode_t mode)
 {
-    log().debug("chmod(path={}, mode={:#o})", deref(path), mode);
+    log().debug("chmod(path={}, mode={:#o})", path, mode);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -494,7 +491,7 @@ int chmod(fs_context& fs, const char* path, mode_t mode)
 
 int chown(fs_context& fs, const char* path, uid_t uid, gid_t gid)
 {
-    log().debug("chown(path={}, uid={}, gid={})", deref(path), uid, gid);
+    log().debug("chown(path={}, uid={}, gid={})", path, uid, gid);
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -513,7 +510,7 @@ int chown(fs_context& fs, const char* path, uid_t uid, gid_t gid)
 
 int statfs(fs_context& fs, const char* path, struct ::statvfs* sfs)
 {
-    log().debug("statfs(path={}, sfs={})", deref(path), static_cast<void*>(sfs));
+    log().debug("statfs(path={}, sfs={})", path, static_cast<void*>(sfs));
 
     if (ffsp::is_debug_path(fs, path))
         return -EPERM;
@@ -524,9 +521,7 @@ int statfs(fs_context& fs, const char* path, struct ::statvfs* sfs)
 
 int flush(fs_context& fs, const char* path, fuse_file_info* fi)
 {
-    (void)fi;
-
-    log().debug("flush(path={}, fi={})", deref(path), deref(fi));
+    log().debug("flush(path={}, fi={})", path, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
         return 0;
@@ -540,10 +535,7 @@ int flush(fs_context& fs, const char* path, fuse_file_info* fi)
 
 int fsync(fs_context& fs, const char* path, int datasync, fuse_file_info* fi)
 {
-    (void)datasync;
-    (void)fi;
-
-    log().debug("fsync(path={}, datasync={}, fi={})", deref(path), datasync, deref(fi));
+    log().debug("fsync(path={}, datasync={}, fi={})", path, datasync, log_ptr(fi));
 
     if (ffsp::is_debug_path(fs, path))
         return 0;

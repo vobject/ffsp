@@ -6,10 +6,10 @@ option(FFSP_BUILD_LIB "Build file system library." ON)
 option(FFSP_BUILD_FUSELIB "Build fuse operations wrapper." ON)
 option(FFSP_BUILD_MKFS "Build file system creation tool." ON)
 option(FFSP_BUILD_MOUNT "Build file system mount tool." ON)
-option(FFSP_BUILD_BENCHMARKS "Build file system benchmarks." ON)
-option(FFSP_BUILD_TESTS "Build file system tests." ON)
+option(FFSP_BUILD_BENCHMARKS "Build file system benchmarks." OFF)
+option(FFSP_BUILD_TESTS "Build file system tests." OFF)
 
-set(SPDLOG_INCLUDE_DIRS "lib/spdlog-0.11.0/include")
+set(SPDLOG_INCLUDE_DIRS "lib/spdlog-1.15.3/include")
 
 if(WIN32)
     set(FUSE_INCLUDE_DIRS ${DOKAN_INCLUDE_DIR} ${DOKAN_INCLUDE_DIR}/fuse)
@@ -23,7 +23,7 @@ if(WIN32)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
 else()
     set(SPDLOG_LIBRARIES "pthread")
-    
+
     set(FUSE_INCLUDE_DIRS "/usr/include/fuse")
     set(FUSE_LIBRARIES "fuse" "pthread")
 
@@ -89,7 +89,6 @@ if(FFSP_BUILD_FUSELIB)
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
         src/libffsp-fuse/fuse_ffsp_log.hpp
-        src/libffsp-fuse/fuse_ffsp_log.cpp
         src/libffsp-fuse/fuse_ffsp_utils.hpp
         src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/libffsp-fuse/fuse_get_context.cpp
@@ -130,7 +129,6 @@ if(FFSP_BUILD_MOUNT)
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
         src/libffsp-fuse/fuse_ffsp_log.hpp
-        src/libffsp-fuse/fuse_ffsp_log.cpp
         src/libffsp-fuse/fuse_ffsp_utils.hpp
         src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/mount.ffsp.cpp
@@ -156,7 +154,6 @@ if(FFSP_BUILD_BENCHMARKS)
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
         src/libffsp-fuse/fuse_ffsp_log.hpp
-        src/libffsp-fuse/fuse_ffsp_log.cpp
         src/libffsp-fuse/fuse_ffsp_utils.hpp
         src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/libffsp-fuse/fuse_get_context.cpp
@@ -184,7 +181,6 @@ if(FFSP_BUILD_TESTS)
         src/libffsp-fuse/fuse_ffsp.hpp
         src/libffsp-fuse/fuse_ffsp.cpp
         src/libffsp-fuse/fuse_ffsp_log.hpp
-        src/libffsp-fuse/fuse_ffsp_log.cpp
         src/libffsp-fuse/fuse_ffsp_utils.hpp
         src/libffsp-fuse/fuse_ffsp_utils.cpp
         src/libffsp-fuse/fuse_get_context.cpp
