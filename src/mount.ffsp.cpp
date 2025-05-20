@@ -28,6 +28,7 @@
 #include <string>
 
 #include <cstddef>
+#include <unistd.h>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -485,7 +486,7 @@ static int ffsp_opt_proc(void* data, const char* arg, int key, fuse_args* outarg
 #ifdef _WIN32
                 char* cwd = ::_getcwd(nullptr, 0);
 #else
-                char* cwd = get_current_dir_name();
+                char* cwd = getcwd(nullptr, 0);
 #endif
                 if (!cwd)
                 {
