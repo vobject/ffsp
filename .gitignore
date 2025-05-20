@@ -4,7 +4,9 @@ mount.ffsp
 fs
 .cproject
 .project
-*-build
+.vscode/
+*-build/
+build/
 CMakeLists.txt.user
 win32/Debug
 win32/Release
