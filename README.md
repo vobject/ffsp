@@ -1,6 +1,5 @@
 # FFSP - A Flash File System Prototype
 
-[![Build status](https://ci.appveyor.com/api/projects/status/n7j070e6e4ketrl5/branch/master?svg=true)](https://ci.appveyor.com/project/vobject/ffsp/branch/master)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 

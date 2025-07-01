@@ -11,6 +11,7 @@ target_include_directories(mkfs.ffsp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${FUSE_INCLUDE_DIRS}
+        $<$<PLATFORM_ID:Windows>:${CMAKE_CURRENT_SOURCE_DIR}/platform/windows>
 )
 target_link_libraries(mkfs.ffsp
     PRIVATE

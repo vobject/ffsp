@@ -1,4 +1,4 @@
-add_library(ffsp-fuse SHARED)
+add_library(ffsp-fuse STATIC)
 add_library(ffsp::fuse ALIAS ffsp-fuse)
 
 target_sources(ffsp-fuse
@@ -6,6 +6,10 @@ target_sources(ffsp-fuse
         fuse_ffsp.cpp
         fuse_ffsp_utils.cpp
         fuse_get_context.cpp
+)
+
+set_target_properties(ffsp-fuse PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
 )
 
 target_include_directories(ffsp-fuse

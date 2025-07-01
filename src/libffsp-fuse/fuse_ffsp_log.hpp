@@ -33,6 +33,7 @@ struct fmt::formatter<fuse_file_info> : fmt::formatter<std::string> {
 };
 
 #ifdef _WIN32
+template <>
 struct fmt::formatter<struct FUSE_STAT> : fmt::formatter<std::string> {
     auto format(const struct FUSE_STAT& stat, format_context &ctx) const -> decltype(ctx.out()) {
         return fmt::format_to(ctx.out(), "{{dev={}, ino={}, nlink={}, mode=0x{:x}, uid={}, gid={}, rdev={}, size={}, blksize={}, blocks={}, atime={}.{}, mtime={}.{}, ctime={}.{}, birthtim={}}}",
@@ -51,6 +52,15 @@ struct fmt::formatter<struct stat> : fmt::formatter<std::string> {
 };
 #endif
 
+#ifdef _WIN32
+template <>
+struct fmt::formatter<struct statvfs> : fmt::formatter<std::string> {
+    auto format(const struct statvfs& sfs, format_context &ctx) const -> decltype(ctx.out()) {
+        return fmt::format_to(ctx.out(), "{{bsize={}, frsize={}, blocks={}, bfree={}, bavail={}, files={}, ffree={}, favail={}, fsid={}, flag=0x{:x}, namemax={}}}",
+            sfs.f_bsize, sfs.f_frsize, sfs.f_blocks, sfs.f_bfree, sfs.f_bavail, sfs.f_files, sfs.f_ffree, sfs.f_favail, sfs.f_fsid, sfs.f_flag, sfs.f_namemax);
+    }
+};
+#else
 template <>
 struct fmt::formatter<struct statvfs> : fmt::formatter<std::string> {
     auto format(const struct statvfs& sfs, format_context &ctx) const -> decltype(ctx.out()) {
@@ -58,6 +68,7 @@ struct fmt::formatter<struct statvfs> : fmt::formatter<std::string> {
             sfs.f_bsize, sfs.f_frsize, sfs.f_blocks, sfs.f_bfree, sfs.f_bavail, sfs.f_files, sfs.f_ffree, sfs.f_favail, sfs.f_fsid, sfs.f_flag, sfs.f_namemax, sfs.f_type);
     }
 };
+#endif
 
 template <>
 struct fmt::formatter<struct timespec> : fmt::formatter<std::string> {

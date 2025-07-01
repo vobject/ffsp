@@ -27,7 +27,7 @@
 #include <vector>
 
 #ifdef _WIN32
-#include <fuse_win.h>
+#include <fuse/fuse_win.h>
 #include <BaseTsd.h>
 typedef SSIZE_T ssize_t;
 #else

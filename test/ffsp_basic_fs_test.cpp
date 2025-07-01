@@ -2,7 +2,7 @@
 
 #include "ffsp_test_utils.hpp"
 
-#if !defined(_WIN32)
+// #if !defined(_WIN32)
 
 class BasicFileSystemOperationsTest : public testing::Test
 {
@@ -64,4 +64,4 @@ TEST_F(BasicFileSystemOperationsTest, DISABLED_SmallFiles)
 //    }
 //}
 
-#endif // _WIN32
+// #endif // _WIN32

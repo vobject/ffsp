@@ -25,13 +25,20 @@ jobs:
     - name: Install dependencies (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        curl -L https://github.com/dokan-dev/dokany/releases/download/v1.0.3/dokan.zip -o dokan.zip
-        7z x dokan.zip -o dokan
-        echo "DOKAN_INCLUDE_DIR=${{ github.workspace }}\dokan\x64\Msys2\include" >> $env:GITHUB_ENV
-        echo "DOKAN_LIB_DIR=${{ github.workspace }}\dokan\x64\Release" >> $env:GITHUB_ENV
+        Invoke-WebRequest -Uri https://github.com/dokan-dev/dokany/releases/download/v1.0.3/dokan.zip -OutFile dokan.zip
+        Expand-Archive -Path dokan.zip -DestinationPath dokan
+        echo "DOKAN_INCLUDE_DIR=${{ github.workspace }}/dokan/x64/Msys2/include" >> $env:GITHUB_ENV
+        echo "DOKAN_LIB_DIR=${{ github.workspace }}/dokan/x64/Msys2/lib" >> $env:GITHUB_ENV
 
-    - name: Configure CMake
-      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Configure CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release -DDOKAN_INCLUDE_DIR="${{env.DOKAN_INCLUDE_DIR}}" -DDOKAN_LIB_DIR="${{env.DOKAN_LIB_DIR}}" -G "Visual Studio 17 2022" -A x64
 
     - name: Build
       run: cmake --build ${{ github.workspace }}/build --config Release

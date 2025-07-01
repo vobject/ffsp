@@ -28,10 +28,12 @@
 #include <string>
 
 #include <cstddef>
-#include <unistd.h>
 
 #ifdef _WIN32
 #include <direct.h>
+#include <io.h>
+#else
+#include <unistd.h>
 #endif
 
 namespace ffsp

@@ -27,6 +27,7 @@ set_target_properties(ffsp PROPERTIES
 target_include_directories(ffsp
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        $<$<PLATFORM_ID:Windows>:${FUSE_INCLUDE_DIRS}>
 )
 
 target_link_libraries(ffsp PUBLIC spdlog::spdlog)

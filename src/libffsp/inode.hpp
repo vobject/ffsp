@@ -28,7 +28,7 @@
 #include <sys/types.h>
 
 #ifdef _WIN32
-#include <fuse_win.h>
+#include <fuse/fuse_win.h>
 #endif
 
 namespace ffsp
